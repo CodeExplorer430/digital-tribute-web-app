@@ -1,0 +1,57 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client'
+
+import { useState, useEffect } from 'react'
+import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator'
+
+interface AdminQRCodeSectionProps {
+  page: any
+  redirects: any[]
+}
+
+export function AdminQRCodeSection({ page, redirects }: AdminQRCodeSectionProps) {
+  const [qrUrl, setQrUrl] = useState<string>('')
+
+  useEffect(() => {
+    const baseUrl = window.location.origin
+    let newUrl = ''
+    if (redirects && redirects.length > 0) {
+      newUrl = `${baseUrl}/r/${redirects[0].shortcode}`
+    } else {
+      newUrl = `${baseUrl}/pages/${page.slug}`
+    }
+
+    if (newUrl && qrUrl !== newUrl) {
+        setQrUrl(newUrl)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page.slug, redirects])
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+      <h3 className="font-semibold text-gray-800 border-b pb-2 mb-4">QR Code for Plaque</h3>
+      <div className="flex flex-col items-center space-y-4">
+          {redirects.length > 0 && (
+            <div className="w-full">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Select URL for QR</label>
+              <select 
+              className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              value={qrUrl}
+              onChange={(e) => setQrUrl(e.target.value)}
+              >
+                {redirects.map((r: any) => (
+                  <option key={r.id} value={`${window.location.origin}/r/${r.shortcode}`}>
+                    Short: /r/{r.shortcode}
+                  </option>
+                ))}
+                <option value={`${window.location.origin}/pages/${page.slug}`}>
+                  Direct: /pages/{page.slug}
+                </option>
+              </select>
+            </div>
+          )}
+          <QRCodeGenerator url={qrUrl} />
+      </div>
+    </div>
+  )
+}
