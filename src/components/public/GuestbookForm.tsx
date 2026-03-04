@@ -20,11 +20,9 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Simple honeypot check
+
     if (honeypot) {
-      console.log('Bot detected')
-      setSubmitted(true) // Pretend it worked
+      setSubmitted(true)
       return
     }
 
@@ -40,22 +38,21 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
     if (insertError) {
       setError(insertError.message)
       setLoading(false)
-    } else {
-      setSubmitted(true)
-      setLoading(false)
+      return
     }
+
+    setSubmitted(true)
+    setLoading(false)
   }
 
   if (submitted) {
     return (
-      <div className="bg-green-50 border border-green-200 p-6 rounded-lg text-center">
-        <h4 className="text-green-800 font-semibold">Thank you for your message</h4>
-        <p className="text-green-700 text-sm mt-1">
-          Your message has been submitted and will be visible after moderation.
-        </p>
-        <Button 
-          variant="outline" 
-          className="mt-4 border-green-200 text-green-700 hover:bg-green-100"
+      <div className="surface-card space-y-2 border-[color:var(--success)]/35 bg-[color:var(--success)]/10 p-6 text-center">
+        <h4 className="text-lg font-semibold text-[color:var(--success)]">Thank you for sharing</h4>
+        <p className="text-sm text-[color:var(--stone-ink)]">Your message has been submitted and will appear after moderation.</p>
+        <Button
+          variant="outline"
+          className="mt-2 border-[color:var(--success)]/30"
           onClick={() => {
             setSubmitted(false)
             setName('')
@@ -69,8 +66,7 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-card p-6 rounded-lg shadow-sm border border-border">
-      {/* Honeypot field - hidden from users */}
+    <form onSubmit={handleSubmit} className="surface-card space-y-4 p-5 md:p-6">
       <div className="hidden" aria-hidden="true">
         <input
           type="text"
@@ -83,30 +79,22 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Your Name</label>
-        <Input
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g., John Smith"
-          className="bg-background border-input focus-visible:ring-primary"
-        />
+        <label className="mb-1.5 block text-sm font-medium">Your Name</label>
+        <Input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., John Smith" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Your Message</label>
+        <label className="mb-1.5 block text-sm font-medium">Your Message</label>
         <textarea
           required
           rows={4}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full rounded-md border border-input bg-[var(--surface-1)] px-3 py-2 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] placeholder:text-muted-foreground/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/70"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Share a memory or words of comfort..."
         />
       </div>
 
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      {error && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? 'Submitting...' : 'Post to Guestbook'}

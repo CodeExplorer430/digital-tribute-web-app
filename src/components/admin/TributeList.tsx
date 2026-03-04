@@ -14,24 +14,26 @@ interface TributeListProps {
 
 export function TributeList({ pages }: TributeListProps) {
   return (
-    <div className="bg-card shadow-sm rounded-lg border border-border overflow-hidden">
-      <div className="px-6 py-4 border-b border-border">
-        <h3 className="text-lg font-medium text-foreground">Your Tribute Pages</h3>
+    <div className="surface-card overflow-hidden">
+      <div className="border-b border-border px-5 py-4">
+        <h3 className="text-lg font-semibold">Your Tribute Pages</h3>
       </div>
       <ul className="divide-y divide-border">
         {pages && pages.length > 0 ? (
           pages.map((page) => (
-            <li key={page.id} className="px-6 py-4 hover:bg-secondary/50 transition-colors">
-              <div className="flex items-center justify-between">
+            <li key={page.id} className="px-5 py-4 transition-colors hover:bg-secondary/45">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-foreground">{page.title}</h4>
-                  <p className="text-sm text-muted-foreground">/{page.slug}</p>
+                  <h4 className="text-sm font-semibold">{page.title}</h4>
+                  <p className="text-sm text-muted-foreground">/pages/{page.slug}</p>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/pages/${page.slug}`} target="_blank">View</Link>
+                    <Link href={`/pages/${page.slug}`} target="_blank">
+                      View
+                    </Link>
                   </Button>
-                  <Button variant="primary" size="sm" asChild>
+                  <Button size="sm" asChild>
                     <Link href={`/admin/pages/${page.id}`}>Edit</Link>
                   </Button>
                 </div>
@@ -39,9 +41,7 @@ export function TributeList({ pages }: TributeListProps) {
             </li>
           ))
         ) : (
-          <li className="px-6 py-12 text-center text-muted-foreground">
-            No tribute pages created yet.
-          </li>
+          <li className="px-5 py-12 text-center text-sm text-muted-foreground">No tribute pages created yet.</li>
         )}
       </ul>
     </div>

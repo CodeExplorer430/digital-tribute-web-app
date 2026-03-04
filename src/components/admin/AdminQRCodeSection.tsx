@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator'
 
 interface AdminQRCodeSectionProps {
@@ -10,47 +10,42 @@ interface AdminQRCodeSectionProps {
 }
 
 export function AdminQRCodeSection({ page, redirects }: AdminQRCodeSectionProps) {
-  const [qrUrl, setQrUrl] = useState<string>('')
+  const [selectedUrl, setSelectedUrl] = useState<string>('')
 
-  useEffect(() => {
+  const options = useMemo(() => {
     const baseUrl = process.env.NEXT_PUBLIC_SHORT_DOMAIN || window.location.origin
-    let newUrl = ''
-    if (redirects && redirects.length > 0) {
-      newUrl = `${baseUrl}/r/${redirects[0].shortcode}`
-    } else {
-      newUrl = `${baseUrl}/pages/${page.slug}`
-    }
+    const redirectOptions = (redirects || []).map((r: any) => ({
+      key: r.id,
+      label: `Short: /r/${r.shortcode}`,
+      value: `${baseUrl}/r/${r.shortcode}`,
+    }))
 
-    if (newUrl && qrUrl !== newUrl) {
-        setQrUrl(newUrl)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return [...redirectOptions, { key: 'direct', label: `Direct: /pages/${page.slug}`, value: `${baseUrl}/pages/${page.slug}` }]
   }, [page.slug, redirects])
 
+  const qrUrl = selectedUrl || options[0]?.value || ''
+
   return (
-    <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
-      <h3 className="font-semibold text-foreground border-b border-border pb-2 mb-4">QR Code for Plaque</h3>
+    <div className="surface-card space-y-4 p-6">
+      <h3 className="border-b border-border pb-2 text-base font-semibold">QR Code for Plaque</h3>
       <div className="flex flex-col items-center space-y-4">
-          {redirects.length > 0 && (
-            <div className="w-full">
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Select URL for QR</label>
-              <select 
-              className="w-full text-sm bg-background border-input text-foreground rounded-md shadow-sm focus:border-primary focus:ring-primary"
+        {options.length > 1 && (
+          <div className="w-full">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Select URL for QR</label>
+            <select
+              className="w-full rounded-md border border-input bg-[var(--surface-1)] px-3 py-2 text-sm"
               value={qrUrl}
-              onChange={(e) => setQrUrl(e.target.value)}
-              >
-                {redirects.map((r: any) => (
-                  <option key={r.id} value={`${process.env.NEXT_PUBLIC_SHORT_DOMAIN || window.location.origin}/r/${r.shortcode}`}>
-                    Short: /r/{r.shortcode}
-                  </option>
-                ))}
-                <option value={`${process.env.NEXT_PUBLIC_SHORT_DOMAIN || window.location.origin}/pages/${page.slug}`}>
-                  Direct: /pages/{page.slug}
+              onChange={(e) => setSelectedUrl(e.target.value)}
+            >
+              {options.map((opt) => (
+                <option key={opt.key} value={opt.value}>
+                  {opt.label}
                 </option>
-              </select>
-            </div>
-          )}
-          <QRCodeGenerator url={qrUrl} />
+              ))}
+            </select>
+          </div>
+        )}
+        <QRCodeGenerator url={qrUrl} />
       </div>
     </div>
   )

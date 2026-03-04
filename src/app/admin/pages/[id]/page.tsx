@@ -29,42 +29,27 @@ export default function EditTributePage({ params }: PageProps) {
   const supabase = useMemo(() => createClient(), [])
 
   const fetchPage = useCallback(async () => {
-    const { data: pageData } = await supabase
-      .from('pages')
-      .select('*')
-      .eq('id', id)
-      .single()
-    
+    const { data: pageData } = await supabase.from('pages').select('*').eq('id', id).single()
+
     setPage(pageData)
 
-    // Fetch related shortcodes
-    const { data: redirectData } = await supabase
-      .from('redirects')
-      .select('*')
-      .ilike('target_url', `%${pageData.slug}%`)
-    
+    const { data: redirectData } = await supabase.from('redirects').select('*').ilike('target_url', `%${pageData.slug}%`)
+
     setRedirects(redirectData || [])
 
-    const { data: photoData } = await supabase
-      .from('photos')
-      .select('*')
-      .eq('page_id', id)
-      .order('sort_index', { ascending: true })
-    
+    const { data: photoData } = await supabase.from('photos').select('*').eq('page_id', id).order('sort_index', { ascending: true })
+
     setPhotos(photoData || [])
     setLoading(false)
   }, [id, supabase])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPage()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchPage])
 
   const handleSetHero = async (photoUrl: string) => {
-    const { error } = await supabase
-      .from('pages')
-      .update({ hero_image_url: photoUrl })
-      .eq('id', id)
+    const { error } = await supabase.from('pages').update({ hero_image_url: photoUrl }).eq('id', id)
 
     if (error) alert(error.message)
     else {
@@ -72,61 +57,55 @@ export default function EditTributePage({ params }: PageProps) {
     }
   }
 
-  if (loading) return <div className="p-8">Loading...</div>
-  if (!page) return <div className="p-8">Page not found.</div>
+  if (loading) return <div className="surface-card p-8 text-sm text-muted-foreground">Loading tribute editor...</div>
+  if (!page) return <div className="surface-card p-8 text-sm">Page not found.</div>
 
   return (
-    <div className="space-y-12">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Edit Tribute: {page.title}</h2>
-        <div className="flex space-x-4">
-           {page.privacy === 'public' && (
-            <Button variant="outline" asChild>
-              <Link href={`/pages/${page.slug}`} target="_blank">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                View Public Page
-              </Link>
-            </Button>
-           )}
+    <div className="space-y-6">
+      <div className="surface-card flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold">Edit Tribute: {page.title}</h2>
+          <p className="text-sm text-muted-foreground">Manage page info, media, timeline, and sharing tools.</p>
         </div>
+        {page.privacy === 'public' && (
+          <Button variant="outline" asChild>
+            <Link href={`/pages/${page.slug}`} target="_blank">
+              <ExternalLink className="h-4 w-4" />
+              View Public Page
+            </Link>
+          </Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Edit Info */}
-        <div className="lg:col-span-1 space-y-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="space-y-6">
           <AdminPageInfo page={page} onUpdate={fetchPage} />
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
-            <h3 className="font-semibold text-gray-800 border-b pb-2 mb-4">Video Links (YouTube)</h3>
+          <section className="surface-card space-y-4 p-6">
+            <h3 className="border-b border-border pb-2 text-base font-semibold">Video Links (YouTube)</h3>
             <VideoManager pageId={id} />
-          </div>
+          </section>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
-            <h3 className="font-semibold text-gray-800 border-b pb-2 mb-4">Timeline Events</h3>
+          <section className="surface-card space-y-4 p-6">
+            <h3 className="border-b border-border pb-2 text-base font-semibold">Timeline Events</h3>
             <TimelineEditor pageId={id} />
-          </div>
+          </section>
 
           <AdminQRCodeSection page={page} redirects={redirects} />
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
-            <h3 className="font-semibold text-gray-800 border-b pb-2 mb-4">Export Data</h3>
+          <section className="surface-card space-y-4 p-6">
+            <h3 className="border-b border-border pb-2 text-base font-semibold">Export Data</h3>
             <DataExport pageId={id} pageTitle={page.title} />
-          </div>
+          </section>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
-            <h3 className="font-semibold text-gray-800 border-b pb-2 mb-4">Upload Photos</h3>
+          <section className="space-y-4">
+            <h3 className="px-1 text-base font-semibold">Upload Photos</h3>
             <MediaUpload pageId={id} onUploadComplete={fetchPage} />
-          </div>
+          </section>
         </div>
 
-        {/* Right: Photo Gallery */}
-        <div className="lg:col-span-2 space-y-6">
-          <AdminPhotoGallery 
-            photos={photos} 
-            heroImageUrl={page.hero_image_url}
-            onRefresh={fetchPage}
-            onSetHero={handleSetHero}
-          />
+        <div className="space-y-6">
+          <AdminPhotoGallery photos={photos} heroImageUrl={page.hero_image_url} onRefresh={fetchPage} onSetHero={handleSetHero} />
         </div>
       </div>
     </div>

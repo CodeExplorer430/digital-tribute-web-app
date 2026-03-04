@@ -86,7 +86,7 @@ export function AdminPhotoGallery({ photos, heroImageUrl, onRefresh, onSetHero }
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="h-8 text-xs bg-white/90 hover:bg-white"
+                      className="h-8 text-xs"
                       onClick={() => setHeroImage(fullImageUrl)}
                       disabled={!fullImageUrl}
                     >

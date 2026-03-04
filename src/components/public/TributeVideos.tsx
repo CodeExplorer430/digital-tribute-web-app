@@ -12,25 +12,24 @@ export function TributeVideos({ videos }: TributeVideosProps) {
   if (!videos || videos.length === 0) return null
 
   return (
-    <section className="space-y-12 border-t border-border pt-16">
-      <div className="text-center">
-        <h2 className="text-3xl font-serif font-semibold text-foreground">Videos</h2>
+    <section className="space-y-8 border-t border-border/80 pt-12">
+      <div className="space-y-2 text-center">
+        <h2 className="section-title">Video Memories</h2>
+        <p className="text-sm text-muted-foreground">Recorded stories and moments from loved ones.</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {videos.map((video) => (
-          <div key={video.id} className="space-y-4">
-            <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
+          <article key={video.id} className="surface-card overflow-hidden p-3 md:p-4">
+            <div className="aspect-video overflow-hidden rounded-md bg-black">
               <iframe
                 src={`https://www.youtube.com/embed/${video.provider_id}`}
-                className="w-full h-full"
+                className="h-full w-full"
                 allowFullScreen
                 title={video.title || 'Video'}
               />
             </div>
-            {video.title && (
-              <p className="text-center text-muted-foreground font-medium">{video.title}</p>
-            )}
-          </div>
+            {video.title && <p className="px-1 pt-3 text-sm font-medium text-muted-foreground">{video.title}</p>}
+          </article>
         ))}
       </div>
     </section>

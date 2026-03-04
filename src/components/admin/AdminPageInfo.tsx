@@ -35,9 +35,9 @@ export function AdminPageInfo({ page, onUpdate }: AdminPageInfoProps) {
         privacy: formData.privacy,
       })
       .eq('id', page.id)
-    
+
     if (error) alert(error.message)
-    else onUpdate() // Trigger refresh
+    else onUpdate()
     setUpdating(false)
   }
 
@@ -46,13 +46,13 @@ export function AdminPageInfo({ page, onUpdate }: AdminPageInfoProps) {
   }
 
   return (
-    <form onSubmit={handleUpdate} className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
-      <h3 className="font-semibold text-foreground border-b border-border pb-2 mb-4">Basic Information</h3>
-      
-      <div className="flex items-center justify-between bg-secondary p-3 rounded-md border border-border">
-        <div className="flex items-center space-x-2">
-          {formData.privacy === 'public' ? <Globe className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-amber-600" />}
-          <span className="text-sm font-medium text-foreground capitalize">{formData.privacy} Mode</span>
+    <form onSubmit={handleUpdate} className="surface-card space-y-4 p-6">
+      <h3 className="border-b border-border pb-2 text-base font-semibold">Basic Information</h3>
+
+      <div className="flex items-center justify-between rounded-md border border-border bg-secondary/55 p-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          {formData.privacy === 'public' ? <Globe className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-amber-700" />}
+          <span className="capitalize">{formData.privacy} Mode</span>
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={togglePrivacy}>
           Switch to {formData.privacy === 'public' ? 'Private' : 'Public'}
@@ -60,47 +60,25 @@ export function AdminPageInfo({ page, onUpdate }: AdminPageInfoProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-foreground">Page Title</label>
-        <Input
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="bg-background border-input"
-        />
+        <label className="mb-1.5 block text-sm font-medium">Page Title</label>
+        <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
       </div>
       <div>
-        <label className="block text-sm font-medium text-foreground">Slug</label>
-        <Input
-          value={formData.slug}
-          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-          className="bg-background border-input"
-        />
+        <label className="mb-1.5 block text-sm font-medium">Slug</label>
+        <Input value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} />
       </div>
       <div>
-        <label className="block text-sm font-medium text-foreground">Full Name</label>
-        <Input
-          value={formData.full_name || ''}
-          onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-          className="bg-background border-input"
-        />
+        <label className="mb-1.5 block text-sm font-medium">Full Name</label>
+        <Input value={formData.full_name || ''} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-foreground">DOB</label>
-          <Input
-            type="date"
-            value={formData.dob || ''}
-            onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-            className="bg-background border-input"
-          />
+          <label className="mb-1.5 block text-sm font-medium">DOB</label>
+          <Input type="date" value={formData.dob || ''} onChange={(e) => setFormData({ ...formData, dob: e.target.value })} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground">DOD</label>
-          <Input
-            type="date"
-            value={formData.dod || ''}
-            onChange={(e) => setFormData({ ...formData, dod: e.target.value })}
-            className="bg-background border-input"
-          />
+          <label className="mb-1.5 block text-sm font-medium">DOD</label>
+          <Input type="date" value={formData.dod || ''} onChange={(e) => setFormData({ ...formData, dod: e.target.value })} />
         </div>
       </div>
       <Button type="submit" className="w-full" disabled={updating}>

@@ -124,13 +124,15 @@ export function MediaUpload({ pageId, onUploadComplete }: MediaUploadProps) {
   }, [cloudName, onUploadComplete, pageId, registerPhoto, uploadPreset])
 
   return (
-    <div className="space-y-4 border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50">
+    <div className="surface-card space-y-4 border-2 border-dashed p-6">
       <Script src="https://upload-widget.cloudinary.com/global/all.js" onLoad={() => setWidgetReady(true)} />
 
-      <div className="flex flex-col items-center justify-center space-y-2 text-center">
-        <Upload className="h-10 w-10 text-gray-400" />
-        <p className="text-sm text-gray-600">Upload photos with Cloudinary Upload Widget (bulk supported).</p>
-        <p className="text-xs text-gray-500">Images are stored in Cloudinary and optimized with URL transformations.</p>
+      <div className="space-y-2 text-center">
+        <div className="mx-auto inline-flex rounded-full bg-secondary p-3">
+          <Upload className="h-5 w-5 text-foreground/85" />
+        </div>
+        <p className="text-sm font-medium">Upload photos with Cloudinary (bulk supported)</p>
+        <p className="text-xs text-muted-foreground">Images are optimized for delivery through Cloudinary URL transformations.</p>
       </div>
 
       <Button onClick={openWidget} disabled={!widgetReady || uploading} className="w-full">
@@ -145,9 +147,9 @@ export function MediaUpload({ pageId, onUploadComplete }: MediaUploadProps) {
       </Button>
 
       {uploadedCount > 0 && <p className="text-xs text-emerald-700">Uploaded images this session: {uploadedCount}</p>}
-      {errorMessage && <p className="text-xs text-red-600">{errorMessage}</p>}
+      {errorMessage && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{errorMessage}</p>}
       {!cloudName || !uploadPreset ? (
-        <p className="text-xs text-amber-600">
+        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
           Missing `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` or `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`.
         </p>
       ) : null}

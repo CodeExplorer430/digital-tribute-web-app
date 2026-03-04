@@ -22,7 +22,9 @@ export default function NewTributePage() {
     setLoading(true)
     setError(null)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
     if (!user) {
       setError('You must be logged in')
@@ -42,13 +44,13 @@ export default function NewTributePage() {
     if (insertError) {
       setError(insertError.message)
       setLoading(false)
-    } else {
-      router.push('/admin')
-      router.refresh()
+      return
     }
+
+    router.push('/admin')
+    router.refresh()
   }
 
-  // Auto-generate slug from title
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value
     setTitle(newTitle)
@@ -58,76 +60,49 @@ export default function NewTributePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">Create New Tribute</h2>
-        <p className="text-gray-600">Enter the details for the memorial page.</p>
+    <div className="mx-auto max-w-2xl space-y-5">
+      <div className="space-y-1">
+        <h2 className="text-2xl font-semibold">Create New Tribute</h2>
+        <p className="text-sm text-muted-foreground">Add the core details now. You can enrich the page later.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <form onSubmit={handleSubmit} className="surface-card space-y-5 p-6">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Page Title (e.g., In Loving Memory of...)</label>
-            <Input
-              required
-              value={title}
-              onChange={handleTitleChange}
-              placeholder="In Loving Memory of Jane Doe"
-            />
+            <label className="mb-1.5 block text-sm font-medium">Page Title</label>
+            <Input required value={title} onChange={handleTitleChange} placeholder="In Loving Memory of Jane Doe" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">URL Slug</label>
+            <label className="mb-1.5 block text-sm font-medium">URL Slug</label>
             <div className="flex">
-              <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+              <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-secondary px-3 text-sm text-muted-foreground">
                 /pages/
               </span>
-              <Input
-                required
-                className="rounded-l-none"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="jane-doe"
-              />
+              <Input required className="rounded-l-none" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="jane-doe" />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Full Name</label>
-            <Input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Jane Elizabeth Doe"
-            />
+            <label className="mb-1.5 block text-sm font-medium">Full Name</label>
+            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Elizabeth Doe" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
-              <Input
-                type="date"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)}
-              />
+              <label className="mb-1.5 block text-sm font-medium">Date of Birth</label>
+              <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Date of Death</label>
-              <Input
-                type="date"
-                value={dod}
-                onChange={(e) => setDod(e.target.value)}
-              />
+              <label className="mb-1.5 block text-sm font-medium">Date of Death</label>
+              <Input type="date" value={dod} onChange={(e) => setDod(e.target.value)} />
             </div>
           </div>
         </div>
 
-        {error && (
-          <div className="text-sm text-red-600">
-            {error}
-          </div>
-        )}
+        {error && <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>}
 
-        <div className="flex justify-end space-x-4">
+        <div className="flex justify-end gap-3">
           <Button variant="outline" type="button" onClick={() => router.back()}>
             Cancel
           </Button>

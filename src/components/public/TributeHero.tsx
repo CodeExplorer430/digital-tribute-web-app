@@ -12,22 +12,24 @@ interface TributeHeroProps {
 
 export function TributeHero({ page }: TributeHeroProps) {
   return (
-    <section className="relative h-[60vh] bg-foreground flex items-center justify-center text-white overflow-hidden">
-      {page.hero_image_url ? (
-        <img
-          src={page.hero_image_url}
-          alt={page.full_name || page.title}
-          className="absolute inset-0 w-full h-full object-cover opacity-60"
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-700 to-gray-900 opacity-60" />
-      )}
-      <div className="relative z-10 text-center px-4">
-        <h1 className="text-4xl md:text-6xl font-serif font-bold mb-4">{page.title}</h1>
-        <p className="text-xl md:text-2xl font-light italic">{page.full_name}</p>
+    <section className="relative isolate overflow-hidden">
+      <div className="h-[54vh] min-h-[340px] w-full bg-foreground">
+        {page.hero_image_url ? (
+          <img src={page.hero_image_url} alt={page.full_name || page.title} className="h-full w-full object-cover opacity-70" />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-b from-stone-700 via-stone-800 to-stone-900" />
+        )}
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/15" />
+      <div className="page-container absolute inset-x-0 bottom-0 py-10 text-white md:py-14">
+        <p className="mb-3 inline-flex rounded-full border border-white/35 bg-black/20 px-3 py-1 text-xs tracking-wide text-white/85">
+          In Loving Memory
+        </p>
+        <h1 className="max-w-3xl text-4xl font-semibold leading-tight md:text-6xl">{page.title}</h1>
+        <p className="mt-3 text-base italic text-white/88 md:text-xl">{page.full_name}</p>
         {(page.dob || page.dod) && (
-          <p className="mt-4 text-lg md:text-xl tracking-widest uppercase">
-            {page.dob ? format(new Date(page.dob), 'MMMM d, yyyy') : '...'} — {page.dod ? format(new Date(page.dod), 'MMMM d, yyyy') : 'Present'}
+          <p className="mt-5 text-sm uppercase tracking-[0.2em] text-white/80 md:text-base">
+            {page.dob ? format(new Date(page.dob), 'MMMM d, yyyy') : '...'} - {page.dod ? format(new Date(page.dod), 'MMMM d, yyyy') : 'Present'}
           </p>
         )}
       </div>

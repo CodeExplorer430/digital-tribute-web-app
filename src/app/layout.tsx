@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Digital Tribute",
-  description: "Create and share digital memorial tribute pages for your loved ones.",
+  description: "Create and share memorial pages with photos, timelines, videos, and moderated guestbook messages.",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-primary/50`}
       >
         {children}
       </body>

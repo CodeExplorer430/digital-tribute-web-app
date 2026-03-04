@@ -19,25 +19,21 @@ export function VideoManager({ pageId }: VideoManagerProps) {
   const supabase = useMemo(() => createClient(), [])
 
   const fetchVideos = useCallback(async () => {
-    const { data } = await supabase
-      .from('videos')
-      .select('*')
-      .eq('page_id', pageId)
-      .order('created_at', { ascending: true })
-    
+    const { data } = await supabase.from('videos').select('*').eq('page_id', pageId).order('created_at', { ascending: true })
+
     setVideos(data || [])
     setLoading(false)
   }, [pageId, supabase])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchVideos()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchVideos])
 
-  const getYoutubeId = (url: string) => {
+  const getYoutubeId = (youtubeUrl: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/
-    const match = url.match(regExp)
-    return (match && match[2].length === 11) ? match[2] : null
+    const match = youtubeUrl.match(regExp)
+    return match && match[2].length === 11 ? match[2] : null
   }
 
   const addVideo = async (e: React.FormEvent) => {
@@ -52,7 +48,7 @@ export function VideoManager({ pageId }: VideoManagerProps) {
       page_id: pageId,
       provider: 'youtube',
       provider_id: videoId,
-      title: title
+      title,
     })
 
     if (error) alert(error.message)
@@ -68,52 +64,41 @@ export function VideoManager({ pageId }: VideoManagerProps) {
     fetchVideos()
   }
 
-  if (loading) return <div>Loading videos...</div>
+  if (loading) return <div className="text-sm text-muted-foreground">Loading videos...</div>
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
         Upload videos to YouTube first, then paste the link here. For files larger than 100MB, direct app uploads are not supported.
       </div>
-      <form onSubmit={addVideo} className="space-y-4">
-        <div className="space-y-2">
-          <Input
-            placeholder="YouTube URL (e.g. https://www.youtube.com/watch?v=...)"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            required
-          />
-          <div className="flex space-x-2">
-            <Input
-              className="flex-1"
-              placeholder="Video Title (Optional)"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <Button type="submit" size="icon">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+      <form onSubmit={addVideo} className="space-y-3">
+        <Input
+          placeholder="YouTube URL (e.g. https://www.youtube.com/watch?v=...)"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          required
+        />
+        <div className="flex gap-2">
+          <Input className="flex-1" placeholder="Video Title (Optional)" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Button type="submit" size="icon" aria-label="Add video">
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
       </form>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="space-y-2">
         {videos.map((video) => (
-          <div key={video.id} className="flex items-center space-x-4 bg-gray-50 p-3 rounded border border-gray-100">
-            <div className="flex-shrink-0 bg-red-100 p-2 rounded">
-              <Youtube className="h-6 w-6 text-red-600" />
+          <div key={video.id} className="flex items-center gap-3 rounded-md border border-border bg-secondary/45 p-3">
+            <div className="rounded bg-red-100 p-2">
+              <Youtube className="h-5 w-5 text-red-600" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {video.title || 'Untitled Video'}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                ID: {video.provider_id}
-              </p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{video.title || 'Untitled Video'}</p>
+              <p className="truncate text-xs text-muted-foreground">ID: {video.provider_id}</p>
             </div>
-            <button onClick={() => deleteVideo(video.id)} className="text-red-500 hover:text-red-700">
-              <Trash2 className="h-4 w-4" />
-            </button>
+            <Button variant="ghost" size="sm" onClick={() => deleteVideo(video.id)} aria-label="Delete video">
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
           </div>
         ))}
       </div>

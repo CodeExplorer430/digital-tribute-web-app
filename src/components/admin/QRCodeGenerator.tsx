@@ -20,7 +20,7 @@ export function QRCodeGenerator({ url }: QRCodeGeneratorProps) {
 
     if (canvasRef.current) {
       QRCode.toCanvas(canvasRef.current, url, {
-        width: 1200, // High resolution for printing
+        width: 1200,
         margin: 2,
         errorCorrectionLevel: 'H',
       })
@@ -44,17 +44,10 @@ export function QRCodeGenerator({ url }: QRCodeGeneratorProps) {
   }
 
   return (
-    <div className="flex flex-col items-center space-y-4 w-full">
-      <div 
-        className="w-48 h-48 border border-gray-200 rounded-lg p-2 bg-white"
-        dangerouslySetInnerHTML={{ __html: svg }}
-      />
-      <div className="text-center">
-        <p className="text-xs font-mono text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-          {url}
-        </p>
-      </div>
-      <div className="grid grid-cols-1 w-full gap-2">
+    <div className="w-full space-y-3 text-center">
+      <div className="mx-auto w-fit rounded-xl border border-border bg-white p-3 shadow-[var(--shadow-card)]" dangerouslySetInnerHTML={{ __html: svg }} />
+      <p className="rounded-md border border-border bg-secondary/60 px-2 py-1 text-xs font-mono text-muted-foreground">{url}</p>
+      <div className="grid grid-cols-1 gap-2">
         <Button variant="outline" size="sm" onClick={downloadSVG}>
           <Download className="mr-2 h-4 w-4" />
           Download SVG (Vector)
@@ -64,11 +57,8 @@ export function QRCodeGenerator({ url }: QRCodeGeneratorProps) {
           Download PNG (300+ DPI)
         </Button>
       </div>
-      {/* Hidden canvas for PNG generation */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      <p className="text-[10px] text-gray-400 text-center">
-        Vector (SVG) is recommended for engraving.
-      </p>
+      <p className="text-[11px] text-muted-foreground">SVG is best for engraving vendors.</p>
     </div>
   )
 }

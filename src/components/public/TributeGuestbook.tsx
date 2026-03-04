@@ -16,29 +16,29 @@ interface TributeGuestbookProps {
 
 export function TributeGuestbook({ pageId, fullName, entries }: TributeGuestbookProps) {
   return (
-    <section className="space-y-8 border-t border-border pt-16">
-      <div className="text-center">
-        <h2 className="text-3xl font-serif font-semibold text-foreground">Guestbook</h2>
-        <p className="text-muted-foreground mt-2">Leave a message in memory of {fullName || 'our loved one'}.</p>
+    <section className="space-y-8 border-t border-border/80 pt-12">
+      <div className="space-y-2 text-center">
+        <h2 className="section-title">Guestbook</h2>
+        <p className="text-sm text-muted-foreground">Leave a message in memory of {fullName || 'our loved one'}.</p>
       </div>
 
-      <div className="max-w-xl mx-auto">
+      <div className="mx-auto max-w-xl">
         <GuestbookForm pageId={pageId} />
       </div>
 
-      <div className="space-y-6 mt-12">
+      <div className="space-y-4 md:space-y-5">
         {entries && entries.length > 0 ? (
           entries.map((entry) => (
-            <div key={entry.id} className="bg-card p-6 rounded-lg shadow-sm border border-border">
-              <p className="text-foreground leading-relaxed mb-4 italic">&quot;{entry.message}&quot;</p>
-              <div className="flex justify-between items-center text-sm">
-                <span className="font-semibold text-foreground">{entry.name}</span>
+            <article key={entry.id} className="surface-card p-5 md:p-6">
+              <p className="mb-4 text-sm leading-relaxed text-foreground/95 md:text-base">&quot;{entry.message}&quot;</p>
+              <div className="flex items-center justify-between gap-3 text-xs md:text-sm">
+                <span className="font-semibold">{entry.name}</span>
                 <span className="text-muted-foreground">{format(new Date(entry.created_at), 'MMMM d, yyyy')}</span>
               </div>
-            </div>
+            </article>
           ))
         ) : (
-          <p className="text-center text-muted-foreground italic">No messages yet. Be the first to share a memory.</p>
+          <p className="text-center text-sm italic text-muted-foreground">No messages yet. Be the first to share a memory.</p>
         )}
       </div>
     </section>
