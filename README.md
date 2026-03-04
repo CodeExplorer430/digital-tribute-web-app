@@ -22,8 +22,11 @@ A full-stack web app for creating, managing, and sharing memorial pages with QR-
 
 ### 1) Install
 ```bash
+nvm use
 npm install
 ```
+
+Recommended runtime: Node.js 22 LTS (see `.nvmrc`).
 
 ### 2) Environment variables
 Create `.env.local`:
@@ -56,6 +59,14 @@ npm run test:coverage
 npm run test:e2e:install
 npm run test:e2e
 ```
+
+If Turbopack-specific local issues appear in e2e startup, use:
+```bash
+npm run test:e2e:turbopack
+npm run test:e2e:webpack
+```
+
+`npm run test:e2e` uses webpack-backed Next dev by default for stability in this environment. Use `npm run test:e2e:turbopack` only for Turbopack diagnostics.
 
 Coverage gates are enforced at 90% global thresholds in CI.
 

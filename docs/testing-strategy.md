@@ -10,8 +10,13 @@ This repository uses a layered strategy:
 - `npm run test:unit`: run unit/component tests
 - `npm run test:coverage`: run tests with V8 coverage gates
 - `npm run test:e2e:install`: install Chromium browser for Playwright
-- `npm run test:e2e`: run Playwright end-to-end tests
+- `npm run test:e2e`: run Playwright end-to-end tests (webpack-backed Next dev)
+- `npm run test:e2e:turbopack`: run e2e against Turbopack dev server (diagnostic mode)
 - `npm run test:all`: run coverage + e2e
+
+## E2E Runtime Mode
+- Default e2e runner uses webpack-backed Next dev for stability.
+- Turbopack e2e can fail on some environments with LightningCSS/Tailwind module resolution. Keep Turbopack runs as diagnostic mode until upstream/toolchain behavior stabilizes.
 
 ## Coverage Policy
 Global coverage threshold (enforced in CI):

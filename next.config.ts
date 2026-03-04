@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const configDir = dirname(fileURLToPath(import.meta.url));
 
 const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
   {
@@ -25,7 +29,7 @@ if (supabaseUrl) {
 
 const nextConfig: NextConfig = {
   turbopack: {
-    root: process.cwd(),
+    root: configDir,
   },
   allowedDevOrigins: ['localhost', '127.0.0.1'],
   images: {
