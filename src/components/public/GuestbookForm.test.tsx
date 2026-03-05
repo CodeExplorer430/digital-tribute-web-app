@@ -2,23 +2,15 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { GuestbookForm } from '@/components/public/GuestbookForm'
 
-const insertMock = vi.fn()
-
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    from: () => ({
-      insert: insertMock,
-    }),
-  }),
-}))
-
 describe('GuestbookForm', () => {
   beforeEach(() => {
-    insertMock.mockReset()
+    vi.restoreAllMocks()
   })
 
   it('submits and shows success message', async () => {
-    insertMock.mockResolvedValue({ error: null })
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 201 })
+    )
     const user = userEvent.setup()
 
     render(<GuestbookForm pageId="page-1" />)
@@ -27,16 +19,19 @@ describe('GuestbookForm', () => {
     await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
     await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
 
-    expect(insertMock).toHaveBeenCalledWith({
-      page_id: 'page-1',
-      name: 'Maria',
-      message: 'Forever remembered',
-    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/guestbook',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    )
     expect(await screen.findByText('Thank you for sharing')).toBeInTheDocument()
   })
 
   it('shows API error', async () => {
-    insertMock.mockResolvedValue({ error: { message: 'Service unavailable' } })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Service unavailable' }), { status: 500 })
+    )
     const user = userEvent.setup()
 
     render(<GuestbookForm pageId="page-1" />)

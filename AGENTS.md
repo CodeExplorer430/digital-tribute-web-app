@@ -31,6 +31,7 @@ Run `npm run lint && npm run typecheck && npm run test:coverage` before opening 
 - Hooks/utilities: `camelCase` names; route folders use Next.js conventions (`[slug]`, `route.ts`, `page.tsx`).
 - Styling: Tailwind utility classes; prefer shared primitives in `src/components/ui`.
 - Linting: ESLint (`eslint-config-next`) is the baseline style gate.
+- Admin data boundary: in client-side admin pages/components, use `fetch('/api/admin/*')` for reads/writes. Do not query Supabase directly from admin client code.
 
 ## Testing Guidelines
 - Frameworks:
@@ -38,6 +39,7 @@ Run `npm run lint && npm run typecheck && npm run test:coverage` before opening 
   - E2E: Playwright (Chromium)
 - Coverage gate (CI-enforced): 90% global for lines/functions/statements/branches.
 - Mock-first strategy in CI for external services (Supabase/Cloudinary/Worker integrations).
+- Add/maintain route tests for each admin API endpoint (`auth`, `ownership`, `validation`, and success path).
 - Test placement:
   - Unit/component tests colocated as `*.test.ts`/`*.test.tsx`
   - E2E tests under `tests/e2e/`

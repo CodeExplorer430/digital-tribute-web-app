@@ -13,6 +13,11 @@ Checks:
 - `npm run test:e2e`
 - `npm run build`
 
+Security/reliability note:
+- Admin/public write flows are validated server-side via `/api/*` endpoints and are covered by unit route tests in CI.
+- Admin media mutations (photo metadata create, caption update, and delete) are also API-only and route-tested.
+- Admin client reads are also API-mediated (`/api/admin/*`) for a single trust boundary and explicit ownership checks.
+
 This workflow should be configured as a required status check before merge.
 Required statuses: `lint`, `typecheck`, `unit_coverage`, `e2e`, `build`.
 

@@ -31,6 +31,30 @@ CI and local tests are mock-first for external systems:
 - Cloudinary widget integration is mocked in component tests
 - E2E flows focus on deterministic UX and routing smoke checks
 
+## Trust Boundary Coverage
+Server mutation endpoints are covered with focused route tests:
+- `POST /api/guestbook`
+- `POST /api/admin/pages`
+- `GET /api/admin/guestbook`
+- `POST /api/admin/redirects`
+- `GET /api/admin/redirects`
+- `DELETE /api/admin/redirects/:id`
+- `POST /api/admin/videos`
+- `GET /api/admin/pages/:id/videos`
+- `DELETE /api/admin/videos/:id`
+- `POST /api/admin/photos`
+- `GET /api/admin/pages/:id/photos`
+- `PATCH /api/admin/photos/:id`
+- `DELETE /api/admin/photos/:id`
+- `POST /api/admin/timeline`
+- `GET /api/admin/pages/:id/timeline`
+- `PATCH /api/admin/pages/:id`
+- `GET /api/admin/pages/:id`
+- `GET /api/admin/pages/:id/redirects`
+- `GET /api/admin/pages/:id/guestbook`
+
+These tests verify validation, auth/ownership checks, and success-path persistence calls.
+
 ## Test Placement
 - Place tests near implementation as `*.test.ts`/`*.test.tsx`
 - Keep E2E tests under `tests/e2e`
