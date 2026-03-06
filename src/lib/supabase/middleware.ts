@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getSupabasePublishableKeyOrThrow, getSupabaseUrlOrThrow } from '@/lib/supabase/env'
 
 export async function updateSession(request: NextRequest) {
   if (process.env.E2E_BYPASS_ADMIN_AUTH === '1' && request.nextUrl.pathname.startsWith('/admin')) {
@@ -11,8 +12,8 @@ export async function updateSession(request: NextRequest) {
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getSupabaseUrlOrThrow(),
+    getSupabasePublishableKeyOrThrow(),
     {
       cookies: {
         getAll() {

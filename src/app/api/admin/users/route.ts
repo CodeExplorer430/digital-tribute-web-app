@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     serviceRole = createServiceRoleClient()
   } catch {
     return NextResponse.json(
-      { code: 'CONFIG_ERROR', message: 'SUPABASE_SERVICE_ROLE_KEY is required for user invitations.' },
+      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user invitations.' },
       { status: 500 }
     )
   }

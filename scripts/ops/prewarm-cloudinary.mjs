@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
 import { createClient } from '@supabase/supabase-js';
+import { loadLocalEnv } from './load-env.mjs';
+
+loadLocalEnv();
 
 const enabled = process.env.MEDIA_PREWARM_ENABLED === '1';
 if (!enabled) {
@@ -9,12 +12,12 @@ if (!enabled) {
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const batchSize = Number(process.env.MEDIA_PREWARM_BATCH_SIZE || '40');
 
 if (!supabaseUrl || !serviceRoleKey || !cloudName) {
-  console.error('missing required env vars: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME');
+  console.error('missing required env vars: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY), NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME');
   process.exit(1);
 }
 

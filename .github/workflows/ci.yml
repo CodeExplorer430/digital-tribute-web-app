@@ -69,6 +69,7 @@ jobs:
     timeout-minutes: 30
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test_publishable_key
       NEXT_PUBLIC_SUPABASE_ANON_KEY: test_anon_key
       NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: test-cloud
       NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: test-preset
@@ -96,6 +97,7 @@ jobs:
     timeout-minutes: 35
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test_publishable_key
       NEXT_PUBLIC_SUPABASE_ANON_KEY: test_anon_key
       NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: test-cloud
       NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: test-preset
@@ -124,6 +126,7 @@ jobs:
     timeout-minutes: 25
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test_publishable_key
       NEXT_PUBLIC_SUPABASE_ANON_KEY: test_anon_key
       NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: test-cloud
       NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: test-preset
@@ -143,6 +146,7 @@ jobs:
     timeout-minutes: 30
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test_publishable_key
       NEXT_PUBLIC_SUPABASE_ANON_KEY: test_anon_key
       NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: test-cloud
       NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: test-preset
@@ -162,6 +166,7 @@ jobs:
     timeout-minutes: 35
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test_publishable_key
       NEXT_PUBLIC_SUPABASE_ANON_KEY: test_anon_key
       NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: test-cloud
       NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: test-preset
@@ -189,6 +194,7 @@ jobs:
     needs: [lint, typecheck, unit_coverage, worker_tests, e2e_webpack, e2e_turbopack, a11y, launch_readiness, perf_a11y_gate]
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test_publishable_key
       NEXT_PUBLIC_SUPABASE_ANON_KEY: test_anon_key
       NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: test-cloud
       NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: test-preset

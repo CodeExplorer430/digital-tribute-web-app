@@ -17,7 +17,7 @@ Use this when moving ownership from developer to family operators.
 
 ## 3) Secret Rotation Checklist
 Rotate after transfer and after any suspected leak:
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`)
 - `PRIVATE_MEDIA_TOKEN_SECRET`
 - `UPSTASH_REDIS_REST_TOKEN` (if used)
 - Cloudflare API tokens

@@ -34,7 +34,7 @@ Vercel Git integration handles deployments:
 
 Required Vercel env vars:
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
 - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
 - `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`
 - `RATE_LIMIT_BACKEND=upstash`
@@ -53,7 +53,7 @@ Required GitHub secrets:
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 - `WORKER_SUPABASE_URL`
-- `WORKER_SUPABASE_SERVICE_ROLE_KEY`
+- `WORKER_SUPABASE_SECRET_KEY` (or legacy `WORKER_SUPABASE_SERVICE_ROLE_KEY`)
 - `WORKER_FALLBACK_URL`
 
 ### 4) DB Backup Automation (`.github/workflows/backup-db.yml`)
@@ -90,7 +90,7 @@ Optional scheduled Cloudinary transform prewarm:
 
 Required secrets/vars:
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`)
 - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
 - `MEDIA_PREWARM_ENABLED` (repo variable, default `0`)
 - `MEDIA_PREWARM_BATCH_SIZE` (repo variable, default `40`)

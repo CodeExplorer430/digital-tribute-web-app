@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:webpack": "next dev --webpack",
     "dev:e2e": "next dev --hostname 127.0.0.1 --port 4173",
     "dev:e2e:webpack": "next dev --webpack --hostname 127.0.0.1 --port 4173",
     "build": "next build",
@@ -25,6 +26,9 @@
     "test:perf": "npx @lhci/cli@0.14.x autorun --config=./lighthouserc.json",
     "ops:check-prereqs": "node scripts/ops/check-deploy-prereqs.mjs",
     "ops:check-prereqs:production": "CHECK_PROD_SECURITY=1 node scripts/ops/check-deploy-prereqs.mjs",
+    "ops:check-db-schema": "node scripts/ops/check-db-schema.mjs",
+    "ops:supabase:migrate:hosted": "bash scripts/ops/supabase-apply-migrations.sh",
+    "ops:supabase:bootstrap-admin": "node scripts/ops/supabase-bootstrap-admin.mjs",
     "ops:backup:prune": "node scripts/ops/prune-backups.mjs",
     "ops:media:prewarm": "node scripts/ops/prewarm-cloudinary.mjs",
     "prepare": "husky",

@@ -1,6 +1,7 @@
 interface Env {
   SUPABASE_URL: string
-  SUPABASE_SERVICE_ROLE_KEY: string
+  SUPABASE_SECRET_KEY?: string
+  SUPABASE_SERVICE_ROLE_KEY?: string
   FALLBACK_URL?: string
 }
 
@@ -18,6 +19,8 @@ function sanitizeCode(pathname: string): string {
 }
 
 async function fetchTargetUrl(code: string, env: Env): Promise<string | null> {
+  const apiKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY
+  if (!apiKey) return null
   const endpoint = new URL(`${env.SUPABASE_URL}/rest/v1/redirects`)
   endpoint.searchParams.set('shortcode', `eq.${code}`)
   endpoint.searchParams.set('is_active', 'eq.true')
@@ -26,8 +29,8 @@ async function fetchTargetUrl(code: string, env: Env): Promise<string | null> {
 
   const res = await fetch(endpoint.toString(), {
     headers: {
-      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      apikey: apiKey,
+      Authorization: `Bearer ${apiKey}`,
       Accept: 'application/json',
     },
     cf: {

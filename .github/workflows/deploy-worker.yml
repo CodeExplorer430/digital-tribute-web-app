@@ -29,7 +29,8 @@ jobs:
         run: npm run ops:check-prereqs:production
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${{ secrets.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}
           NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: ${{ secrets.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET }}
           NEXT_PUBLIC_SHORT_DOMAIN: ${{ vars.NEXT_PUBLIC_SHORT_DOMAIN || secrets.NEXT_PUBLIC_SHORT_DOMAIN }}
@@ -50,10 +51,12 @@ jobs:
           workingDirectory: workers/redirector
           secrets: |
             SUPABASE_URL
+            SUPABASE_SECRET_KEY
             SUPABASE_SERVICE_ROLE_KEY
             FALLBACK_URL
           command: deploy
         env:
           SUPABASE_URL: ${{ secrets.WORKER_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.WORKER_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.WORKER_SUPABASE_SECRET_KEY || secrets.WORKER_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.WORKER_SUPABASE_SERVICE_ROLE_KEY || secrets.WORKER_SUPABASE_SECRET_KEY }}
           FALLBACK_URL: ${{ secrets.WORKER_FALLBACK_URL }}

@@ -41,6 +41,12 @@ Use this for production issues affecting family admins or public visitors.
 - Verify Supabase auth status.
 - Confirm user role/is_active in admin users.
 - Use owner account to restore role.
+- If profile row is missing, run:
+  - `npm run ops:supabase:bootstrap-admin -- --email=<user@email.com> --full-name="<Name>"`
+  - Requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`).
+- If bootstrap fails with missing `profiles.full_name`, apply migrations and verify schema:
+  - `npm run ops:supabase:migrate:hosted -- <project-ref>`
+  - `npm run ops:check-db-schema`
 
 ## 4) Rollback Procedures
 

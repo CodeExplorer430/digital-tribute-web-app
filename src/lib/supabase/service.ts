@@ -1,16 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
-
-function serviceEnvOrThrow(name: string) {
-  const value = process.env[name]
-  if (!value) {
-    throw new Error(`${name} is required for admin user management.`)
-  }
-  return value
-}
+import { getSupabaseSecretKeyOrThrow, getSupabaseUrlOrThrow } from '@/lib/supabase/env'
 
 export function createServiceRoleClient() {
-  const supabaseUrl = serviceEnvOrThrow('NEXT_PUBLIC_SUPABASE_URL')
-  const serviceRoleKey = serviceEnvOrThrow('SUPABASE_SERVICE_ROLE_KEY')
+  const supabaseUrl = getSupabaseUrlOrThrow()
+  const serviceRoleKey = getSupabaseSecretKeyOrThrow()
 
   return createClient(supabaseUrl, serviceRoleKey, {
     auth: {

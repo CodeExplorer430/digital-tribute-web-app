@@ -11,7 +11,7 @@
 
 ## Runtime Secrets
 - `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`)
 - `FALLBACK_URL`
 
 ## Redirect Rules

@@ -22,7 +22,7 @@ Then set:
 2. Add route: `go.yourdomain.com/*` -> `everlume-redirector`.
 3. Set worker secrets:
    - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`)
    - `FALLBACK_URL` (temporary public page until Vercel is live)
 4. Set app env:
    - `NEXT_PUBLIC_SHORT_DOMAIN=https://go.yourdomain.com`

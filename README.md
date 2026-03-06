@@ -32,11 +32,13 @@ Recommended runtime: Node.js 22 LTS (see `.nvmrc`).
 Create `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your_unsigned_upload_preset
 NEXT_PUBLIC_SHORT_DOMAIN=https://go.yourdomain.com
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_SECRET_KEY=your_supabase_secret_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key # legacy fallback
 PRIVATE_MEDIA_TOKEN_SECRET=long_random_secret
 RATE_LIMIT_BACKEND=memory # or upstash
 UPSTASH_REDIS_REST_URL=
@@ -57,16 +59,45 @@ Run SQL migrations in order from `supabase/migrations/`:
 - `20260306000300_redirect_launch_readiness.sql`
 - `20260306000400_access_mode_pwa_and_site_settings.sql`
 - `20260306000500_media_optimization_runs.sql`
+- `20260307000100_profiles_full_name_normalization.sql`
+
+Hosted migration workflow (recommended):
+```bash
+supabase login
+npm run ops:supabase:migrate:hosted -- <your-project-ref>
+npm run ops:check-db-schema
+```
+
+If admin pages show `Your account does not have admin access.`, bootstrap your current login as admin:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=... \
+SUPABASE_SECRET_KEY=... \
+npm run ops:supabase:bootstrap-admin -- --email=you@example.com --full-name="Your Name"
+```
+
+If bootstrap warns about legacy `profiles.name`, migrations are missing on that project. Re-run:
+```bash
+npm run ops:supabase:migrate:hosted -- <your-project-ref>
+```
+
+Local parity workflow:
+```bash
+supabase start
+supabase db reset
+```
 
 ## Run and Validate
 ```bash
 npm run dev
+npm run dev:webpack
 npm run ops:check-prereqs
 npm run ops:check-prereqs:production
 npm run lint
 npm run typecheck
 npm run build
 ```
+
+`ops:*` scripts automatically read `.env` and `.env.local` (shell-provided environment variables still take precedence).
 
 ## Testing
 ```bash
