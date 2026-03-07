@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 export function NewMemorialForm() {
+  const titleId = 'new-memorial-title'
+  const slugId = 'new-memorial-slug'
+  const fullNameId = 'new-memorial-full-name'
+  const dobId = 'new-memorial-dob'
+  const dodId = 'new-memorial-dod'
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [fullName, setFullName] = useState('')
@@ -61,31 +66,48 @@ export function NewMemorialForm() {
       <form onSubmit={handleSubmit} className="surface-card space-y-5 p-6">
         <div className="grid gap-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Page Title</label>
-            <Input required value={title} onChange={handleTitleChange} placeholder="In Loving Memory of Jane Doe" />
+            <label htmlFor={titleId} className="mb-1.5 block text-sm font-medium">
+              Page Title
+            </label>
+            <Input id={titleId} required value={title} onChange={handleTitleChange} placeholder="In Loving Memory of Jane Doe" />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium">URL Slug</label>
+            <label htmlFor={slugId} className="mb-1.5 block text-sm font-medium">
+              URL Slug
+            </label>
             <div className="flex">
               <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-secondary px-3 text-sm text-muted-foreground">/memorials/</span>
-              <Input required className="rounded-l-none" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="jane-doe" />
+              <Input
+                id={slugId}
+                required
+                className="rounded-l-none"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="jane-doe"
+              />
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Full Name</label>
-            <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Elizabeth Doe" />
+            <label htmlFor={fullNameId} className="mb-1.5 block text-sm font-medium">
+              Full Name
+            </label>
+            <Input id={fullNameId} value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Elizabeth Doe" />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Date of Birth</label>
-              <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+              <label htmlFor={dobId} className="mb-1.5 block text-sm font-medium">
+                Date of Birth
+              </label>
+              <Input id={dobId} type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Date of Death</label>
-              <Input type="date" value={dod} onChange={(e) => setDod(e.target.value)} />
+              <label htmlFor={dodId} className="mb-1.5 block text-sm font-medium">
+                Date of Death
+              </label>
+              <Input id={dodId} type="date" value={dod} onChange={(e) => setDod(e.target.value)} />
             </div>
           </div>
         </div>
