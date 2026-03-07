@@ -1,0 +1,76 @@
+import { render, screen } from '@testing-library/react'
+
+const mockAdminShell = vi.fn()
+const mockRedirect = vi.fn<(url: string) => never>(() => {
+  throw new Error('NEXT_REDIRECT')
+})
+const mockGetUser = vi.fn()
+const mockCreateClient = vi.fn(async () => ({
+  auth: {
+    getUser: mockGetUser,
+  },
+}))
+
+vi.mock('next/navigation', () => ({
+  redirect: (url: string) => mockRedirect(url),
+}))
+
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: () => mockCreateClient(),
+}))
+
+vi.mock('@/components/admin/AdminShell', () => ({
+  AdminShell: ({ userEmail, children }: { userEmail?: string; children: React.ReactNode }) => {
+    mockAdminShell({ userEmail, children })
+    return <div data-testid="admin-shell">{children}</div>
+  },
+}))
+
+describe('app/admin/layout', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    delete process.env.E2E_BYPASS_ADMIN_AUTH
+    delete process.env.E2E_ADMIN_EMAIL
+    mockAdminShell.mockReset()
+    mockRedirect.mockClear()
+    mockGetUser.mockReset()
+    mockCreateClient.mockClear()
+  })
+
+  it('bypasses auth when E2E_BYPASS_ADMIN_AUTH is enabled', async () => {
+    process.env.E2E_BYPASS_ADMIN_AUTH = '1'
+    process.env.E2E_ADMIN_EMAIL = 'e2e@example.com'
+
+    const mod = await import('@/app/admin/layout')
+    const node = await mod.default({ children: <div>Admin child</div> })
+    render(node)
+
+    expect(screen.getByTestId('admin-shell')).toBeInTheDocument()
+    expect(screen.getByText('Admin child')).toBeInTheDocument()
+    expect(mockCreateClient).not.toHaveBeenCalled()
+    expect(mockAdminShell).toHaveBeenCalledWith(
+      expect.objectContaining({ userEmail: 'e2e@example.com' })
+    )
+  })
+
+  it('redirects to /login when user is missing', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } })
+
+    const mod = await import('@/app/admin/layout')
+    await expect(mod.default({ children: <div>Admin child</div> })).rejects.toThrow('NEXT_REDIRECT')
+    expect(mockRedirect).toHaveBeenCalledWith('/login')
+  })
+
+  it('renders AdminShell with authenticated user email', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { email: 'owner@example.com' } } })
+
+    const mod = await import('@/app/admin/layout')
+    const node = await mod.default({ children: <div>Admin child</div> })
+    render(node)
+
+    expect(screen.getByTestId('admin-shell')).toBeInTheDocument()
+    expect(mockAdminShell).toHaveBeenCalledWith(
+      expect.objectContaining({ userEmail: 'owner@example.com' })
+    )
+  })
+})
