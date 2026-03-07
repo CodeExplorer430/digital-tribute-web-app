@@ -3,7 +3,7 @@
 :root {
   --ink-950: #1f241f;
   --ink-700: #39413a;
-  --moss-500: #5f7966;
+  --moss-500: #5e7865;
   --moss-300: #aac0ad;
   --stone-100: #f5f3eb;
   --stone-150: #efede4;
@@ -25,7 +25,7 @@
   --secondary-foreground: var(--ink-700);
 
   --muted: rgba(42, 52, 43, 0.07);
-  --muted-foreground: rgba(33, 40, 34, 0.68);
+  --muted-foreground: rgba(33, 40, 34, 0.8);
 
   --accent: #d8e4d8;
   --accent-foreground: var(--ink-950);

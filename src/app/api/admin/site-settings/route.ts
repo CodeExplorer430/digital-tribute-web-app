@@ -1,4 +1,5 @@
 import { databaseError, requireAdminUser } from '@/lib/server/admin-auth'
+import { logAdminAudit } from '@/lib/server/admin-audit'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -41,7 +42,16 @@ export async function PATCH(request: NextRequest) {
 
   const auth = await requireAdminUser({ minRole: 'admin' })
   if (!auth.ok) return auth.response
-  const { supabase } = auth
+  const { supabase, userId } = auth
+
+  const { data: existing, error: existingError } = await supabase
+    .from('site_settings')
+    .select('home_directory_enabled')
+    .eq('id', 1)
+    .single()
+  if (existingError) {
+    return databaseError('Unable to load current site settings.')
+  }
 
   const { error } = await supabase
     .from('site_settings')
@@ -54,6 +64,21 @@ export async function PATCH(request: NextRequest) {
   if (error) {
     return databaseError('Unable to update site settings.')
   }
+
+  await logAdminAudit(supabase, {
+    actorId: userId,
+    action: 'site_settings.update',
+    entity: 'site_settings',
+    entityId: '1',
+    metadata: {
+      before: {
+        homeDirectoryEnabled: existing?.home_directory_enabled === true,
+      },
+      after: {
+        homeDirectoryEnabled: parsed.data.homeDirectoryEnabled,
+      },
+    },
+  })
 
   return NextResponse.json({ ok: true }, { status: 200 })
 }

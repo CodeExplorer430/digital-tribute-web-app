@@ -19,11 +19,12 @@ type AuditAction =
   | 'user.create'
   | 'user.update'
   | 'user.deactivate'
+  | 'site_settings.update'
 
 type LogAdminAuditInput = {
   actorId: string
   action: AuditAction
-  entity: 'page' | 'photo' | 'video' | 'timeline' | 'guestbook' | 'redirect' | 'user'
+  entity: 'page' | 'photo' | 'video' | 'timeline' | 'guestbook' | 'redirect' | 'user' | 'site_settings'
   entityId: string
   metadata?: Record<string, unknown>
 }
