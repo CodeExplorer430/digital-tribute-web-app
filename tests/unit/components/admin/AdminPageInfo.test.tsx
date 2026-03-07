@@ -140,4 +140,39 @@ describe('AdminPageInfo', () => {
     await user.click(screen.getByRole('button', { name: 'Save Changes' }))
     expect(await screen.findByText('Unable to save page details.')).toBeInTheDocument()
   })
+
+  it('disables submit and shows saving state while request is pending', async () => {
+    let resolveFetch: ((value: Response) => void) | undefined
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve
+        })
+    )
+
+    const user = userEvent.setup()
+    render(
+      <AdminPageInfo
+        onUpdate={vi.fn()}
+        page={{
+          id: 'page-10',
+          title: 'Sample',
+          slug: 'sample',
+          full_name: null,
+          dob: null,
+          dod: null,
+          access_mode: 'public',
+          privacy: 'public',
+        }}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+
+    if (resolveFetch) {
+      resolveFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    }
+    expect(await screen.findByRole('button', { name: 'Save Changes' })).not.toBeDisabled()
+  })
 })

@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
 
   const { data, error } = await supabase
     .from('videos')
-    .select('id, provider_id, title, created_at')
+    .select('id, provider, provider_id, title, created_at')
     .eq('page_id', parsed.data.id)
     .order('created_at', { ascending: true })
 

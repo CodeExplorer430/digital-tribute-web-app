@@ -22,6 +22,7 @@ type MemorialPhoto = {
 
 type MemorialVideo = {
   id: string
+  provider: 'youtube' | 'cloudinary' | null
   provider_id: string
   title: string | null
 }

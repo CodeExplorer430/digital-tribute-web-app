@@ -14,10 +14,15 @@
   - Public ID should be auto-generated and unguessable.
 
 ## Video Policy
-- Admin flow is YouTube-first.
-- UI must show: "Upload videos to YouTube first, then paste the link here."
-- Large raw video uploads are not supported in-app.
-- Policy threshold in this project: files above 100MB must be uploaded to YouTube Unlisted.
+- Admin supports two paths:
+  - Direct upload with server-side compression (Cloud Run + ffmpeg).
+  - YouTube Unlisted link entry.
+- Compression target for Cloudinary free-tier is <=100MB.
+- If a video still exceeds 100MB after compression retries, UI must guide fallback to YouTube Unlisted.
+- Required env for direct-upload pipeline:
+  - `VIDEO_TRANSCODE_API_BASE`
+  - `VIDEO_TRANSCODE_API_TOKEN`
+  - `VIDEO_TRANSCODE_CALLBACK_TOKEN`
 
 ## Backup Policy
 - Keep original masters in shared Google Drive for family handover and disaster recovery.

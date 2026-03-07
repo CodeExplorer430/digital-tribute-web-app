@@ -8,6 +8,9 @@ type AuditAction =
   | 'photo.delete'
   | 'video.create'
   | 'video.delete'
+  | 'video.upload_init'
+  | 'video.upload_start'
+  | 'video.upload_attach'
   | 'timeline.create'
   | 'timeline.delete'
   | 'guestbook.approve'
@@ -24,7 +27,7 @@ type AuditAction =
 type LogAdminAuditInput = {
   actorId: string
   action: AuditAction
-  entity: 'page' | 'photo' | 'video' | 'timeline' | 'guestbook' | 'redirect' | 'user' | 'site_settings'
+  entity: 'page' | 'photo' | 'video' | 'video_upload' | 'timeline' | 'guestbook' | 'redirect' | 'user' | 'site_settings'
   entityId: string
   metadata?: Record<string, unknown>
 }

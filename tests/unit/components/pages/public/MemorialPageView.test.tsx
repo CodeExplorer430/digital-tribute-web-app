@@ -76,7 +76,7 @@ describe('MemorialPageView', () => {
       <MemorialPageView
         page={{ id: 'page-1', title: 'In Loving Memory', full_name: null, hero_image_url: null, dob: null, dod: null }}
         photos={[{ id: 'photo-1', image_url: '/image.jpg', thumb_url: '/thumb.jpg', caption: null }]}
-        videos={[{ id: 'v1', provider_id: 'abcdefghijk', title: null }]}
+        videos={[{ id: 'v1', provider: 'youtube', provider_id: 'abcdefghijk', title: null }]}
         timeline={[{ id: 't1', year: 2001, text: 'Milestone' }]}
         guestbook={[{ id: 'g1', name: 'Ana', message: 'Forever', created_at: '2026-01-01T00:00:00.000Z' }]}
       />
