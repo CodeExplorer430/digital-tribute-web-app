@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -16,7 +15,7 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const [startedAt] = useState(() => Date.now())
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,14 +28,21 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
     setLoading(true)
     setError(null)
 
-    const { error: insertError } = await supabase.from('guestbook').insert({
-      page_id: pageId,
-      name,
-      message,
+    const response = await fetch('/api/guestbook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pageId,
+        name,
+        message,
+        honeypot,
+        submittedAt: startedAt,
+      }),
     })
 
-    if (insertError) {
-      setError(insertError.message)
+    if (!response.ok && response.status !== 202) {
+      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      setError(payload?.message || 'Unable to submit your message right now.')
       setLoading(false)
       return
     }
@@ -47,7 +53,10 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
 
   if (submitted) {
     return (
-      <div className="surface-card space-y-2 border-[color:var(--success)]/35 bg-[color:var(--success)]/10 p-6 text-center">
+      <div
+        className="surface-card space-y-2 border-[color:var(--success)]/35 bg-[color:var(--success)]/10 p-6 text-center"
+        aria-live="polite"
+      >
         <h4 className="text-lg font-semibold text-[color:var(--success)]">Thank you for sharing</h4>
         <p className="text-sm text-[color:var(--stone-ink)]">Your message has been submitted and will appear after moderation.</p>
         <Button
@@ -105,7 +114,11 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
         />
       </div>
 
-      {error && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? 'Submitting...' : 'Post to Guestbook'}

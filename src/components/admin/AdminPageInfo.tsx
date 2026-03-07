@@ -1,48 +1,72 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Globe, Lock } from 'lucide-react'
+import { Globe, Lock, Shield } from 'lucide-react'
+
+type AdminPage = {
+  id: string
+  title: string
+  slug: string
+  full_name: string | null
+  dob: string | null
+  dod: string | null
+  access_mode?: 'public' | 'private' | 'password'
+  privacy: 'public' | 'private'
+}
 
 interface AdminPageInfoProps {
-  page: any
+  page: AdminPage
   onUpdate: () => void
 }
 
 export function AdminPageInfo({ page, onUpdate }: AdminPageInfoProps) {
-  const [formData, setFormData] = useState(page)
+  const [formData, setFormData] = useState({
+    ...page,
+    access_mode: page.access_mode || (page.privacy === 'private' ? 'private' : 'public'),
+  })
+  const [password, setPassword] = useState('')
   const [updating, setUpdating] = useState(false)
-  const supabase = createClient()
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    setFormData(page)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData({
+      ...page,
+      access_mode: page.access_mode || (page.privacy === 'private' ? 'private' : 'public'),
+    })
   }, [page])
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     setUpdating(true)
-    const { error } = await supabase
-      .from('pages')
-      .update({
+    setErrorMessage(null)
+
+    const response = await fetch(`/api/admin/pages/${page.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         title: formData.title,
         slug: formData.slug,
-        full_name: formData.full_name,
+        fullName: formData.full_name,
         dob: formData.dob,
         dod: formData.dod,
-        privacy: formData.privacy,
+        accessMode: formData.access_mode,
+        password: password || undefined,
       })
-      .eq('id', page.id)
+    })
 
-    if (error) alert(error.message)
-    else onUpdate()
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      setErrorMessage(payload?.message || 'Unable to save page details.')
+      setUpdating(false)
+      return
+    }
+
+    onUpdate()
+    setPassword('')
     setUpdating(false)
-  }
-
-  const togglePrivacy = () => {
-    setFormData({ ...formData, privacy: formData.privacy === 'public' ? 'private' : 'public' })
   }
 
   return (
@@ -51,13 +75,46 @@ export function AdminPageInfo({ page, onUpdate }: AdminPageInfoProps) {
 
       <div className="flex items-center justify-between rounded-md border border-border bg-secondary/55 p-3">
         <div className="flex items-center gap-2 text-sm font-medium">
-          {formData.privacy === 'public' ? <Globe className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-amber-700" />}
-          <span className="capitalize">{formData.privacy} Mode</span>
+          {formData.access_mode === 'public' ? (
+            <Globe className="h-4 w-4 text-primary" />
+          ) : formData.access_mode === 'private' ? (
+            <Lock className="h-4 w-4 text-amber-700" />
+          ) : (
+            <Shield className="h-4 w-4 text-violet-700" />
+          )}
+          <span className="capitalize">{formData.access_mode} Mode</span>
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={togglePrivacy}>
-          Switch to {formData.privacy === 'public' ? 'Private' : 'Public'}
-        </Button>
+        <select
+          value={formData.access_mode}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              access_mode: e.target.value as 'public' | 'private' | 'password',
+              privacy: e.target.value === 'public' ? 'public' : 'private',
+            })
+          }
+          className="h-9 rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
+          aria-label="Access mode"
+        >
+          <option value="public">Public</option>
+          <option value="private">Private</option>
+          <option value="password">Password</option>
+        </select>
       </div>
+
+      {formData.access_mode === 'password' && (
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">Set or Rotate Password</label>
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={6}
+            placeholder="Enter a new access password"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">Password must be at least 6 characters. Leave blank to keep current password.</p>
+        </div>
+      )}
 
       <div>
         <label className="mb-1.5 block text-sm font-medium">Page Title</label>
@@ -81,6 +138,7 @@ export function AdminPageInfo({ page, onUpdate }: AdminPageInfoProps) {
           <Input type="date" value={formData.dod || ''} onChange={(e) => setFormData({ ...formData, dod: e.target.value })} />
         </div>
       </div>
+      {errorMessage && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>}
       <Button type="submit" className="w-full" disabled={updating}>
         {updating ? 'Saving...' : 'Save Changes'}
       </Button>
