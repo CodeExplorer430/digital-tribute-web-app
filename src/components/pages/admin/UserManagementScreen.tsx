@@ -48,8 +48,11 @@ export function UserManagementScreen() {
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchUsers()
+    const kickoff = setTimeout(() => {
+      void fetchUsers()
+    }, 0)
+
+    return () => clearTimeout(kickoff)
   }, [fetchUsers])
 
   const filteredUsers = useMemo(() => {

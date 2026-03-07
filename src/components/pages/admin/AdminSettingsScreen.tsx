@@ -52,9 +52,12 @@ export function AdminSettingsScreen() {
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchRedirects()
-    fetchSiteSettings()
+    const kickoff = setTimeout(() => {
+      void fetchRedirects()
+      void fetchSiteSettings()
+    }, 0)
+
+    return () => clearTimeout(kickoff)
   }, [fetchRedirects, fetchSiteSettings])
 
   const createRedirect = async (e: React.FormEvent) => {

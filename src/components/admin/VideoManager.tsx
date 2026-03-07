@@ -39,8 +39,11 @@ export function VideoManager({ pageId }: VideoManagerProps) {
   }, [pageId])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchVideos()
+    const kickoff = setTimeout(() => {
+      void fetchVideos()
+    }, 0)
+
+    return () => clearTimeout(kickoff)
   }, [fetchVideos])
 
   const addVideo = async (e: React.FormEvent) => {

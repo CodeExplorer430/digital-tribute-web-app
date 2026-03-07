@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Globe, Lock, Shield } from 'lucide-react'
@@ -22,6 +22,23 @@ interface AdminPageInfoProps {
 }
 
 export function AdminPageInfo({ page, onUpdate }: AdminPageInfoProps) {
+  return <AdminPageInfoForm key={serializePageKey(page)} page={page} onUpdate={onUpdate} />
+}
+
+function serializePageKey(page: AdminPage) {
+  return [
+    page.id,
+    page.title,
+    page.slug,
+    page.full_name ?? '',
+    page.dob ?? '',
+    page.dod ?? '',
+    page.access_mode ?? '',
+    page.privacy,
+  ].join('|')
+}
+
+function AdminPageInfoForm({ page, onUpdate }: AdminPageInfoProps) {
   const [formData, setFormData] = useState({
     ...page,
     access_mode: page.access_mode || (page.privacy === 'private' ? 'private' : 'public'),
@@ -29,14 +46,6 @@ export function AdminPageInfo({ page, onUpdate }: AdminPageInfoProps) {
   const [password, setPassword] = useState('')
   const [updating, setUpdating] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFormData({
-      ...page,
-      access_mode: page.access_mode || (page.privacy === 'private' ? 'private' : 'public'),
-    })
-  }, [page])
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
