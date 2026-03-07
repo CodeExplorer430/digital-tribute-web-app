@@ -99,7 +99,10 @@ describe('DataExport', () => {
         )
       }
       if (url === 'https://cdn.example.com/full.jpg') {
-        return new Response(new Blob(['image-bytes'], { type: 'image/jpeg' }), { status: 200 })
+        return new Response(Uint8Array.from([255, 216, 255, 217]), {
+          status: 200,
+          headers: { 'content-type': 'image/jpeg' },
+        })
       }
       return new Response(JSON.stringify({}), { status: 200 })
     })
