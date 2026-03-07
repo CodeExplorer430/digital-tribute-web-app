@@ -23,9 +23,11 @@
   - `VIDEO_TRANSCODE_API_BASE`
   - `VIDEO_TRANSCODE_API_TOKEN`
   - `VIDEO_TRANSCODE_CALLBACK_TOKEN`
+  - `VIDEO_TRANSCODE_APP_BASE`
 - Service implementation lives in `services/video-transcode` (Cloud Run container).
-- Contract validation command:
+- Contract validation commands:
   - `npm run ops:check-video-transcode`
+  - `npm run ops:check-video-transcode:synthetic`
 
 ## Backup Policy
 - Keep original masters in shared Google Drive for family handover and disaster recovery.

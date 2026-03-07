@@ -77,6 +77,7 @@ Minimum owner accounts to keep active:
   - `VIDEO_TRANSCODE_API_BASE`
   - `VIDEO_TRANSCODE_API_TOKEN`
   - `VIDEO_TRANSCODE_CALLBACK_TOKEN`
+  - `VIDEO_TRANSCODE_APP_BASE`
 - Short links: `NEXT_PUBLIC_SHORT_DOMAIN`
 - Security: `RATE_LIMIT_BACKEND`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `CAPTCHA_ENABLED`, `CAPTCHA_SECRET`, `CAPTCHA_VERIFY_URL`
 - Private media signing: `PRIVATE_MEDIA_TOKEN_SECRET`
@@ -101,6 +102,7 @@ Minimum owner accounts to keep active:
   - `npm run ops:check-db-schema`
 - Transcode contract:
   - `npm run ops:check-video-transcode`
+  - `npm run ops:check-video-transcode:synthetic`
 - Quality gates:
   - `npm run test:coverage`
   - `npm run test:e2e`

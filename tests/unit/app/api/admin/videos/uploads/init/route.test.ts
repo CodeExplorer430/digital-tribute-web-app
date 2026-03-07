@@ -1,14 +1,8 @@
 import { POST } from '@/app/api/admin/videos/uploads/init/route'
 
-const mockGetUser = vi.fn()
-const mockProfileSingle = vi.fn()
-const mockProfileEq = vi.fn(() => ({ single: mockProfileSingle }))
-const mockProfileSelect = vi.fn(() => ({ eq: mockProfileEq }))
-
-const mockPageSingle = vi.fn()
-const mockPageEqOwner = vi.fn(() => ({ single: mockPageSingle }))
-const mockPageEqId = vi.fn(() => ({ eq: mockPageEqOwner }))
-const mockPageSelect = vi.fn(() => ({ eq: mockPageEqId }))
+const mockRequireAdminUser = vi.fn()
+const mockAssertPageOwnership = vi.fn()
+const mockLogAdminAudit = vi.fn()
 
 const mockJobInsertSingle = vi.fn()
 const mockJobInsertSelect = vi.fn(() => ({ single: mockJobInsertSingle }))
@@ -19,95 +13,327 @@ const mockJobUpdateSelect = vi.fn(() => ({ single: mockJobUpdateSingle }))
 const mockJobUpdateEq = vi.fn(() => ({ select: mockJobUpdateSelect }))
 const mockJobUpdate = vi.fn(() => ({ eq: mockJobUpdateEq }))
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: async () => ({
-    auth: { getUser: mockGetUser },
-    from: (table: string) => {
-      if (table === 'profiles') return { select: mockProfileSelect }
-      if (table === 'pages') return { select: mockPageSelect }
-      if (table === 'video_upload_jobs') return { insert: mockJobInsert, update: mockJobUpdate }
-      return { insert: vi.fn(), update: vi.fn(), select: vi.fn() }
-    },
-  }),
+const mockIsVideoTranscodeConfigured = vi.fn()
+const mockGetVideoTranscodeApiBaseOrThrow = vi.fn()
+const mockGetVideoTranscodeApiTokenOrThrow = vi.fn()
+
+vi.mock('@/lib/server/admin-auth', () => ({
+  requireAdminUser: (...args: unknown[]) => mockRequireAdminUser(...args),
+  assertPageOwnership: (...args: unknown[]) => mockAssertPageOwnership(...args),
+  forbidden: (message: string) => new Response(JSON.stringify({ code: 'FORBIDDEN', message }), { status: 403 }),
+  databaseError: (message: string) => new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), { status: 500 }),
 }))
 
 vi.mock('@/lib/server/video-upload', () => ({
-  isVideoTranscodeConfigured: () => true,
-  getVideoTranscodeApiBaseOrThrow: () => 'https://transcode.example.com',
-  getVideoTranscodeApiTokenOrThrow: () => 'token',
+  isVideoTranscodeConfigured: () => mockIsVideoTranscodeConfigured(),
+  getVideoTranscodeApiBaseOrThrow: () => mockGetVideoTranscodeApiBaseOrThrow(),
+  getVideoTranscodeApiTokenOrThrow: () => mockGetVideoTranscodeApiTokenOrThrow(),
   videoUploadStatusSchema: { _type: 'uploading' },
 }))
 
 vi.mock('@/lib/server/admin-audit', () => ({
-  logAdminAudit: vi.fn(),
+  logAdminAudit: (...args: unknown[]) => mockLogAdminAudit(...args),
 }))
 
 describe('POST /api/admin/videos/uploads/init', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    mockGetUser.mockReset()
-    mockProfileSingle.mockReset()
-    mockPageSingle.mockReset()
+    mockRequireAdminUser.mockReset()
+    mockAssertPageOwnership.mockReset()
+    mockLogAdminAudit.mockReset()
+    mockIsVideoTranscodeConfigured.mockReset()
+    mockGetVideoTranscodeApiBaseOrThrow.mockReset()
+    mockGetVideoTranscodeApiTokenOrThrow.mockReset()
     mockJobInsertSingle.mockReset()
     mockJobUpdateSingle.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ uploadUrl: 'https://upload.example.com/file.mp4', uploadMethod: 'PUT' }), { status: 200 })
-    )
-  })
-
-  it('returns unauthorized when no user exists', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } })
-    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        pageId: '550e8400-e29b-41d4-a716-446655440000',
-        fileName: 'tribute.mp4',
-        fileSize: 139000000,
-        mimeType: 'video/mp4',
-      }),
+    mockJobInsert.mockClear()
+    mockJobUpdate.mockClear()
+    mockRequireAdminUser.mockResolvedValue({
+      ok: true,
+      userId: 'user-1',
+      role: 'editor',
+      supabase: {
+        from: (table: string) => {
+          if (table === 'video_upload_jobs') return { insert: mockJobInsert, update: mockJobUpdate }
+          return {}
+        },
+      },
     })
-    const res = await POST(req as never)
-    expect(res.status).toBe(401)
-  })
-
-  it('creates upload job and returns upload target', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockPageSingle.mockResolvedValue({ data: { id: 'page-1' } })
+    mockAssertPageOwnership.mockResolvedValue(true)
+    mockIsVideoTranscodeConfigured.mockReturnValue(true)
+    mockGetVideoTranscodeApiBaseOrThrow.mockReturnValue('https://transcode.example.com')
+    mockGetVideoTranscodeApiTokenOrThrow.mockReturnValue('token')
     mockJobInsertSingle.mockResolvedValue({
       data: {
         id: '550e8400-e29b-41d4-a716-446655440000',
-        page_id: 'page-1',
+        page_id: '550e8400-e29b-41d4-a716-446655440001',
         created_by: 'user-1',
         status: 'queued',
+        title: 'Tribute',
         source_filename: 'tribute.mp4',
         source_mime: 'video/mp4',
         source_bytes: 139000000,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
       },
       error: null,
     })
     mockJobUpdateSingle.mockResolvedValue({
-      data: { id: '550e8400-e29b-41d4-a716-446655440000', status: 'uploading', upload_url: 'https://upload.example.com/file.mp4', upload_method: 'PUT' },
+      data: {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        status: 'uploading',
+        upload_url: 'https://upload.example.com/file.mp4',
+        upload_method: 'PUT',
+      },
       error: null,
     })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ uploadUrl: 'https://upload.example.com/file.mp4', uploadMethod: 'PUT', cloudJobId: 'cloud-job-1' }), {
+        status: 200,
+      })
+    )
+  })
+
+  it('returns 400 for invalid JSON payload', async () => {
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{',
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(400)
+    expect(mockRequireAdminUser).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 for validation errors', async () => {
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: 'not-a-uuid',
+        fileName: '',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(400)
+    expect(mockRequireAdminUser).not.toHaveBeenCalled()
+  })
+
+  it('returns auth response when user is not authorized', async () => {
+    mockRequireAdminUser.mockResolvedValue({ ok: false, response: new Response(null, { status: 401 }) })
 
     const req = new Request('http://localhost/api/admin/videos/uploads/init', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        pageId: '550e8400-e29b-41d4-a716-446655440000',
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
         fileName: 'tribute.mp4',
         fileSize: 139000000,
         mimeType: 'video/mp4',
       }),
     })
+
     const res = await POST(req as never)
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 403 when ownership check fails', async () => {
+    mockAssertPageOwnership.mockResolvedValue(false)
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(403)
+  })
+
+  it('returns 500 when upload job insert fails', async () => {
+    mockJobInsertSingle.mockResolvedValue({ data: null, error: { message: 'insert failed' } })
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(500)
+  })
+
+  it('returns 503 when transcode service is not configured', async () => {
+    mockIsVideoTranscodeConfigured.mockReturnValue(false)
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(503)
+    expect(globalThis.fetch).not.toHaveBeenCalled()
+  })
+
+  it('returns 503 when transcode upstream is unreachable', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network down'))
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(503)
+  })
+
+  it('returns 502 with upstream message when init call fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'upstream init failed' }), { status: 502 })
+    )
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(502)
+    const body = (await res.json()) as { message: string }
+    expect(body.message).toContain('upstream init failed')
+  })
+
+  it('returns 502 with fallback message when upstream body is invalid', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('oops', { status: 500 }))
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(502)
+    const body = (await res.json()) as { message: string }
+    expect(body.message).toContain('Unable to initialize video upload.')
+  })
+
+  it('returns 502 when transcode response shape is invalid', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ uploadMethod: 'PUT' }), { status: 200 }))
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(502)
+  })
+
+  it('returns 500 when upload job update fails after successful init', async () => {
+    mockJobUpdateSingle.mockResolvedValue({ data: null, error: { message: 'update failed' } })
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(500)
+    expect(mockLogAdminAudit).not.toHaveBeenCalled()
+  })
+
+  it('creates upload job and returns upload target on success', async () => {
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+        title: 'Tribute',
+      }),
+    })
+    const res = await POST(req as never)
+
     expect(res.status).toBe(201)
-    expect(mockJobInsert).toHaveBeenCalled()
+    expect(mockJobInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page_id: '550e8400-e29b-41d4-a716-446655440001',
+        created_by: 'user-1',
+      })
+    )
     expect(globalThis.fetch).toHaveBeenCalledWith(
       'https://transcode.example.com/jobs/init',
-      expect.objectContaining({ method: 'POST' })
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token',
+          'Content-Type': 'application/json',
+        }),
+      })
+    )
+    expect(mockLogAdminAudit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: 'video.upload_init',
+        entity: 'video_upload',
+        metadata: expect.objectContaining({
+          pageId: '550e8400-e29b-41d4-a716-446655440001',
+          fileSize: 139000000,
+        }),
+      })
     )
   })
 })

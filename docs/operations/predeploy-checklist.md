@@ -58,9 +58,11 @@ Deploy the in-repo service before enabling direct video upload in production.
    - `VIDEO_TRANSCODE_API_BASE=<cloud-run-url>`
    - `VIDEO_TRANSCODE_API_TOKEN=<same-as-service-token>`
    - `VIDEO_TRANSCODE_CALLBACK_TOKEN=<same-as-service-callback-token>`
+   - `VIDEO_TRANSCODE_APP_BASE=<app-base-url>` (for synthetic callback checks, e.g. `https://app.yourdomain.com`)
 4. Run contract check:
 ```bash
 npm run ops:check-video-transcode
+npm run ops:check-video-transcode:synthetic
 ```
 
 ## 5) Local Validation
@@ -70,6 +72,7 @@ npm run ops:check-prereqs
 npm run ops:check-prereqs:production
 npm run ops:check-db-schema
 npm run ops:check-video-transcode
+npm run ops:check-video-transcode:synthetic
 npm run lint
 npm run typecheck
 npm run test:coverage
