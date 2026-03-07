@@ -41,4 +41,81 @@ describe('TimelineEditor', () => {
       })
     )
   })
+
+  it('shows load error when initial fetch fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Timeline unavailable.' }), { status: 503 }))
+
+    render(<TimelineEditor pageId="page-2" />)
+    expect(await screen.findByText('Timeline unavailable.')).toBeInTheDocument()
+  })
+
+  it('shows fallback error when add fails with non-json payload', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/timeline' && init?.method === 'POST') {
+        return new Response('bad', { status: 500 })
+      }
+      return new Response(JSON.stringify({ events: [] }), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<TimelineEditor pageId="page-3" />)
+
+    await screen.findByPlaceholderText('Event description...')
+    await user.type(screen.getByPlaceholderText('Year'), '2001')
+    await user.type(screen.getByPlaceholderText('Event description...'), 'Test event')
+    await user.click(screen.getByRole('button', { name: /add timeline event/i }))
+
+    expect(await screen.findByText('Unable to add timeline event.')).toBeInTheDocument()
+  })
+
+  it('restores event and shows error when delete fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url.includes('/api/admin/pages/page-4/timeline')) {
+        return new Response(JSON.stringify({ events: [{ id: 't1', year: 1990, text: 'Born' }] }), { status: 200 })
+      }
+      if (url === '/api/admin/timeline/t1' && init?.method === 'DELETE') {
+        return new Response(JSON.stringify({ message: 'Cannot delete event.' }), { status: 500 })
+      }
+      return new Response('{}', { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<TimelineEditor pageId="page-4" />)
+
+    await screen.findByText('Born')
+    await user.click(screen.getByRole('button', { name: /delete timeline event/i }))
+
+    expect(await screen.findByText('Cannot delete event.')).toBeInTheDocument()
+    expect(screen.getByText('Born')).toBeInTheDocument()
+  })
+
+  it('reloads list when add succeeds without event payload', async () => {
+    let getCount = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url.includes('/api/admin/pages/page-5/timeline')) {
+        getCount += 1
+        if (getCount === 1) {
+          return new Response(JSON.stringify({ events: [] }), { status: 200 })
+        }
+        return new Response(JSON.stringify({ events: [{ id: 't2', year: 2001, text: 'Started school' }] }), { status: 200 })
+      }
+      if (url === '/api/admin/timeline' && init?.method === 'POST') {
+        return new Response(JSON.stringify({}), { status: 201 })
+      }
+      return new Response('{}', { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<TimelineEditor pageId="page-5" />)
+
+    await screen.findByPlaceholderText('Event description...')
+    await user.type(screen.getByPlaceholderText('Year'), '2001')
+    await user.type(screen.getByPlaceholderText('Event description...'), 'Started school')
+    await user.click(screen.getByRole('button', { name: /add timeline event/i }))
+
+    expect(await screen.findByText('Started school')).toBeInTheDocument()
+  })
 })

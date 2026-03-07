@@ -154,11 +154,12 @@ export function DataExport({ pageId, pageTitle }: DataExportProps) {
           continue
         }
 
-        const blob = await imageRes.blob()
+        const fileBytes = await imageRes.arrayBuffer()
+        const contentType = imageRes.headers.get('content-type') || 'image/jpeg'
         const publicIdSegment = photo.cloudinary_public_id?.split('/').pop()
-        const extension = blob.type.split('/').pop() || 'jpg'
+        const extension = contentType.split('/').pop() || 'jpg'
         const fileName = publicIdSegment ? `${publicIdSegment}.${extension}` : `photo_${index + 1}.${extension}`
-        folder?.file(fileName, blob)
+        folder?.file(fileName, fileBytes)
       }
 
       const content = await zip.generateAsync({ type: 'blob' })

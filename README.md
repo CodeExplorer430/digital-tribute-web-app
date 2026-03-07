@@ -39,6 +39,9 @@ NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your_unsigned_upload_preset
 NEXT_PUBLIC_SHORT_DOMAIN=https://go.yourdomain.com
 SUPABASE_SECRET_KEY=your_supabase_secret_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key # legacy fallback
+VIDEO_TRANSCODE_API_BASE=https://your-cloud-run-service.run.app
+VIDEO_TRANSCODE_API_TOKEN=shared_service_token
+VIDEO_TRANSCODE_CALLBACK_TOKEN=shared_callback_token
 PRIVATE_MEDIA_TOKEN_SECRET=long_random_secret
 RATE_LIMIT_BACKEND=memory # or upstash
 UPSTASH_REDIS_REST_URL=
@@ -125,6 +128,7 @@ Coverage gates are currently enforced at 10% global thresholds in CI.
 - **Vercel deploys:** previews on PRs and production on merge to main branch
 - **Cloudflare Worker deploy:** `.github/workflows/deploy-worker.yml`
 - **Cloudinary prewarm (optional):** `.github/workflows/prewarm-media.yml`
+- **Video transcode service:** deploy `services/video-transcode` to Cloud Run (see `services/video-transcode/README.md`).
 
 Operational docs:
 - `docs/operations/ci-cd.md`
@@ -134,6 +138,7 @@ Operational docs:
 - `docs/operations/predeploy-checklist.md`
 - `docs/operations/qr-launch-checklist.md`
 - `docs/operations/maintenance-schedule.md`
+- `docs/operations/service-architecture-map.md`
 - `docs/handover/family-admin-playbook.md`
 - `docs/handover/access-transfer-checklist.md`
 - `docs/handover/incident-and-rollback-sop.md`
@@ -142,11 +147,18 @@ Operational docs:
 - `docs/repo-governance.md`
 
 ## Video Upload Policy
-For large files, admins must use YouTube Unlisted:
-- Upload to YouTube first
-- Paste the YouTube URL in admin video manager
+For large files, admins can now use the **Upload and Compress** flow:
+- Select local video in admin.
+- App initializes upload with the transcode service.
+- Service compresses and targets <=100MB for Cloudinary free tier.
+- On success, compressed Cloudinary video can be attached to the page.
 
-Project threshold: files above **100MB** should be treated as YouTube-only.
+Fallback policy: if compression cannot get under 100MB with acceptable settings, use YouTube Unlisted and paste the URL in the YouTube form.
+
+Cloud Run contract readiness check:
+```bash
+npm run ops:check-video-transcode
+```
 
 ## Security Notes
 - Admin APIs enforce role-based access (`viewer`, `editor`, `admin`).

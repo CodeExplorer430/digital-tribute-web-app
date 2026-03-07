@@ -38,8 +38,11 @@ export function GuestbookModerationScreen() {
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchEntries()
+    const kickoff = setTimeout(() => {
+      void fetchEntries()
+    }, 0)
+
+    return () => clearTimeout(kickoff)
   }, [fetchEntries])
 
   const approveEntry = async (id: string) => {

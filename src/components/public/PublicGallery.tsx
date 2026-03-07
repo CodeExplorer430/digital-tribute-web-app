@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -25,22 +25,18 @@ export function PublicGallery({ photos }: PublicGalleryProps) {
     setSelectedIndex(index)
   }
 
-  const closeLightbox = () => {
+  const closeLightbox = useCallback(() => {
     setSelectedIndex(null)
     lastFocusedRef.current?.focus()
-  }
+  }, [])
 
-  const nextImage = () => {
-    if (selectedIndex !== null) {
-      setSelectedIndex((selectedIndex + 1) % photos.length)
-    }
-  }
+  const nextImage = useCallback(() => {
+    setSelectedIndex((current) => (current !== null ? (current + 1) % photos.length : current))
+  }, [photos.length])
 
-  const prevImage = () => {
-    if (selectedIndex !== null) {
-      setSelectedIndex((selectedIndex - 1 + photos.length) % photos.length)
-    }
-  }
+  const prevImage = useCallback(() => {
+    setSelectedIndex((current) => (current !== null ? (current - 1 + photos.length) % photos.length : current))
+  }, [photos.length])
 
   useEffect(() => {
     if (selectedIndex === null) return
@@ -62,7 +58,7 @@ export function PublicGallery({ photos }: PublicGalleryProps) {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [closeLightbox, nextImage, prevImage, selectedIndex])
 
   return (
     <>

@@ -1,5 +1,8 @@
+import { buildCloudinaryVideoUrl } from '@/lib/cloudinary'
+
 interface Video {
   id: string
+  provider: 'youtube' | 'cloudinary' | null
   provider_id: string
   title: string | null
 }
@@ -21,12 +24,21 @@ export function TributeVideos({ videos }: TributeVideosProps) {
         {videos.map((video) => (
           <article key={video.id} className="surface-card overflow-hidden p-3 md:p-4">
             <div className="aspect-video overflow-hidden rounded-md bg-black">
-              <iframe
-                src={`https://www.youtube.com/embed/${video.provider_id}`}
-                className="h-full w-full"
-                allowFullScreen
-                title={video.title || 'Video'}
-              />
+              {video.provider === 'cloudinary' ? (
+                <video
+                  controls
+                  preload="metadata"
+                  className="h-full w-full"
+                  src={buildCloudinaryVideoUrl(video.provider_id, { quality: 'auto:good', format: 'mp4' })}
+                />
+              ) : (
+                <iframe
+                  src={`https://www.youtube.com/embed/${video.provider_id}`}
+                  className="h-full w-full"
+                  allowFullScreen
+                  title={video.title || 'Video'}
+                />
+              )}
             </div>
             {video.title && <p className="px-1 pt-3 text-sm font-medium text-muted-foreground">{video.title}</p>}
           </article>

@@ -39,8 +39,11 @@ export function TimelineEditor({ pageId }: TimelineEditorProps) {
   }, [pageId])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchEvents()
+    const kickoff = setTimeout(() => {
+      void fetchEvents()
+    }, 0)
+
+    return () => clearTimeout(kickoff)
   }, [fetchEvents])
 
   const addEvent = async (e: React.FormEvent) => {

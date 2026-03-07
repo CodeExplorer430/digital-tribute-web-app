@@ -88,8 +88,11 @@ export function EditMemorialScreen({ pageId }: EditMemorialScreenProps) {
   }, [pageId])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchPage()
+    const kickoff = setTimeout(() => {
+      void fetchPage()
+    }, 0)
+
+    return () => clearTimeout(kickoff)
   }, [fetchPage])
 
   const handleSetHero = async (photoUrl: string) => {

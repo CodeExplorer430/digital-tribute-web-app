@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       provider_id: videoId,
       title: title || null,
     })
-    .select('id, provider_id, title, created_at')
+    .select('id, provider, provider_id, title, created_at')
     .single()
 
   if (error) {
