@@ -6,6 +6,7 @@ const mockProfileEq = vi.fn(() => ({ single: mockProfileSingle }))
 const mockProfilesOrder = vi.fn()
 
 const mockInvite = vi.fn()
+const mockServiceProfilesOrder = vi.fn()
 const mockUpsertSingle = vi.fn()
 const mockUpsertSelect = vi.fn(() => ({ single: mockUpsertSingle }))
 const mockUpsert = vi.fn(() => ({ select: mockUpsertSelect }))
@@ -39,6 +40,7 @@ vi.mock('@/lib/supabase/service', () => ({
       },
     },
     from: () => ({
+      select: () => ({ order: mockServiceProfilesOrder }),
       upsert: mockUpsert,
     }),
   }),
@@ -49,6 +51,7 @@ describe('admin users route', () => {
     mockGetUser.mockReset()
     mockProfileSingle.mockReset()
     mockProfilesOrder.mockReset()
+    mockServiceProfilesOrder.mockReset()
     mockInvite.mockReset()
     mockUpsertSingle.mockReset()
   })
@@ -71,7 +74,7 @@ describe('admin users route', () => {
   it('GET returns users for active admin', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
     mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockProfilesOrder.mockResolvedValue({ data: [{ id: 'u1' }], error: null })
+    mockServiceProfilesOrder.mockResolvedValue({ data: [{ id: 'u1' }], error: null })
 
     const res = await GET()
     expect(res.status).toBe(200)

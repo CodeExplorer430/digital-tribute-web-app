@@ -33,6 +33,21 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }))
 
+vi.mock('@/lib/supabase/service', () => ({
+  createServiceRoleClient: () => ({
+    from: (table: string) => {
+      if (table !== 'profiles') return { select: vi.fn(), update: vi.fn() }
+      return {
+        select: (columns: string, options?: { head?: boolean; count?: string }) => {
+          if (options?.head) return { eq: mockCountEqRole }
+          return { eq: mockTargetEq }
+        },
+        update: mockUpdate,
+      }
+    },
+  }),
+}))
+
 describe('admin users [id] route', () => {
   beforeEach(() => {
     mockGetUser.mockReset()

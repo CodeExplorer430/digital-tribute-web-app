@@ -16,15 +16,24 @@ async function assertAdminPrivileges() {
     return { ok: false as const, response: auth.response }
   }
 
-  return { ok: true as const, supabase: auth.supabase, userId: auth.userId }
+  return { ok: true as const, actorSupabase: auth.supabase, userId: auth.userId }
 }
 
 export async function GET() {
   const authz = await assertAdminPrivileges()
   if (!authz.ok) return authz.response
-  const { supabase } = authz
 
-  const { data, error } = await supabase
+  let serviceRole
+  try {
+    serviceRole = createServiceRoleClient()
+  } catch {
+    return NextResponse.json(
+      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.' },
+      { status: 500 }
+    )
+  }
+
+  const { data, error } = await serviceRole
     .from('profiles')
     .select('id, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
     .order('created_at', { ascending: false })
@@ -39,7 +48,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const authz = await assertAdminPrivileges()
   if (!authz.ok) return authz.response
-  const { userId } = authz
+  const { actorSupabase, userId } = authz
 
   let payload: unknown
   try {
@@ -100,7 +109,7 @@ export async function POST(request: NextRequest) {
     return databaseError('Unable to save invited user profile.')
   }
 
-  await logAdminAudit(authz.supabase, {
+  await logAdminAudit(actorSupabase, {
     actorId: userId,
     action: 'user.create',
     entity: 'user',
