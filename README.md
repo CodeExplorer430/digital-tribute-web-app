@@ -138,6 +138,7 @@ Operational docs:
 - `docs/operations/predeploy-checklist.md`
 - `docs/operations/qr-launch-checklist.md`
 - `docs/operations/maintenance-schedule.md`
+- `docs/operations/service-architecture-map.md`
 - `docs/handover/family-admin-playbook.md`
 - `docs/handover/access-transfer-checklist.md`
 - `docs/handover/incident-and-rollback-sop.md`
