@@ -90,6 +90,28 @@ describe('POST /api/guestbook', () => {
     expect(res.status).toBe(503)
   })
 
+  it('returns 503 in production when turnstile site key is missing', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('RATE_LIMIT_BACKEND', 'upstash')
+    vi.stubEnv('CAPTCHA_ENABLED', '1')
+    vi.stubEnv('CAPTCHA_SECRET', 'test-secret')
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', '')
+
+    const req = new Request('http://localhost/api/guestbook', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      body: JSON.stringify({
+        pageId: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'Maria',
+        message: 'Forever remembered',
+        submittedAt: Date.now() - 3000,
+      }),
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(503)
+  })
+
   it('returns captcha failure when captcha is enabled and token is missing', async () => {
     vi.stubEnv('CAPTCHA_ENABLED', '1')
     vi.stubEnv('CAPTCHA_SECRET', 'test-secret')
@@ -109,6 +131,7 @@ describe('POST /api/guestbook', () => {
     const payload = await res.json()
     expect(res.status).toBe(400)
     expect(payload.code).toBe('CAPTCHA_FAILED')
+    expect(payload.message).toBe('Please complete the captcha check before posting.')
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
@@ -182,6 +205,10 @@ describe('POST /api/guestbook', () => {
     const res = await POST(req as never)
     expect(res.status).toBe(201)
     expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      expect.objectContaining({ method: 'POST' })
+    )
     expect(mockInsert).toHaveBeenCalled()
   })
 })

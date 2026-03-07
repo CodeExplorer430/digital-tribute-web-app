@@ -15,31 +15,50 @@ const guestbookSchema = z.object({
 const RATE_LIMIT_MAX = 5
 const RATE_LIMIT_WINDOW_MS = 60_000
 const MIN_SUBMIT_DELAY_MS = 1_500
+const DEFAULT_TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
 
-async function verifyCaptcha(token: string | undefined, ip: string) {
+type CaptchaCheckResult = {
+  ok: boolean
+  code?: 'MISSING_INPUT' | 'UPSTREAM_ERROR' | 'INVALID_RESPONSE' | 'FAILED'
+}
+
+async function verifyCaptcha(token: string | undefined, ip: string): Promise<CaptchaCheckResult> {
   const enabled = process.env.CAPTCHA_ENABLED === '1'
-  if (!enabled) return true
+  if (!enabled) return { ok: true }
 
   const secret = process.env.CAPTCHA_SECRET
-  if (!secret || !token) return false
+  if (!secret || !token) return { ok: false, code: 'MISSING_INPUT' }
 
-  const verifyUrl = process.env.CAPTCHA_VERIFY_URL || 'https://www.google.com/recaptcha/api/siteverify'
+  const verifyUrl = process.env.CAPTCHA_VERIFY_URL?.trim() || DEFAULT_TURNSTILE_VERIFY_URL
   const formData = new URLSearchParams({
     secret,
     response: token,
     remoteip: ip,
   })
 
-  const response = await fetch(verifyUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData.toString(),
-    cache: 'no-store',
-  })
+  let response: Response
+  try {
+    response = await fetch(verifyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString(),
+      cache: 'no-store',
+    })
+  } catch {
+    return { ok: false, code: 'UPSTREAM_ERROR' }
+  }
 
-  if (!response.ok) return false
-  const body = (await response.json()) as { success?: boolean }
-  return body.success === true
+  if (!response.ok) return { ok: false, code: 'UPSTREAM_ERROR' }
+
+  let body: { success?: boolean } | null = null
+  try {
+    body = (await response.json()) as { success?: boolean }
+  } catch {
+    return { ok: false, code: 'INVALID_RESPONSE' }
+  }
+
+  if (body?.success === true) return { ok: true }
+  return { ok: false, code: 'FAILED' }
 }
 
 function getGuestbookSecurityConfigIssue() {
@@ -51,6 +70,10 @@ function getGuestbookSecurityConfigIssue() {
   }
 
   if (process.env.CAPTCHA_ENABLED !== '1' || !process.env.CAPTCHA_SECRET) {
+    return 'Guestbook is unavailable until CAPTCHA protection is configured.'
+  }
+
+  if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY.trim().length === 0) {
     return 'Guestbook is unavailable until CAPTCHA protection is configured.'
   }
 
@@ -92,10 +115,15 @@ export async function POST(request: NextRequest) {
   }
 
   const ip = getClientIp(request.headers.get('x-forwarded-for'))
-  const captchaOk = await verifyCaptcha(captchaToken, ip)
-  if (!captchaOk) {
+  const captcha = await verifyCaptcha(captchaToken, ip)
+  if (!captcha.ok) {
+    const failureMessage =
+      captcha.code === 'MISSING_INPUT'
+        ? 'Please complete the captcha check before posting.'
+        : 'Captcha verification failed. Please try again.'
+
     return NextResponse.json(
-      { code: 'CAPTCHA_FAILED', message: 'Captcha verification failed. Please try again.' },
+      { code: 'CAPTCHA_FAILED', message: failureMessage },
       { status: 400 }
     )
   }
