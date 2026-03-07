@@ -83,7 +83,7 @@ Production gate note:
 - `ops:check-prereqs:production` enforces durable anti-spam config:
   - `RATE_LIMIT_BACKEND=upstash`
   - `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`
-  - `CAPTCHA_ENABLED=1` + `CAPTCHA_SECRET`
+  - `CAPTCHA_ENABLED=1` + `CAPTCHA_SECRET` + `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 
 ## 6) QR Print Validation
 - Generate QR assets from admin memorial editor.

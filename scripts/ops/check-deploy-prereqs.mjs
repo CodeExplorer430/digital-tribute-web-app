@@ -46,6 +46,9 @@ if (strictProdCheck) {
   if (!process.env.CAPTCHA_SECRET || `${process.env.CAPTCHA_SECRET}`.trim() === '') {
     securityIssues.push('CAPTCHA_SECRET is required for production.')
   }
+  if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || `${process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}`.trim() === '') {
+    securityIssues.push('NEXT_PUBLIC_TURNSTILE_SITE_KEY is required for production.')
+  }
   if (!process.env.VIDEO_TRANSCODE_API_BASE || `${process.env.VIDEO_TRANSCODE_API_BASE}`.trim() === '') {
     securityIssues.push('VIDEO_TRANSCODE_API_BASE is required for production.')
   }

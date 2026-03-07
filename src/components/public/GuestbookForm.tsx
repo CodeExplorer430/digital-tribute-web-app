@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import Script from 'next/script'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -8,20 +9,74 @@ interface GuestbookFormProps {
   pageId: string
 }
 
+type TurnstileWidgetId = string | number
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: HTMLElement | string,
+        options: {
+          sitekey: string
+          callback?: (token: string) => void
+          'expired-callback'?: () => void
+          'error-callback'?: () => void
+        }
+      ) => TurnstileWidgetId
+      reset: (widgetId?: TurnstileWidgetId) => void
+      remove?: (widgetId: TurnstileWidgetId) => void
+    }
+  }
+}
+
 export function GuestbookForm({ pageId }: GuestbookFormProps) {
+  const turnstileSiteKey = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '').trim()
+  const shouldUseCaptcha = turnstileSiteKey.length > 0
+  const turnstileContainerRef = useRef<HTMLDivElement | null>(null)
+  const turnstileWidgetIdRef = useRef<TurnstileWidgetId | null>(null)
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
   const [honeypot, setHoneypot] = useState('')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [turnstileReady, setTurnstileReady] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [startedAt] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!shouldUseCaptcha || !turnstileReady || !window.turnstile) return
+    const container = turnstileContainerRef.current
+    if (!container || turnstileWidgetIdRef.current) return
+
+    turnstileWidgetIdRef.current = window.turnstile.render(container, {
+      sitekey: turnstileSiteKey,
+      callback: (token) => setCaptchaToken(token),
+      'expired-callback': () => setCaptchaToken(null),
+      'error-callback': () => {
+        setCaptchaToken(null)
+        setError('Captcha failed to load. Please refresh and try again.')
+      },
+    })
+
+    return () => {
+      if (turnstileWidgetIdRef.current && window.turnstile?.remove) {
+        window.turnstile.remove(turnstileWidgetIdRef.current)
+      }
+      turnstileWidgetIdRef.current = null
+    }
+  }, [shouldUseCaptcha, turnstileReady, turnstileSiteKey])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (honeypot) {
       setSubmitted(true)
+      return
+    }
+
+    if (shouldUseCaptcha && !captchaToken) {
+      setError('Please complete the captcha check before posting.')
       return
     }
 
@@ -37,12 +92,17 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
         message,
         honeypot,
         submittedAt: startedAt,
+        captchaToken: captchaToken || undefined,
       }),
     })
 
     if (!response.ok && response.status !== 202) {
       const payload = (await response.json().catch(() => null)) as { message?: string } | null
       setError(payload?.message || 'Unable to submit your message right now.')
+      if (shouldUseCaptcha && turnstileWidgetIdRef.current && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetIdRef.current)
+      }
+      setCaptchaToken(null)
       setLoading(false)
       return
     }
@@ -66,6 +126,10 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
             setSubmitted(false)
             setName('')
             setMessage('')
+            setCaptchaToken(null)
+            if (shouldUseCaptcha && turnstileWidgetIdRef.current && window.turnstile) {
+              window.turnstile.reset(turnstileWidgetIdRef.current)
+            }
           }}
         >
           Write another message
@@ -118,6 +182,16 @@ export function GuestbookForm({ pageId }: GuestbookFormProps) {
         <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
+      )}
+
+      {shouldUseCaptcha && (
+        <>
+          <Script
+            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+            onLoad={() => setTurnstileReady(true)}
+          />
+          <div ref={turnstileContainerRef} data-testid="turnstile-widget" />
+        </>
       )}
 
       <Button type="submit" className="w-full" disabled={loading}>
