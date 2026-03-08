@@ -4,7 +4,7 @@ import { Metadata } from 'next'
 import { MemorialPageView } from '@/components/pages/public/MemorialPageView'
 import { canAccessMemorial, memorialRequiresProtectedMedia } from '@/lib/server/page-access'
 import { createSignedMediaToken } from '@/lib/server/private-media'
-import { PageUnlockForm } from '@/components/public/PageUnlockForm'
+import { MemorialUnlockForm } from '@/components/public/MemorialUnlockForm'
 import { getE2EMemorialFixtureBySlug } from '@/lib/server/e2e-public-fixtures'
 import { resolveMemorialAccessMode } from '@/lib/server/memorials'
 
@@ -110,7 +110,7 @@ export default async function PublicTributePage({ params }: PageProps) {
     }
 
     if (!access.allowed && access.requiresPassword) {
-      return <PageUnlockForm slug={slug} />
+      return <MemorialUnlockForm slug={slug} />
     }
   }
 

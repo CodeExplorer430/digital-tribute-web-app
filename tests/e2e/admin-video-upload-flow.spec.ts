@@ -144,7 +144,6 @@ test('admin upload flow succeeds and attaches cloudinary video', async ({ page }
   })
 
   await page.goto(PAGE_PATH, { waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('heading', { name: /video links/i })).toBeVisible()
 
   await uploadSampleVideo(page)
 

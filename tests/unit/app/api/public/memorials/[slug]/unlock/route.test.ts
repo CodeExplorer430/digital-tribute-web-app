@@ -1,4 +1,4 @@
-import { POST } from '@/app/api/public/pages/[slug]/unlock/route'
+import { POST } from '@/app/api/public/memorials/[slug]/unlock/route'
 import { hashMemorialPassword } from '@/lib/server/page-password'
 
 const mockSingle = vi.fn()
@@ -13,7 +13,7 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }))
 
-describe('POST /api/public/pages/[slug]/unlock', () => {
+describe('POST /api/public/memorials/[slug]/unlock', () => {
   beforeEach(() => {
     mockSingle.mockReset()
   })
@@ -33,7 +33,7 @@ describe('POST /api/public/pages/[slug]/unlock', () => {
       },
     })
 
-    const req = new Request('http://localhost/api/public/pages/jane/unlock', {
+    const req = new Request('http://localhost/api/public/memorials/jane/unlock', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password: 'wrong' }),
@@ -54,7 +54,7 @@ describe('POST /api/public/pages/[slug]/unlock', () => {
       },
     })
 
-    const req = new Request('http://localhost/api/public/pages/jane/unlock', {
+    const req = new Request('http://localhost/api/public/memorials/jane/unlock', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password: 'correct-password' }),
@@ -69,7 +69,7 @@ describe('POST /api/public/pages/[slug]/unlock', () => {
   it('unlocks password memorial fixtures when the e2e public lane is enabled', async () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
 
-    const req = new Request('http://localhost/api/public/pages/e2e-password-memorial/unlock', {
+    const req = new Request('http://localhost/api/public/memorials/e2e-password-memorial/unlock', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password: 'EverlumeMemory!' }),
@@ -85,7 +85,7 @@ describe('POST /api/public/pages/[slug]/unlock', () => {
   it('rejects invalid passwords for password memorial fixtures', async () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
 
-    const req = new Request('http://localhost/api/public/pages/e2e-password-memorial/unlock', {
+    const req = new Request('http://localhost/api/public/memorials/e2e-password-memorial/unlock', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password: 'incorrect-password' }),

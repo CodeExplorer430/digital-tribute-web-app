@@ -1,4 +1,4 @@
-import { GET } from '@/app/api/public/pages/[slug]/media/route'
+import { GET } from '@/app/api/public/memorials/[slug]/media/route'
 
 const mockCanAccessMemorial = vi.fn()
 const mockCreateSignedMediaToken = vi.fn((...args: unknown[]) => `${args[0] as string}-${args[1] as string}-token`)
@@ -28,7 +28,7 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }))
 
-describe('GET /api/public/pages/[slug]/media', () => {
+describe('GET /api/public/memorials/[slug]/media', () => {
   beforeEach(() => {
     mockCanAccessMemorial.mockReset()
     mockCreateSignedMediaToken.mockClear()
@@ -50,7 +50,7 @@ describe('GET /api/public/pages/[slug]/media', () => {
       error: null,
     })
 
-    const req = new Request('http://localhost/api/public/pages/legacy/media')
+    const req = new Request('http://localhost/api/public/memorials/legacy/media')
     const res = await GET(req as never, { params: Promise.resolve({ slug: 'legacy' }) })
 
     expect(res.status).toBe(200)
@@ -69,7 +69,7 @@ describe('GET /api/public/pages/[slug]/media', () => {
       error: null,
     })
 
-    const req = new Request('http://localhost/api/public/pages/private/media')
+    const req = new Request('http://localhost/api/public/memorials/private/media')
     const res = await GET(req as never, { params: Promise.resolve({ slug: 'private' }) })
 
     expect(res.status).toBe(200)
@@ -82,7 +82,7 @@ describe('GET /api/public/pages/[slug]/media', () => {
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1', owner_id: 'owner-1', privacy: 'private', access_mode: 'password', password_updated_at: null } })
     mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: true })
 
-    const req = new Request('http://localhost/api/public/pages/protected/media')
+    const req = new Request('http://localhost/api/public/memorials/protected/media')
     const res = await GET(req as never, { params: Promise.resolve({ slug: 'protected' }) })
 
     expect(res.status).toBe(403)
@@ -96,7 +96,7 @@ describe('GET /api/public/pages/[slug]/media', () => {
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1', owner_id: 'owner-1', privacy: 'private', access_mode: 'private', password_updated_at: null } })
     mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: false })
 
-    const req = new Request('http://localhost/api/public/pages/private/media')
+    const req = new Request('http://localhost/api/public/memorials/private/media')
     const res = await GET(req as never, { params: Promise.resolve({ slug: 'private' }) })
 
     expect(res.status).toBe(403)
@@ -116,7 +116,7 @@ describe('GET /api/public/pages/[slug]/media', () => {
       error: null,
     })
 
-    const req = new Request('http://localhost/api/public/pages/legacy-private/media')
+    const req = new Request('http://localhost/api/public/memorials/legacy-private/media')
     const res = await GET(req as never, { params: Promise.resolve({ slug: 'legacy-private' }) })
 
     expect(res.status).toBe(200)
@@ -128,7 +128,7 @@ describe('GET /api/public/pages/[slug]/media', () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
     mockCanAccessMemorial.mockResolvedValue({ allowed: true, requiresPassword: false })
 
-    const req = new Request('http://localhost/api/public/pages/e2e-public-memorial/media')
+    const req = new Request('http://localhost/api/public/memorials/e2e-public-memorial/media')
     const res = await GET(req as never, { params: Promise.resolve({ slug: 'e2e-public-memorial' }) })
 
     expect(res.status).toBe(200)
@@ -143,7 +143,7 @@ describe('GET /api/public/pages/[slug]/media', () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
     mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: true })
 
-    const req = new Request('http://localhost/api/public/pages/e2e-password-memorial/media')
+    const req = new Request('http://localhost/api/public/memorials/e2e-password-memorial/media')
     const res = await GET(req as never, { params: Promise.resolve({ slug: 'e2e-password-memorial' }) })
 
     expect(res.status).toBe(403)

@@ -152,8 +152,8 @@ High-level entities: `users`, `pages`, `photos`, `videos`, `timeline_events`, `g
 ## 11. API Endpoints (summary)
 **Public**
 - `GET /memorials/:slug` — render public memorial
-- `GET /api/public/pages/:slug/media` — return memorial media list with access enforcement
-- `POST /api/public/pages/:slug/unlock` — unlock password-protected memorial
+- `GET /api/public/memorials/:slug/media` — return memorial media list with access enforcement
+- `POST /api/public/memorials/:slug/unlock` — unlock password-protected memorial
 - `POST /api/guestbook` — add guestbook entry (rate-limited)
 
 **Admin (auth required)**

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 
 const mockMemorialPageView = vi.fn()
-const mockPageUnlockForm = vi.fn()
+const mockMemorialUnlockForm = vi.fn()
 const mockCanAccessMemorial = vi.fn()
 const mockCreateSignedMediaToken = vi.fn()
 const mockNotFound = vi.fn(() => {
@@ -43,10 +43,10 @@ vi.mock('@/components/pages/public/MemorialPageView', () => ({
   },
 }))
 
-vi.mock('@/components/public/PageUnlockForm', () => ({
-  PageUnlockForm: (props: unknown) => {
-    mockPageUnlockForm(props)
-    return <div data-testid="page-unlock-form" />
+vi.mock('@/components/public/MemorialUnlockForm', () => ({
+  MemorialUnlockForm: (props: unknown) => {
+    mockMemorialUnlockForm(props)
+    return <div data-testid="memorial-unlock-form" />
   },
 }))
 
@@ -91,7 +91,7 @@ describe('/memorials/[slug] page', () => {
   beforeEach(() => {
     vi.resetModules()
     mockMemorialPageView.mockReset()
-    mockPageUnlockForm.mockReset()
+    mockMemorialUnlockForm.mockReset()
     mockCanAccessMemorial.mockReset()
     mockCreateSignedMediaToken.mockReset()
     mockNotFound.mockClear()
@@ -138,8 +138,8 @@ describe('/memorials/[slug] page', () => {
     const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
     render(node)
 
-    expect(screen.getByTestId('page-unlock-form')).toBeInTheDocument()
-    expect(mockPageUnlockForm).toHaveBeenCalledWith({ slug: 'jane' })
+    expect(screen.getByTestId('memorial-unlock-form')).toBeInTheDocument()
+    expect(mockMemorialUnlockForm).toHaveBeenCalledWith({ slug: 'jane' })
     expect(mockMemorialPageView).not.toHaveBeenCalled()
   })
 

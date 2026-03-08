@@ -4,11 +4,11 @@ import { FormEvent, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-interface PageUnlockFormProps {
+interface MemorialUnlockFormProps {
   slug: string
 }
 
-export function PageUnlockForm({ slug }: PageUnlockFormProps) {
+export function MemorialUnlockForm({ slug }: MemorialUnlockFormProps) {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -18,7 +18,7 @@ export function PageUnlockForm({ slug }: PageUnlockFormProps) {
     setLoading(true)
     setErrorMessage(null)
 
-    const response = await fetch(`/api/public/pages/${slug}/unlock`, {
+    const response = await fetch(`/api/public/memorials/${slug}/unlock`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
