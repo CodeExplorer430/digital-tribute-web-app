@@ -25,18 +25,23 @@ function VideoFrame({ video }: { video: Video }) {
 }
 
 export function TributeVideos({ videos, layout = 'grid' }: TributeVideosProps) {
-  if (!videos || videos.length === 0) return null
-
   const featured = layout === 'featured' ? videos[0] : null
   const remaining = layout === 'featured' ? videos.slice(1) : videos
 
   return (
-    <section className="space-y-8 border-t border-border/80 pt-12">
+    <section id="videos" className="space-y-8 border-t border-border/80 pt-12">
       <div className="space-y-2 text-center">
         <h2 className="section-title">Video Memories</h2>
         <p className="text-sm text-muted-foreground">Recorded stories and moments from loved ones.</p>
       </div>
-      {featured ? (
+      {(!videos || videos.length === 0) ? (
+        <div className="surface-card mx-auto max-w-3xl px-6 py-10 text-center">
+          <p className="text-lg font-semibold text-foreground">No videos have been shared yet.</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            When the family adds recorded tributes or memorial footage, they will appear here.
+          </p>
+        </div>
+      ) : featured ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <article className="surface-card overflow-hidden p-3 md:p-4">
             <VideoFrame video={featured} />

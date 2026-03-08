@@ -6,9 +6,9 @@ describe('TributeVideos', () => {
     process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = 'demo-cloud'
   })
 
-  it('does not render section when videos empty', () => {
-    const { container } = render(<TributeVideos videos={[]} />)
-    expect(container).toBeEmptyDOMElement()
+  it('renders empty state when videos are unavailable', () => {
+    render(<TributeVideos videos={[]} />)
+    expect(screen.getByText('No videos have been shared yet.')).toBeInTheDocument()
   })
 
   it('renders iframe and title for each video', () => {

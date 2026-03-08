@@ -1,4 +1,5 @@
 import { PublicGallery } from '@/components/public/PublicGallery'
+import { MemorialActionBar } from '@/components/public/MemorialActionBar'
 import { TributeHero } from '@/components/public/TributeHero'
 import { TributeVideos } from '@/components/public/TributeVideos'
 import { TributeTimeline } from '@/components/public/TributeTimeline'
@@ -73,6 +74,8 @@ export function MemorialPageView({ memorial, photos, videos, timeline, guestbook
       <TributeHero memorial={memorial} />
 
       <main id="main-content" className="page-container space-y-12 py-10 md:space-y-16 md:py-14">
+        <MemorialActionBar memorialTitle={memorial.title} guestbookHref="#guestbook" />
+
         <section className="surface-card mx-auto max-w-4xl px-6 py-8 text-center md:px-10">
           <p className="section-kicker">Remembrance</p>
           <h2 className="section-title mt-2">Our Memories</h2>
@@ -81,7 +84,7 @@ export function MemorialPageView({ memorial, photos, videos, timeline, guestbook
           </p>
         </section>
 
-        <section className="space-y-6">
+        <section id="photos" className="space-y-6">
           {photos.length > 0 ? (
             <PublicGallery
               photos={photos.map((photo) => ({ ...photo, caption: photo.caption ?? undefined }))}
@@ -91,7 +94,13 @@ export function MemorialPageView({ memorial, photos, videos, timeline, guestbook
               captionStyle={memorialCaptionStyle}
             />
           ) : (
-            <div className="surface-card py-12 text-center text-sm italic text-muted-foreground">No photos shared yet.</div>
+            <div className="surface-card mx-auto max-w-3xl px-6 py-12 text-center">
+              <p className="section-kicker">Gallery</p>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">Photos will be added here</h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                The family has opened this memorial before the gallery is complete. Return later for portraits, keepsakes, and shared photographs.
+              </p>
+            </div>
           )}
         </section>
 

@@ -145,17 +145,24 @@ export function LandingContent({ directoryEnabled, memorials }: LandingContentPr
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {memorials.map((memorial) => (
-              <article key={memorial.id} className="surface-card p-5">
-                <h4 className="font-semibold text-foreground">{memorial.title}</h4>
-                <p className="mt-1 text-sm text-muted-foreground">{memorial.full_name || 'Memorial'}</p>
-                <Link href={`/memorials/${memorial.slug}`} className="mt-4 inline-flex text-sm font-medium text-foreground underline-offset-4 hover:underline">
-                  View memorial
-                </Link>
+              <article key={memorial.id} className="surface-card flex h-full flex-col justify-between gap-4 p-5">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/85">Public memorial</p>
+                  <h4 className="text-lg font-semibold text-foreground">{memorial.title}</h4>
+                  <p className="text-sm text-muted-foreground">{memorial.full_name || 'Memorial'}</p>
+                  <p className="text-xs text-muted-foreground">everlume / {memorial.slug}</p>
+                </div>
+                <Button variant="outline" asChild>
+                  <Link href={`/memorials/${memorial.slug}`}>Open memorial</Link>
+                </Button>
               </article>
             ))}
             {memorials.length === 0 && (
-              <div className="surface-card col-span-full p-5 text-sm text-muted-foreground">
-                Public memorial sharing is enabled, but no families have published a directory-listed memorial yet.
+              <div className="surface-card col-span-full p-6 text-center">
+                <p className="text-lg font-semibold text-foreground">The public directory is ready.</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Public memorial sharing is enabled, but no families have published a directory-listed memorial yet.
+                </p>
               </div>
             )}
           </div>

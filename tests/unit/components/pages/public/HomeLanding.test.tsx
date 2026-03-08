@@ -33,11 +33,11 @@ describe('LandingContent', () => {
     expect(screen.getByText(/Private and password-protected memorials remain outside this directory\./)).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 4, name: 'Maria Santos' })).toBeInTheDocument()
     expect(screen.getByText('Memorial')).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'View memorial' })[0]).toHaveAttribute('href', '/memorials/maria-santos')
+    expect(screen.getAllByRole('link', { name: 'Open memorial' })[0]).toHaveAttribute('href', '/memorials/maria-santos')
   })
 
   it('renders empty-state text when directory is enabled with no memorials', () => {
     render(<LandingContent directoryEnabled memorials={[]} />)
-    expect(screen.getByText('Public memorial sharing is enabled, but no families have published a directory-listed memorial yet.')).toBeInTheDocument()
+    expect(screen.getByText('The public directory is ready.')).toBeInTheDocument()
   })
 })

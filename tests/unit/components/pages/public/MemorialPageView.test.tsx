@@ -2,10 +2,18 @@ import { render, screen } from '@testing-library/react'
 import { MemorialPageView } from '@/components/pages/public/MemorialPageView'
 
 const mockPublicGallery = vi.fn()
+const mockMemorialActionBar = vi.fn()
 const mockTributeVideos = vi.fn()
 const mockTributeTimeline = vi.fn()
 const mockTributeGuestbook = vi.fn()
 const mockTributeHero = vi.fn()
+
+vi.mock('@/components/public/MemorialActionBar', () => ({
+  MemorialActionBar: (props: unknown) => {
+    mockMemorialActionBar(props)
+    return <div data-testid="memorial-action-bar" />
+  },
+}))
 
 vi.mock('@/components/public/PublicGallery', () => ({
   PublicGallery: (props: unknown) => {
@@ -46,6 +54,7 @@ describe('MemorialPageView', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     mockPublicGallery.mockReset()
+    mockMemorialActionBar.mockReset()
     mockTributeVideos.mockReset()
     mockTributeTimeline.mockReset()
     mockTributeGuestbook.mockReset()
@@ -75,7 +84,9 @@ describe('MemorialPageView', () => {
     )
 
     expect(screen.getByTestId('tribute-hero')).toBeInTheDocument()
-    expect(screen.getByText('No photos shared yet.')).toBeInTheDocument()
+    expect(screen.getByTestId('memorial-action-bar')).toBeInTheDocument()
+    expect(screen.getByText('Photos will be added here')).toBeInTheDocument()
+    expect(mockMemorialActionBar).toHaveBeenCalledWith({ memorialTitle: 'In Loving Memory', guestbookHref: '#guestbook' })
     expect(mockPublicGallery).not.toHaveBeenCalled()
     expect(mockTributeVideos).toHaveBeenCalledWith({ videos: [], layout: 'grid' })
     expect(mockTributeTimeline).toHaveBeenCalledWith({ timeline: [] })
@@ -105,6 +116,7 @@ describe('MemorialPageView', () => {
     )
 
     expect(screen.getByTestId('public-gallery')).toBeInTheDocument()
+    expect(screen.getByTestId('memorial-action-bar')).toBeInTheDocument()
     expect(mockPublicGallery).toHaveBeenCalledWith({
       photos: [{ id: 'photo-1', image_url: '/image.jpg', thumb_url: '/thumb.jpg', caption: undefined }],
       slideshowEnabled: true,

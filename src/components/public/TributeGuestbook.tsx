@@ -16,7 +16,7 @@ interface TributeGuestbookProps {
 
 export function TributeGuestbook({ memorialId, fullName, entries }: TributeGuestbookProps) {
   return (
-    <section className="space-y-8 border-t border-border/80 pt-12">
+    <section id="guestbook" className="space-y-8 border-t border-border/80 pt-12">
       <div className="space-y-2 text-center">
         <h2 className="section-title">Guestbook</h2>
         <p className="text-sm text-muted-foreground">Leave a message in memory of {fullName || 'our loved one'}.</p>
@@ -38,7 +38,12 @@ export function TributeGuestbook({ memorialId, fullName, entries }: TributeGuest
             </article>
           ))
         ) : (
-          <p className="text-center text-sm italic text-muted-foreground">No messages yet. Be the first to share a memory.</p>
+          <div className="surface-card px-6 py-10 text-center">
+            <p className="text-lg font-semibold text-foreground">No messages have been published yet.</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              You can be the first to leave a memory for {fullName || 'this loved one'}. New messages appear after family moderation.
+            </p>
+          </div>
         )}
       </div>
     </section>

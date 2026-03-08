@@ -10,7 +10,7 @@ interface TributeTimelineProps {
 
 export function TributeTimeline({ timeline }: TributeTimelineProps) {
   return (
-    <section className="space-y-8 border-t border-border/80 pt-12">
+    <section id="timeline" className="space-y-8 border-t border-border/80 pt-12">
       <div className="space-y-2 text-center">
         <h2 className="section-title">Life Timeline</h2>
         <p className="text-sm text-muted-foreground">A brief sequence of meaningful moments.</p>
@@ -28,7 +28,12 @@ export function TributeTimeline({ timeline }: TributeTimelineProps) {
             ))}
           </div>
         ) : (
-          <p className="text-center text-sm italic text-muted-foreground">No timeline events shared yet.</p>
+          <div className="surface-card px-6 py-10 text-center">
+            <p className="text-lg font-semibold text-foreground">A life story is still being assembled.</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Milestones, places, and family memories will appear here as the timeline is completed.
+            </p>
+          </div>
         )}
       </div>
     </section>

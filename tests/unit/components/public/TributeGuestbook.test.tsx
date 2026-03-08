@@ -10,7 +10,7 @@ describe('TributeGuestbook', () => {
     render(<TributeGuestbook memorialId="p1" fullName="Jane" entries={[]} />)
 
     expect(screen.getByTestId('guestbook-form')).toHaveTextContent('p1')
-    expect(screen.getByText('No messages yet. Be the first to share a memory.')).toBeInTheDocument()
+    expect(screen.getByText('No messages have been published yet.')).toBeInTheDocument()
   })
 
   it('renders guestbook entries', () => {
