@@ -25,8 +25,15 @@ interface MemorialPageRecord {
   memorial_slideshow_enabled?: boolean
   memorial_slideshow_interval_ms?: number
   memorial_video_layout?: 'grid' | 'featured'
+  memorial_photo_fit?: 'cover' | 'contain'
+  memorial_caption_style?: 'classic' | 'minimal'
   qr_template?: 'classic' | 'minimal' | 'warm'
   qr_caption?: string
+  qr_foreground_color?: '#111827' | '#14532d' | '#7c2d12'
+  qr_background_color?: '#ffffff' | '#f8fafc' | '#fffaf2'
+  qr_frame_style?: 'line' | 'rounded' | 'double'
+  qr_caption_font?: 'serif' | 'sans'
+  qr_show_logo?: boolean
 }
 
 interface PhotoRecord {

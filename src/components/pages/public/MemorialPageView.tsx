@@ -15,6 +15,8 @@ type MemorialPage = {
   memorial_slideshow_enabled?: boolean | null
   memorial_slideshow_interval_ms?: number | null
   memorial_video_layout?: 'grid' | 'featured' | null
+  memorial_photo_fit?: 'cover' | 'contain' | null
+  memorial_caption_style?: 'classic' | 'minimal' | null
 }
 
 type MemorialPhoto = {
@@ -56,6 +58,8 @@ export function MemorialPageView({ page, photos, videos, timeline, guestbook }: 
   const slideshowEnabled = page.memorial_slideshow_enabled !== false
   const slideshowIntervalMs = Number(page.memorial_slideshow_interval_ms) || 4500
   const memorialVideoLayout = page.memorial_video_layout === 'featured' ? 'featured' : 'grid'
+  const memorialPhotoFit = page.memorial_photo_fit === 'contain' ? 'contain' : 'cover'
+  const memorialCaptionStyle = page.memorial_caption_style === 'minimal' ? 'minimal' : 'classic'
   const themePreset = page.memorial_theme === 'serene' || page.memorial_theme === 'editorial' ? page.memorial_theme : 'classic'
   const themeShellClass =
     themePreset === 'serene'
@@ -82,6 +86,8 @@ export function MemorialPageView({ page, photos, videos, timeline, guestbook }: 
               photos={photos.map((photo) => ({ ...photo, caption: photo.caption ?? undefined }))}
               slideshowEnabled={slideshowEnabled}
               slideshowIntervalMs={slideshowIntervalMs}
+              fit={memorialPhotoFit}
+              captionStyle={memorialCaptionStyle}
             />
           ) : (
             <div className="surface-card py-12 text-center text-sm italic text-muted-foreground">No photos shared yet.</div>

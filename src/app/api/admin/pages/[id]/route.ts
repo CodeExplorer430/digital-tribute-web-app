@@ -22,8 +22,15 @@ const pageUpdateSchema = z
     memorialSlideshowEnabled: z.boolean().optional(),
     memorialSlideshowIntervalMs: z.number().int().min(2000).max(12000).optional(),
     memorialVideoLayout: z.enum(['grid', 'featured']).optional(),
+    memorialPhotoFit: z.enum(['cover', 'contain']).optional(),
+    memorialCaptionStyle: z.enum(['classic', 'minimal']).optional(),
     qrTemplate: z.enum(['classic', 'minimal', 'warm']).optional(),
     qrCaption: z.string().trim().min(2).max(40).optional(),
+    qrForegroundColor: z.enum(['#111827', '#14532d', '#7c2d12']).optional(),
+    qrBackgroundColor: z.enum(['#ffffff', '#f8fafc', '#fffaf2']).optional(),
+    qrFrameStyle: z.enum(['line', 'rounded', 'double']).optional(),
+    qrCaptionFont: z.enum(['serif', 'sans']).optional(),
+    qrShowLogo: z.boolean().optional(),
   })
   .refine((value) => value.accessMode !== 'password' || Boolean(value.password), {
     message: 'Password is required when access mode is password.',
@@ -98,8 +105,15 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     memorial_slideshow_enabled: body.memorialSlideshowEnabled,
     memorial_slideshow_interval_ms: body.memorialSlideshowIntervalMs,
     memorial_video_layout: body.memorialVideoLayout,
+    memorial_photo_fit: body.memorialPhotoFit,
+    memorial_caption_style: body.memorialCaptionStyle,
     qr_template: body.qrTemplate,
     qr_caption: body.qrCaption,
+    qr_foreground_color: body.qrForegroundColor,
+    qr_background_color: body.qrBackgroundColor,
+    qr_frame_style: body.qrFrameStyle,
+    qr_caption_font: body.qrCaptionFont,
+    qr_show_logo: body.qrShowLogo,
     updated_at: new Date().toISOString(),
   }
 

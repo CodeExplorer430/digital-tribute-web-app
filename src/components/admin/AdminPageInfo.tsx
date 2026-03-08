@@ -18,8 +18,15 @@ type AdminPage = {
   memorial_slideshow_enabled?: boolean
   memorial_slideshow_interval_ms?: number
   memorial_video_layout?: 'grid' | 'featured'
+  memorial_photo_fit?: 'cover' | 'contain'
+  memorial_caption_style?: 'classic' | 'minimal'
   qr_template?: 'classic' | 'minimal' | 'warm'
   qr_caption?: string
+  qr_foreground_color?: '#111827' | '#14532d' | '#7c2d12'
+  qr_background_color?: '#ffffff' | '#f8fafc' | '#fffaf2'
+  qr_frame_style?: 'line' | 'rounded' | 'double'
+  qr_caption_font?: 'serif' | 'sans'
+  qr_show_logo?: boolean
 }
 
 interface AdminPageInfoProps {
@@ -45,8 +52,15 @@ function serializePageKey(page: AdminPage) {
     String(page.memorial_slideshow_enabled ?? true),
     String(page.memorial_slideshow_interval_ms ?? 4500),
     page.memorial_video_layout ?? 'grid',
+    page.memorial_photo_fit ?? 'cover',
+    page.memorial_caption_style ?? 'classic',
     page.qr_template ?? 'classic',
     page.qr_caption ?? 'Scan me!',
+    page.qr_foreground_color ?? '#111827',
+    page.qr_background_color ?? '#ffffff',
+    page.qr_frame_style ?? 'line',
+    page.qr_caption_font ?? 'serif',
+    String(page.qr_show_logo ?? false),
   ].join('|')
 }
 
@@ -65,8 +79,15 @@ function AdminPageInfoForm({ page, onUpdate }: AdminPageInfoProps) {
     memorial_slideshow_enabled: page.memorial_slideshow_enabled !== false,
     memorial_slideshow_interval_ms: page.memorial_slideshow_interval_ms || 4500,
     memorial_video_layout: page.memorial_video_layout || 'grid',
+    memorial_photo_fit: page.memorial_photo_fit || 'cover',
+    memorial_caption_style: page.memorial_caption_style || 'classic',
     qr_template: page.qr_template || 'classic',
     qr_caption: page.qr_caption || 'Scan me!',
+    qr_foreground_color: page.qr_foreground_color || '#111827',
+    qr_background_color: page.qr_background_color || '#ffffff',
+    qr_frame_style: page.qr_frame_style || 'line',
+    qr_caption_font: page.qr_caption_font || 'serif',
+    qr_show_logo: page.qr_show_logo === true,
   })
   const [password, setPassword] = useState('')
   const [updating, setUpdating] = useState(false)
@@ -92,8 +113,15 @@ function AdminPageInfoForm({ page, onUpdate }: AdminPageInfoProps) {
         memorialSlideshowEnabled: formData.memorial_slideshow_enabled,
         memorialSlideshowIntervalMs: formData.memorial_slideshow_interval_ms,
         memorialVideoLayout: formData.memorial_video_layout,
+        memorialPhotoFit: formData.memorial_photo_fit,
+        memorialCaptionStyle: formData.memorial_caption_style,
         qrTemplate: formData.qr_template,
         qrCaption: formData.qr_caption,
+        qrForegroundColor: formData.qr_foreground_color,
+        qrBackgroundColor: formData.qr_background_color,
+        qrFrameStyle: formData.qr_frame_style,
+        qrCaptionFont: formData.qr_caption_font,
+        qrShowLogo: formData.qr_show_logo,
       })
     })
 
@@ -256,6 +284,34 @@ function AdminPageInfoForm({ page, onUpdate }: AdminPageInfoProps) {
             />
           </div>
           <div>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="photo-fit">
+              Photo Fit
+            </label>
+            <select
+              id="photo-fit"
+              className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
+              value={formData.memorial_photo_fit}
+              onChange={(e) => setFormData({ ...formData, memorial_photo_fit: e.target.value as 'cover' | 'contain' })}
+            >
+              <option value="cover">Cover (immersive)</option>
+              <option value="contain">Contain (full image)</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="caption-style">
+              Caption Style
+            </label>
+            <select
+              id="caption-style"
+              className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
+              value={formData.memorial_caption_style}
+              onChange={(e) => setFormData({ ...formData, memorial_caption_style: e.target.value as 'classic' | 'minimal' })}
+            >
+              <option value="classic">Classic</option>
+              <option value="minimal">Minimal</option>
+            </select>
+          </div>
+          <div>
             <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-template">
               QR Template
             </label>
@@ -280,6 +336,83 @@ function AdminPageInfoForm({ page, onUpdate }: AdminPageInfoProps) {
               value={formData.qr_caption || 'Scan me!'}
               onChange={(e) => setFormData({ ...formData, qr_caption: e.target.value })}
             />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-foreground-color">
+              QR Foreground Color
+            </label>
+            <select
+              id="qr-foreground-color"
+              className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
+              value={formData.qr_foreground_color}
+              onChange={(e) =>
+                setFormData({ ...formData, qr_foreground_color: e.target.value as '#111827' | '#14532d' | '#7c2d12' })
+              }
+            >
+              <option value="#111827">Slate</option>
+              <option value="#14532d">Forest</option>
+              <option value="#7c2d12">Copper</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-background-color">
+              QR Background Color
+            </label>
+            <select
+              id="qr-background-color"
+              className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
+              value={formData.qr_background_color}
+              onChange={(e) =>
+                setFormData({ ...formData, qr_background_color: e.target.value as '#ffffff' | '#f8fafc' | '#fffaf2' })
+              }
+            >
+              <option value="#ffffff">Pure White</option>
+              <option value="#f8fafc">Soft Slate</option>
+              <option value="#fffaf2">Warm Paper</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-frame-style">
+              QR Frame Style
+            </label>
+            <select
+              id="qr-frame-style"
+              className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
+              value={formData.qr_frame_style}
+              onChange={(e) => setFormData({ ...formData, qr_frame_style: e.target.value as 'line' | 'rounded' | 'double' })}
+            >
+              <option value="line">Line</option>
+              <option value="rounded">Rounded</option>
+              <option value="double">Double</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-caption-font">
+              QR Caption Font
+            </label>
+            <select
+              id="qr-caption-font"
+              className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
+              value={formData.qr_caption_font}
+              onChange={(e) => setFormData({ ...formData, qr_caption_font: e.target.value as 'serif' | 'sans' })}
+            >
+              <option value="serif">Serif</option>
+              <option value="sans">Sans</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-show-logo">
+              QR Monogram
+            </label>
+            <select
+              id="qr-show-logo"
+              className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
+              value={formData.qr_show_logo ? 'enabled' : 'disabled'}
+              onChange={(e) => setFormData({ ...formData, qr_show_logo: e.target.value === 'enabled' })}
+            >
+              <option value="disabled">Disabled</option>
+              <option value="enabled">Enabled</option>
+            </select>
           </div>
         </div>
       </section>

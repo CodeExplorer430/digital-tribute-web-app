@@ -15,9 +15,17 @@ interface PublicGalleryProps {
   photos: Photo[]
   slideshowEnabled?: boolean
   slideshowIntervalMs?: number
+  fit?: 'cover' | 'contain'
+  captionStyle?: 'classic' | 'minimal'
 }
 
-export function PublicGallery({ photos, slideshowEnabled = false, slideshowIntervalMs = 4500 }: PublicGalleryProps) {
+export function PublicGallery({
+  photos,
+  slideshowEnabled = false,
+  slideshowIntervalMs = 4500,
+  fit = 'cover',
+  captionStyle = 'classic',
+}: PublicGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [slideshowPaused, setSlideshowPaused] = useState(false)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -94,7 +102,7 @@ export function PublicGallery({ photos, slideshowEnabled = false, slideshowInter
                   alt={photo.caption || `Memorial photo ${index + 1}`}
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                  className="object-cover transition-transform duration-300 hover:scale-105"
+                  className={`${fit === 'contain' ? 'object-contain bg-white/80 p-1.5' : 'object-cover'} transition-transform duration-500 hover:scale-105`}
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Missing image URL</div>
@@ -154,11 +162,17 @@ export function PublicGallery({ photos, slideshowEnabled = false, slideshowInter
                 alt={photos[selectedIndex].caption || `Memorial photo ${selectedIndex + 1}`}
                 fill
                 sizes="100vw"
-                className="rounded-md object-contain shadow-2xl"
+                className={`rounded-md ${fit === 'contain' ? 'object-contain' : 'object-cover'} shadow-2xl transition-all duration-700`}
                 priority
               />
             </div>
-            {photos[selectedIndex].caption && <p className="mt-5 text-center text-sm text-white/90 md:text-base">{photos[selectedIndex].caption}</p>}
+            {photos[selectedIndex].caption && (
+              <p
+                className={`mt-5 text-center ${captionStyle === 'minimal' ? 'text-xs tracking-[0.06em] uppercase' : 'text-sm md:text-base'} text-white/90`}
+              >
+                {photos[selectedIndex].caption}
+              </p>
+            )}
           </div>
         </div>
       )}

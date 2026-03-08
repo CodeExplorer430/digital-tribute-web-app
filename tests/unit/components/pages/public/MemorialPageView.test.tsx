@@ -109,6 +109,8 @@ describe('MemorialPageView', () => {
       photos: [{ id: 'photo-1', image_url: '/image.jpg', thumb_url: '/thumb.jpg', caption: undefined }],
       slideshowEnabled: true,
       slideshowIntervalMs: 4500,
+      fit: 'cover',
+      captionStyle: 'classic',
     })
   })
 })

@@ -93,7 +93,7 @@ export async function getOwnedPage(supabase: AdminSupabase, pageId: string, user
   let query = supabase
     .from('pages')
     .select(
-      'id, title, slug, full_name, dob, dod, privacy, access_mode, hero_image_url, memorial_theme, memorial_slideshow_enabled, memorial_slideshow_interval_ms, memorial_video_layout, qr_template, qr_caption'
+      'id, title, slug, full_name, dob, dod, privacy, access_mode, hero_image_url, memorial_theme, memorial_slideshow_enabled, memorial_slideshow_interval_ms, memorial_video_layout, memorial_photo_fit, memorial_caption_style, qr_template, qr_caption, qr_foreground_color, qr_background_color, qr_frame_style, qr_caption_font, qr_show_logo'
     )
     .eq('id', pageId)
   if (role !== 'admin') {
