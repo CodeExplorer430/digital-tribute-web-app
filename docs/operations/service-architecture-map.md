@@ -79,7 +79,7 @@ Minimum owner accounts to keep active:
   - `VIDEO_TRANSCODE_CALLBACK_TOKEN`
   - `VIDEO_TRANSCODE_APP_BASE`
 - Short links: `NEXT_PUBLIC_SHORT_DOMAIN`
-- Security: `RATE_LIMIT_BACKEND`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `CAPTCHA_ENABLED`, `CAPTCHA_SECRET`, `CAPTCHA_VERIFY_URL`
+- Security: `RATE_LIMIT_BACKEND`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `CAPTCHA_ENABLED`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `CAPTCHA_SECRET`, `CAPTCHA_VERIFY_URL`
 - Private media signing: `PRIVATE_MEDIA_TOKEN_SECRET`
 
 ### Cloudflare Worker
@@ -106,4 +106,5 @@ Minimum owner accounts to keep active:
 - Quality gates:
   - `npm run test:coverage`
   - `npm run test:e2e`
+  - `npm run test:e2e:auth`
   - `npm run test:launch-readiness`

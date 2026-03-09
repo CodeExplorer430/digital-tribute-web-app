@@ -19,7 +19,7 @@ describe('TributeHero', () => {
   it('renders hero image and formatted date range', () => {
     render(
       <TributeHero
-        page={{
+        memorial={{
           title: 'In Loving Memory',
           full_name: 'Jane Doe',
           dob: '1950-01-01',
@@ -37,9 +37,9 @@ describe('TributeHero', () => {
   })
 
   it('renders gradient fallback and no date range when dates are missing', () => {
-    const { container } = render(
+    render(
       <TributeHero
-        page={{
+        memorial={{
           title: 'Beloved Parent',
           full_name: null,
           dob: null,
@@ -51,7 +51,7 @@ describe('TributeHero', () => {
 
     expect(screen.queryByTestId('hero-image')).not.toBeInTheDocument()
     expect(screen.getByText('Beloved Parent')).toBeInTheDocument()
-    expect(container.querySelector('.bg-gradient-to-b')).toBeInTheDocument()
+    expect(screen.getByTestId('hero-fallback')).toBeInTheDocument()
     expect(screen.queryByText(/Present/)).not.toBeInTheDocument()
   })
 })

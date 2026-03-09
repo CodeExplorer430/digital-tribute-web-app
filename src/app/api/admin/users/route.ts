@@ -16,30 +16,62 @@ async function assertAdminPrivileges() {
     return { ok: false as const, response: auth.response }
   }
 
-  return { ok: true as const, supabase: auth.supabase, userId: auth.userId }
+  return { ok: true as const, actorSupabase: auth.supabase, userId: auth.userId }
+}
+
+function getAuthRedirectTo(request: NextRequest) {
+  return new URL('/auth/callback?next=/login/reset-password', request.url).toString()
+}
+
+function deriveAccountState(
+  profile: { is_active: boolean },
+  authUser: { last_sign_in_at?: string | null } | null | undefined,
+  authLookupAvailable: boolean
+) {
+  if (!profile.is_active) return 'deactivated' as const
+  if (!authLookupAvailable) return 'active' as const
+  if (authUser?.last_sign_in_at) return 'active' as const
+  return 'invited' as const
 }
 
 export async function GET() {
   const authz = await assertAdminPrivileges()
   if (!authz.ok) return authz.response
-  const { supabase } = authz
 
-  const { data, error } = await supabase
+  let serviceRole
+  try {
+    serviceRole = createServiceRoleClient()
+  } catch {
+    return NextResponse.json(
+      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.' },
+      { status: 500 }
+    )
+  }
+
+  const { data, error } = await serviceRole
     .from('profiles')
-    .select('id, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
+    .select('id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
     .order('created_at', { ascending: false })
 
   if (error) {
     return databaseError('Unable to load users.')
   }
 
-  return NextResponse.json({ users: data ?? [] }, { status: 200 })
+  const { data: authData, error: authError } = await serviceRole.auth.admin.listUsers()
+  const authLookupAvailable = !authError
+  const authUsersById = new Map((authData?.users ?? []).map((user) => [user.id, user]))
+  const users = (data ?? []).map((profile) => ({
+    ...profile,
+    account_state: deriveAccountState(profile, authUsersById.get(profile.id), authLookupAvailable),
+  }))
+
+  return NextResponse.json({ users }, { status: 200 })
 }
 
 export async function POST(request: NextRequest) {
   const authz = await assertAdminPrivileges()
   if (!authz.ok) return authz.response
-  const { userId } = authz
+  const { actorSupabase, userId } = authz
 
   let payload: unknown
   try {
@@ -70,6 +102,7 @@ export async function POST(request: NextRequest) {
 
   const { data: inviteData, error: inviteError } = await serviceRole.auth.admin.inviteUserByEmail(email, {
     data: { role, full_name: fullName },
+    redirectTo: getAuthRedirectTo(request),
   })
 
   if (inviteError || !inviteData.user) {
@@ -85,6 +118,7 @@ export async function POST(request: NextRequest) {
     .upsert(
       {
         id: inviteData.user.id,
+        email,
         full_name: fullName,
         role,
         is_active: true,
@@ -93,14 +127,14 @@ export async function POST(request: NextRequest) {
       },
       { onConflict: 'id' }
     )
-    .select('id, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
+    .select('id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
     .single()
 
   if (profileError) {
     return databaseError('Unable to save invited user profile.')
   }
 
-  await logAdminAudit(authz.supabase, {
+  await logAdminAudit(actorSupabase, {
     actorId: userId,
     action: 'user.create',
     entity: 'user',
@@ -108,5 +142,5 @@ export async function POST(request: NextRequest) {
     metadata: { role: profileData.role },
   })
 
-  return NextResponse.json({ user: profileData }, { status: 201 })
+  return NextResponse.json({ user: { ...profileData, account_state: 'invited' } }, { status: 201 })
 }

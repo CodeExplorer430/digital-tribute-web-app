@@ -15,6 +15,16 @@ type RedirectItem = {
   created_at: string
 }
 
+type SiteSettings = {
+  homeDirectoryEnabled: boolean
+  memorialSlideshowEnabled: boolean
+  memorialSlideshowIntervalMs: number
+  memorialVideoLayout: 'grid' | 'featured'
+  protectedMediaConsentTitle: string
+  protectedMediaConsentBody: string
+  protectedMediaConsentVersion: number
+}
+
 export function AdminSettingsScreen() {
   const [redirects, setRedirects] = useState<RedirectItem[]>([])
   const [shortcode, setShortcode] = useState('')
@@ -25,6 +35,14 @@ export function AdminSettingsScreen() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [homeDirectoryEnabled, setHomeDirectoryEnabled] = useState(false)
+  const [memorialSlideshowEnabled, setMemorialSlideshowEnabled] = useState(true)
+  const [memorialSlideshowIntervalMs, setMemorialSlideshowIntervalMs] = useState(4500)
+  const [memorialVideoLayout, setMemorialVideoLayout] = useState<'grid' | 'featured'>('grid')
+  const [protectedMediaConsentTitle, setProtectedMediaConsentTitle] = useState('Media Viewing Notice')
+  const [protectedMediaConsentBody, setProtectedMediaConsentBody] = useState(
+    "The family has protected this memorial's photos and videos for respectful viewing. Continuing confirms that access to protected media is recorded for family oversight."
+  )
+  const [protectedMediaConsentVersion, setProtectedMediaConsentVersion] = useState(1)
   const [updatingSiteSettings, setUpdatingSiteSettings] = useState(false)
 
   const fetchRedirects = useCallback(async () => {
@@ -47,8 +65,17 @@ export function AdminSettingsScreen() {
   const fetchSiteSettings = useCallback(async () => {
     const response = await fetch('/api/admin/site-settings', { cache: 'no-store' })
     if (!response.ok) return
-    const payload = (await response.json()) as { settings?: { homeDirectoryEnabled?: boolean } }
+    const payload = (await response.json()) as { settings?: Partial<SiteSettings> }
     setHomeDirectoryEnabled(payload.settings?.homeDirectoryEnabled === true)
+    setMemorialSlideshowEnabled(payload.settings?.memorialSlideshowEnabled !== false)
+    setMemorialSlideshowIntervalMs(payload.settings?.memorialSlideshowIntervalMs || 4500)
+    setMemorialVideoLayout(payload.settings?.memorialVideoLayout === 'featured' ? 'featured' : 'grid')
+    setProtectedMediaConsentTitle(payload.settings?.protectedMediaConsentTitle || 'Media Viewing Notice')
+    setProtectedMediaConsentBody(
+      payload.settings?.protectedMediaConsentBody ||
+        "The family has protected this memorial's photos and videos for respectful viewing. Continuing confirms that access to protected media is recorded for family oversight."
+    )
+    setProtectedMediaConsentVersion(Number(payload.settings?.protectedMediaConsentVersion) || 1)
   }, [])
 
   useEffect(() => {
@@ -92,25 +119,96 @@ export function AdminSettingsScreen() {
     setCreating(false)
   }
 
-  const toggleHomeDirectory = async () => {
+  const updateSiteSettings = async (updates: Partial<SiteSettings> & { bumpProtectedMediaConsentVersion?: boolean }, rollback: () => void) => {
     if (updatingSiteSettings) return
     setUpdatingSiteSettings(true)
-    const nextValue = !homeDirectoryEnabled
-    setHomeDirectoryEnabled(nextValue)
 
     const response = await fetch('/api/admin/site-settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ homeDirectoryEnabled: nextValue }),
+      body: JSON.stringify(updates),
     })
 
     if (!response.ok) {
-      setHomeDirectoryEnabled(!nextValue)
+      rollback()
       const payload = (await response.json().catch(() => null)) as { message?: string } | null
       setErrorMessage(payload?.message || 'Unable to update site settings.')
+      setUpdatingSiteSettings(false)
+      return false
     }
 
     setUpdatingSiteSettings(false)
+    return true
+  }
+
+  const toggleHomeDirectory = async () => {
+    if (updatingSiteSettings) return
+    const nextValue = !homeDirectoryEnabled
+    setHomeDirectoryEnabled(nextValue)
+    await updateSiteSettings({ homeDirectoryEnabled: nextValue }, () => setHomeDirectoryEnabled(!nextValue))
+  }
+
+  const toggleMemorialSlideshow = async () => {
+    if (updatingSiteSettings) return
+    const nextValue = !memorialSlideshowEnabled
+    setMemorialSlideshowEnabled(nextValue)
+    await updateSiteSettings(
+      { memorialSlideshowEnabled: nextValue },
+      () => setMemorialSlideshowEnabled(!nextValue)
+    )
+  }
+
+  const saveMemorialPresentation = async () => {
+    if (updatingSiteSettings) return
+    const clampedInterval = Math.min(12000, Math.max(2000, memorialSlideshowIntervalMs || 4500))
+    const previous = {
+      memorialSlideshowIntervalMs,
+      memorialVideoLayout,
+    }
+    setMemorialSlideshowIntervalMs(clampedInterval)
+    await updateSiteSettings(
+      {
+        memorialSlideshowIntervalMs: clampedInterval,
+        memorialVideoLayout,
+      },
+      () => {
+        setMemorialSlideshowIntervalMs(previous.memorialSlideshowIntervalMs)
+        setMemorialVideoLayout(previous.memorialVideoLayout)
+      }
+    )
+  }
+
+  const saveProtectedMediaConsent = async (republishOnly = false) => {
+    if (updatingSiteSettings) return
+    const previous = {
+      protectedMediaConsentTitle,
+      protectedMediaConsentBody,
+      protectedMediaConsentVersion,
+    }
+
+    if (republishOnly) {
+      setProtectedMediaConsentVersion((current) => current + 1)
+    }
+
+    const ok = await updateSiteSettings(
+      {
+        ...(republishOnly
+          ? { bumpProtectedMediaConsentVersion: true }
+          : {
+              protectedMediaConsentTitle: protectedMediaConsentTitle.trim(),
+              protectedMediaConsentBody: protectedMediaConsentBody.trim(),
+            }),
+      },
+      () => {
+        setProtectedMediaConsentTitle(previous.protectedMediaConsentTitle)
+        setProtectedMediaConsentBody(previous.protectedMediaConsentBody)
+        setProtectedMediaConsentVersion(previous.protectedMediaConsentVersion)
+      }
+    )
+
+    if (ok) {
+      setProtectedMediaConsentVersion((current) => current + 1)
+    }
   }
 
   const updateRedirect = async (
@@ -183,9 +281,10 @@ export function AdminSettingsScreen() {
 
   return (
     <div className="space-y-6">
-      <section className="surface-card space-y-1 p-6">
-        <h2 className="text-3xl font-semibold tracking-tight">Short URL Management</h2>
-        <p className="text-sm text-muted-foreground">Create and maintain redirect codes used in printed QR plaques.</p>
+      <section className="dashboard-hero surface-card space-y-2 p-6">
+        <p className="section-kicker">Links and Launch Controls</p>
+        <h2 className="text-3xl font-semibold tracking-[-0.03em]">Short URL Management</h2>
+        <p className="text-sm leading-relaxed text-muted-foreground">Create and maintain redirect codes used in printed QR plaques.</p>
         <p className="text-xs text-muted-foreground">
           Codes must be 3-32 characters and use only lowercase letters, numbers, and dashes.
         </p>
@@ -194,11 +293,110 @@ export function AdminSettingsScreen() {
       <section className="surface-card flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h3 className="text-base font-semibold">Homepage Directory</h3>
-          <p className="text-sm text-muted-foreground">Show a public list of memorial pages on the landing page.</p>
+          <p className="text-sm text-muted-foreground">
+            Show a public list of memorials on the landing page. Only memorials set to public appear here. Private and password-protected
+            pages stay hidden.
+          </p>
         </div>
         <Button variant={homeDirectoryEnabled ? 'secondary' : 'outline'} onClick={toggleHomeDirectory} disabled={updatingSiteSettings}>
           {updatingSiteSettings ? 'Saving...' : homeDirectoryEnabled ? 'Enabled' : 'Disabled'}
         </Button>
+      </section>
+
+      <section className="surface-card space-y-4 p-6">
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold">Memorial Presentation Defaults</h3>
+          <p className="text-sm text-muted-foreground">Used when creating new memorials. Per-memorial settings can override these defaults.</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Photo Slideshow</p>
+            <Button variant={memorialSlideshowEnabled ? 'secondary' : 'outline'} onClick={toggleMemorialSlideshow} disabled={updatingSiteSettings}>
+              {updatingSiteSettings ? 'Saving...' : memorialSlideshowEnabled ? 'Enabled' : 'Disabled'}
+            </Button>
+          </div>
+          <div>
+            <label htmlFor="slideshow-interval" className="mb-1.5 block text-sm font-medium">
+              Slideshow Interval (milliseconds)
+            </label>
+            <Input
+              id="slideshow-interval"
+              type="number"
+              min={2000}
+              max={12000}
+              step={500}
+              value={memorialSlideshowIntervalMs}
+              onChange={(e) => setMemorialSlideshowIntervalMs(Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label htmlFor="video-layout" className="mb-1.5 block text-sm font-medium">
+              Video Layout
+            </label>
+            <select
+              id="video-layout"
+              className="form-select w-full"
+              value={memorialVideoLayout}
+              onChange={(e) => setMemorialVideoLayout(e.target.value === 'featured' ? 'featured' : 'grid')}
+            >
+              <option value="grid">Grid</option>
+              <option value="featured">Featured + List</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <Button variant="outline" onClick={saveMemorialPresentation} disabled={updatingSiteSettings}>
+            {updatingSiteSettings ? 'Saving...' : 'Save Memorial Presentation'}
+          </Button>
+        </div>
+      </section>
+
+      <section className="surface-card space-y-4 p-6">
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold">Protected Media Consent Notice</h3>
+          <p className="text-sm text-muted-foreground">
+            Visitors must accept this notice before protected memorial media is shown. Saving new copy republishes the notice and invalidates
+            existing protected-media consent cookies.
+          </p>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current version {protectedMediaConsentVersion}</p>
+        </div>
+        <div className="grid gap-4">
+          <div>
+            <label htmlFor="protected-media-consent-title" className="mb-1.5 block text-sm font-medium">
+              Notice Title
+            </label>
+            <Input
+              id="protected-media-consent-title"
+              value={protectedMediaConsentTitle}
+              onChange={(e) => setProtectedMediaConsentTitle(e.target.value)}
+              maxLength={120}
+            />
+          </div>
+          <div>
+            <label htmlFor="protected-media-consent-body" className="mb-1.5 block text-sm font-medium">
+              Notice Body
+            </label>
+            <textarea
+              id="protected-media-consent-body"
+              className="form-textarea min-h-32 w-full"
+              value={protectedMediaConsentBody}
+              onChange={(e) => setProtectedMediaConsentBody(e.target.value)}
+              maxLength={800}
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            variant="outline"
+            onClick={() => void saveProtectedMediaConsent(false)}
+            disabled={updatingSiteSettings || protectedMediaConsentTitle.trim().length < 8 || protectedMediaConsentBody.trim().length < 20}
+          >
+            {updatingSiteSettings ? 'Saving...' : 'Save and Publish New Version'}
+          </Button>
+          <Button variant="ghost" onClick={() => void saveProtectedMediaConsent(true)} disabled={updatingSiteSettings}>
+            {updatingSiteSettings ? 'Saving...' : 'Republish Current Notice'}
+          </Button>
+        </div>
       </section>
 
       <form onSubmit={createRedirect} className="surface-card space-y-4 p-6">
@@ -253,7 +451,7 @@ export function AdminSettingsScreen() {
               {redirects.length > 0 ? (
                 redirects.map((r) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 font-medium">/r/{r.shortcode}</td>
+                    <td className="px-4 py-3 font-medium">/{r.shortcode}</td>
                     <td className="max-w-sm px-4 py-3 truncate text-muted-foreground">{r.target_url}</td>
                     <td className="px-4 py-3">
                       <span className={r.is_active ? 'text-emerald-700' : 'text-amber-700'}>

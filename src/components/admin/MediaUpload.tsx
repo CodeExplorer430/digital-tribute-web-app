@@ -7,7 +7,7 @@ import { Loader2, Upload } from 'lucide-react'
 import { buildCloudinaryUrl, normalizeCloudinaryPublicId } from '@/lib/cloudinary'
 
 interface MediaUploadProps {
-  pageId: string
+  memorialId: string
   onUploadComplete: () => void
 }
 
@@ -35,7 +35,7 @@ declare global {
   }
 }
 
-export function MediaUpload({ pageId, onUploadComplete }: MediaUploadProps) {
+export function MediaUpload({ memorialId, onUploadComplete }: MediaUploadProps) {
   const [widgetReady, setWidgetReady] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadedCount, setUploadedCount] = useState(0)
@@ -59,7 +59,7 @@ export function MediaUpload({ pageId, onUploadComplete }: MediaUploadProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pageId,
+          memorialId,
           caption: info.original_filename || '',
           cloudinaryPublicId: publicId,
           imageUrl,
@@ -76,7 +76,7 @@ export function MediaUpload({ pageId, onUploadComplete }: MediaUploadProps) {
         throw new Error(payload?.message || 'Failed to save uploaded image metadata.')
       }
     },
-    [pageId]
+    [memorialId]
   )
 
   const openWidget = useCallback(() => {
@@ -92,7 +92,7 @@ export function MediaUpload({ pageId, onUploadComplete }: MediaUploadProps) {
       {
         cloudName,
         uploadPreset,
-        folder: `everlume/${pageId}`,
+        folder: `everlume/${memorialId}`,
         resourceType: 'image',
         sources: ['local', 'camera'],
         multiple: true,
@@ -126,7 +126,7 @@ export function MediaUpload({ pageId, onUploadComplete }: MediaUploadProps) {
     )
 
     widget.open()
-  }, [cloudName, onUploadComplete, pageId, registerPhoto, uploadPreset])
+  }, [cloudName, memorialId, onUploadComplete, registerPhoto, uploadPreset])
 
   return (
     <div className="surface-card space-y-4 border-2 border-dashed p-6">

@@ -59,28 +59,28 @@ test('admin manages short links and sees QR section on memorial edit', async ({ 
       return
     }
 
-    if (req.method() === 'GET' && /\/api\/admin\/pages\/[^/]+\/redirects$/.test(url)) {
+    if (req.method() === 'GET' && /\/api\/admin\/memorials\/[^/]+\/redirects$/.test(url)) {
       await fulfillJson(route, { redirects: [{ id: 'r-1', shortcode: 'grandma', print_status: 'verified', is_active: true }] })
       return
     }
 
-    if (req.method() === 'GET' && /\/api\/admin\/pages\/[^/]+$/.test(url)) {
+    if (req.method() === 'GET' && /\/api\/admin\/memorials\/[^/]+$/.test(url)) {
       await fulfillJson(route, {
-        page: {
+        memorial: {
           id: '550e8400-e29b-41d4-a716-446655440000',
           title: 'In Loving Memory',
           slug: 'in-loving-memory',
           full_name: 'Jane Doe',
           dob: null,
           dod: null,
-          privacy: 'public',
+          accessMode: 'public',
           hero_image_url: null,
         },
       })
       return
     }
 
-    if (req.method() === 'GET' && /\/api\/admin\/pages\/.+\/(photos|timeline|videos)$/.test(url)) {
+    if (req.method() === 'GET' && /\/api\/admin\/memorials\/.+\/(photos|timeline|videos)$/.test(url)) {
       const key = url.match(/(photos|timeline|videos)$/)?.[1]
       if (key === 'photos') await fulfillJson(route, { photos: [] })
       if (key === 'timeline') await fulfillJson(route, { events: [] })
@@ -98,12 +98,12 @@ test('admin manages short links and sees QR section on memorial edit', async ({ 
   await page.getByPlaceholder('https://yourdomain.com/memorials/sample').fill('https://everlume.app/memorials/nanay')
   await page.getByRole('button', { name: /create redirect/i }).click()
 
-  await expect(page.getByText('/r/nanay')).toBeVisible()
+  await expect(page.getByRole('cell', { name: '/nanay', exact: true })).toBeVisible()
 
   await page.goto('/admin/memorials/550e8400-e29b-41d4-a716-446655440000', { waitUntil: 'domcontentloaded' })
   await expect(page.getByRole('heading', { name: /edit memorial/i })).toBeVisible({ timeout: 15000 })
   await expect(page.getByRole('heading', { name: /qr code for plaque/i })).toBeVisible({ timeout: 15000 })
-  await expect(page.getByText(/\/r\/grandma$/)).toBeVisible()
+  await expect(page.getByText(/\/grandma$/)).toBeVisible()
 })
 
 test('qr selector excludes inactive short links', async ({ page }) => {
@@ -111,7 +111,7 @@ test('qr selector excludes inactive short links', async ({ page }) => {
     const req = route.request()
     const url = req.url()
 
-    if (req.method() === 'GET' && /\/api\/admin\/pages\/[^/]+\/redirects$/.test(url)) {
+    if (req.method() === 'GET' && /\/api\/admin\/memorials\/[^/]+\/redirects$/.test(url)) {
       await fulfillJson(route, {
         redirects: [
           { id: 'r-1', shortcode: 'grandma', print_status: 'verified', is_active: true },
@@ -122,23 +122,23 @@ test('qr selector excludes inactive short links', async ({ page }) => {
       return
     }
 
-    if (req.method() === 'GET' && /\/api\/admin\/pages\/[^/]+$/.test(url)) {
+    if (req.method() === 'GET' && /\/api\/admin\/memorials\/[^/]+$/.test(url)) {
       await fulfillJson(route, {
-        page: {
+        memorial: {
           id: '550e8400-e29b-41d4-a716-446655440000',
           title: 'In Loving Memory',
           slug: 'in-loving-memory',
           full_name: 'Jane Doe',
           dob: null,
           dod: null,
-          privacy: 'public',
+          accessMode: 'public',
           hero_image_url: null,
         },
       })
       return
     }
 
-    if (req.method() === 'GET' && /\/api\/admin\/pages\/.+\/(photos|timeline|videos)$/.test(url)) {
+    if (req.method() === 'GET' && /\/api\/admin\/memorials\/.+\/(photos|timeline|videos)$/.test(url)) {
       const key = url.match(/(photos|timeline|videos)$/)?.[1]
       if (key === 'photos') await fulfillJson(route, { photos: [] })
       if (key === 'timeline') await fulfillJson(route, { events: [] })
@@ -154,8 +154,8 @@ test('qr selector excludes inactive short links', async ({ page }) => {
   await expect(page.getByLabel('Select URL for QR')).toBeVisible()
 
   const options = await page.locator('#qr-url-selector option').allTextContents()
-  expect(options.join(' ')).toContain('/r/grandma')
-  expect(options.join(' ')).toContain('/r/nanay')
-  expect(options.join(' ')).not.toContain('/r/legacy-code')
-  await expect(page.getByText('/r/legacy-code')).not.toBeVisible()
+  expect(options.join(' ')).toContain('/grandma')
+  expect(options.join(' ')).toContain('/nanay')
+  expect(options.join(' ')).not.toContain('/legacy-code')
+  await expect(page.getByText('/legacy-code')).not.toBeVisible()
 })

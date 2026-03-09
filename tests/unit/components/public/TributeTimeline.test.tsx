@@ -4,7 +4,7 @@ import { TributeTimeline } from '@/components/public/TributeTimeline'
 describe('TributeTimeline', () => {
   it('shows empty state', () => {
     render(<TributeTimeline timeline={[]} />)
-    expect(screen.getByText('No timeline events shared yet.')).toBeInTheDocument()
+    expect(screen.getByText('A life story is still being assembled.')).toBeInTheDocument()
   })
 
   it('renders timeline events', () => {

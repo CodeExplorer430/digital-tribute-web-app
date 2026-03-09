@@ -1,5 +1,6 @@
-import { AdminSupabase, databaseError, requireAdminUser } from '@/lib/server/admin-auth'
+import { databaseError, requireAdminUser } from '@/lib/server/admin-auth'
 import { logAdminAudit } from '@/lib/server/admin-audit'
+import { createServiceRoleClient } from '@/lib/supabase/service'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -19,10 +20,39 @@ async function assertAdminPrivileges() {
     return { ok: false as const, response: auth.response }
   }
 
-  return { ok: true as const, supabase: auth.supabase, userId: auth.userId }
+  return { ok: true as const, actorSupabase: auth.supabase, userId: auth.userId }
 }
 
-async function countActiveAdmins(supabase: AdminSupabase) {
+function deriveAccountState(
+  profile: { is_active: boolean },
+  authUser: { last_sign_in_at?: string | null } | null | undefined,
+  authLookupAvailable: boolean
+) {
+  if (!profile.is_active) return 'deactivated' as const
+  if (!authLookupAvailable) return 'active' as const
+  if (authUser?.last_sign_in_at) return 'active' as const
+  return 'invited' as const
+}
+
+async function resolveAccountState(
+  serviceRole: ReturnType<typeof createServiceRoleClient>,
+  profile: { id: string; is_active: boolean }
+) {
+  if (!profile.is_active) return 'deactivated' as const
+
+  const { data, error } = await serviceRole.auth.admin.listUsers()
+  const authLookupAvailable = !error
+  const authUser = data?.users?.find((user) => user.id === profile.id)
+  return deriveAccountState(profile, authUser, authLookupAvailable)
+}
+
+async function countActiveAdmins(supabase: {
+  from: (table: 'profiles') => {
+    select: (columns: string, options?: { head?: boolean; count?: 'exact' }) => {
+      eq: (column: string, value: string | boolean) => { eq: (column: string, value: string | boolean) => Promise<{ count?: number | null }> }
+    }
+  }
+}) {
   const { count } = await supabase
     .from('profiles')
     .select('id', { head: true, count: 'exact' })
@@ -53,9 +83,19 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
   const authz = await assertAdminPrivileges()
   if (!authz.ok) return authz.response
-  const { supabase, userId } = authz
+  const { actorSupabase, userId } = authz
 
-  const { data: existing, error: existingError } = await supabase
+  let serviceRole
+  try {
+    serviceRole = createServiceRoleClient()
+  } catch {
+    return NextResponse.json(
+      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.' },
+      { status: 500 }
+    )
+  }
+
+  const { data: existing, error: existingError } = await serviceRole
     .from('profiles')
     .select('id, role, is_active')
     .eq('id', parsedParams.data.id)
@@ -70,7 +110,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const willDowngradeAdmin = existing.role === 'admin' && changes.role && changes.role !== 'admin'
 
   if ((willDeactivate || willDowngradeAdmin) && existing.is_active) {
-    const activeAdmins = await countActiveAdmins(supabase)
+    const activeAdmins = await countActiveAdmins(serviceRole as never)
     const affectsActiveAdmin = existing.role === 'admin'
 
     if (affectsActiveAdmin && activeAdmins <= 1) {
@@ -92,11 +132,11 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     updatePayload.deactivated_at = changes.isActive ? null : new Date().toISOString()
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await serviceRole
     .from('profiles')
     .update(updatePayload)
     .eq('id', parsedParams.data.id)
-    .select('id, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
+    .select('id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
     .single()
 
   if (error) {
@@ -105,7 +145,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
   const shouldSignOutSelf = parsedParams.data.id === userId && changes.isActive === false
 
-  await logAdminAudit(supabase, {
+  await logAdminAudit(actorSupabase, {
     actorId: userId,
     action: 'user.update',
     entity: 'user',
@@ -116,7 +156,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     },
   })
 
-  return NextResponse.json({ user: data, shouldSignOutSelf }, { status: 200 })
+  const accountState = await resolveAccountState(serviceRole, data)
+
+  return NextResponse.json({ user: { ...data, account_state: accountState }, shouldSignOutSelf }, { status: 200 })
 }
 
 export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -128,9 +170,19 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
 
   const authz = await assertAdminPrivileges()
   if (!authz.ok) return authz.response
-  const { supabase, userId } = authz
+  const { actorSupabase, userId } = authz
 
-  const { data: existing, error: existingError } = await supabase
+  let serviceRole
+  try {
+    serviceRole = createServiceRoleClient()
+  } catch {
+    return NextResponse.json(
+      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.' },
+      { status: 500 }
+    )
+  }
+
+  const { data: existing, error: existingError } = await serviceRole
     .from('profiles')
     .select('id, role, is_active')
     .eq('id', parsedParams.data.id)
@@ -141,7 +193,7 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
   }
 
   if (existing.role === 'admin' && existing.is_active) {
-    const activeAdmins = await countActiveAdmins(supabase)
+    const activeAdmins = await countActiveAdmins(serviceRole as never)
     if (activeAdmins <= 1) {
       return NextResponse.json(
         { code: 'LAST_ADMIN', message: 'At least one active admin must remain.' },
@@ -150,16 +202,18 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
     }
   }
 
-  const { error } = await supabase
+  const { data, error } = await serviceRole
     .from('profiles')
     .update({ is_active: false, deactivated_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', parsedParams.data.id)
+    .select('id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
+    .single()
 
   if (error) {
     return databaseError('Unable to deactivate user.')
   }
 
-  await logAdminAudit(supabase, {
+  await logAdminAudit(actorSupabase, {
     actorId: userId,
     action: 'user.deactivate',
     entity: 'user',
@@ -167,5 +221,12 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
     metadata: { selfAction: parsedParams.data.id === userId },
   })
 
-  return NextResponse.json({ ok: true, shouldSignOutSelf: parsedParams.data.id === userId }, { status: 200 })
+  return NextResponse.json(
+    {
+      ok: true,
+      shouldSignOutSelf: parsedParams.data.id === userId,
+      user: { ...data, account_state: 'deactivated' as const },
+    },
+    { status: 200 }
+  )
 }

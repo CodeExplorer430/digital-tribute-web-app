@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { getPageAccessCookieName, verifyPageAccessToken } from '@/lib/server/page-password'
+import { getMemorialAccessCookieName, verifyMemorialAccessToken } from '@/lib/server/page-password'
+import { resolveMemorialAccessMode, type MemorialAccessMode } from '@/lib/server/memorials'
 
-export async function canAccessPrivatePage(pageOwnerId: string) {
+export async function canAccessPrivateMemorial(memorialOwnerId: string) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -12,7 +13,7 @@ export async function canAccessPrivatePage(pageOwnerId: string) {
     return { allowed: false as const, userId: null }
   }
 
-  if (user.id === pageOwnerId) {
+  if (user.id === memorialOwnerId) {
     return { allowed: true as const, userId: user.id }
   }
 
@@ -32,23 +33,25 @@ export async function canAccessPrivatePage(pageOwnerId: string) {
   return { allowed: false as const, userId: user.id }
 }
 
-type AccessMode = 'public' | 'private' | 'password'
-
 type AccessPageRecord = {
   id: string
   owner_id: string
-  access_mode?: AccessMode | null
+  access_mode?: MemorialAccessMode | null
   privacy?: 'public' | 'private' | null
   password_updated_at?: string | null
 }
 
-export async function canAccessMemorialPage(page: AccessPageRecord) {
-  const accessMode: AccessMode = page.access_mode || (page.privacy === 'private' ? 'private' : 'public')
+export function memorialRequiresProtectedMedia(memorial: Pick<AccessPageRecord, 'access_mode' | 'privacy'>) {
+  return resolveMemorialAccessMode(memorial) !== 'public'
+}
+
+export async function canAccessMemorial(memorial: AccessPageRecord) {
+  const accessMode = resolveMemorialAccessMode(memorial)
   if (accessMode === 'public') {
     return { allowed: true as const, requiresPassword: false as const }
   }
 
-  const ownerAccess = await canAccessPrivatePage(page.owner_id)
+  const ownerAccess = await canAccessPrivateMemorial(memorial.owner_id)
   if (ownerAccess.allowed) {
     return { allowed: true as const, requiresPassword: accessMode === 'password' as const }
   }
@@ -58,8 +61,11 @@ export async function canAccessMemorialPage(page: AccessPageRecord) {
   }
 
   const cookieStore = await cookies()
-  const token = cookieStore.get(getPageAccessCookieName(page.id))?.value
-  const valid = verifyPageAccessToken(token, page.id, page.password_updated_at || null)
+  const token = cookieStore.get(getMemorialAccessCookieName(memorial.id))?.value
+  const valid = verifyMemorialAccessToken(token, memorial.id, memorial.password_updated_at || null)
 
   return { allowed: valid as boolean, requiresPassword: true as const }
 }
+
+export const canAccessPrivatePage = canAccessPrivateMemorial
+export { resolveMemorialAccessMode }

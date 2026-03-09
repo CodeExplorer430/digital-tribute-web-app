@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 
 interface Photo {
   id: string
@@ -13,16 +13,28 @@ interface Photo {
 
 interface PublicGalleryProps {
   photos: Photo[]
+  slideshowEnabled?: boolean
+  slideshowIntervalMs?: number
+  fit?: 'cover' | 'contain'
+  captionStyle?: 'classic' | 'minimal'
 }
 
-export function PublicGallery({ photos }: PublicGalleryProps) {
+export function PublicGallery({
+  photos,
+  slideshowEnabled = false,
+  slideshowIntervalMs = 4500,
+  fit = 'cover',
+  captionStyle = 'classic',
+}: PublicGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [slideshowPaused, setSlideshowPaused] = useState(false)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const lastFocusedRef = useRef<HTMLElement | null>(null)
 
   const openLightbox = (index: number) => {
     lastFocusedRef.current = document.activeElement as HTMLElement | null
     setSelectedIndex(index)
+    setSlideshowPaused(false)
   }
 
   const closeLightbox = useCallback(() => {
@@ -60,11 +72,24 @@ export function PublicGallery({ photos }: PublicGalleryProps) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [closeLightbox, nextImage, prevImage, selectedIndex])
 
+  useEffect(() => {
+    if (selectedIndex === null) return
+    if (!slideshowEnabled || slideshowPaused || photos.length < 2) return
+
+    const intervalMs = Math.min(12000, Math.max(2000, slideshowIntervalMs || 4500))
+    const timer = window.setInterval(() => {
+      nextImage()
+    }, intervalMs)
+
+    return () => window.clearInterval(timer)
+  }, [selectedIndex, slideshowEnabled, slideshowPaused, slideshowIntervalMs, photos.length, nextImage])
+
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4">
         {photos.map((photo, index) => {
           const thumbUrl = photo.thumb_url || photo.image_url || ''
+          const usesProtectedMediaProxy = thumbUrl.startsWith('/api/public/media/') || (photo.image_url || '').startsWith('/api/public/media/')
           return (
             <button
               key={photo.id}
@@ -78,7 +103,8 @@ export function PublicGallery({ photos }: PublicGalleryProps) {
                   alt={photo.caption || `Memorial photo ${index + 1}`}
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                  className="object-cover transition-transform duration-300 hover:scale-105"
+                  unoptimized={usesProtectedMediaProxy}
+                  className={`${fit === 'contain' ? 'object-contain bg-white/80 p-1.5' : 'object-cover'} transition-transform duration-500 hover:scale-105`}
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Missing image URL</div>
@@ -104,6 +130,17 @@ export function PublicGallery({ photos }: PublicGalleryProps) {
             <X className="h-8 w-8" />
           </button>
 
+          {slideshowEnabled && photos.length > 1 && (
+            <button
+              onClick={() => setSlideshowPaused((current) => !current)}
+              className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-md border border-white/25 bg-black/35 px-3 py-1.5 text-sm text-white/90 transition-colors hover:bg-black/55"
+              aria-label={slideshowPaused ? 'Resume slideshow' : 'Pause slideshow'}
+            >
+              {slideshowPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              {slideshowPaused ? 'Resume' : 'Pause'}
+            </button>
+          )}
+
           <button
             onClick={prevImage}
             className="absolute left-3 text-white/75 transition-colors hover:text-white md:left-8"
@@ -127,11 +164,18 @@ export function PublicGallery({ photos }: PublicGalleryProps) {
                 alt={photos[selectedIndex].caption || `Memorial photo ${selectedIndex + 1}`}
                 fill
                 sizes="100vw"
-                className="rounded-md object-contain shadow-2xl"
+                unoptimized={(photos[selectedIndex].image_url || photos[selectedIndex].thumb_url || '').startsWith('/api/public/media/')}
+                className={`rounded-md ${fit === 'contain' ? 'object-contain' : 'object-cover'} shadow-2xl transition-all duration-700`}
                 priority
               />
             </div>
-            {photos[selectedIndex].caption && <p className="mt-5 text-center text-sm text-white/90 md:text-base">{photos[selectedIndex].caption}</p>}
+            {photos[selectedIndex].caption && (
+              <p
+                className={`mt-5 text-center ${captionStyle === 'minimal' ? 'text-xs tracking-[0.06em] uppercase' : 'text-sm md:text-base'} text-white/90`}
+              >
+                {photos[selectedIndex].caption}
+              </p>
+            )}
           </div>
         </div>
       )}

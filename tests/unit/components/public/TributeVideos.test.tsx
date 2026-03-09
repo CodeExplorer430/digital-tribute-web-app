@@ -6,9 +6,9 @@ describe('TributeVideos', () => {
     process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = 'demo-cloud'
   })
 
-  it('does not render section when videos empty', () => {
-    const { container } = render(<TributeVideos videos={[]} />)
-    expect(container).toBeEmptyDOMElement()
+  it('renders empty state when videos are unavailable', () => {
+    render(<TributeVideos videos={[]} />)
+    expect(screen.getByText('No videos have been shared yet.')).toBeInTheDocument()
   })
 
   it('renders iframe and title for each video', () => {
@@ -35,5 +35,16 @@ describe('TributeVideos', () => {
     const videoEl = container.querySelector('video')
     expect(videoEl).toBeTruthy()
     expect(videoEl?.getAttribute('src')).toContain('/video/upload/')
+  })
+
+  it('renders featured layout shell when configured', () => {
+    render(
+      <TributeVideos
+        layout="featured"
+        videos={[{ id: 'v1', provider: 'youtube', provider_id: 'abcdefghijk', title: 'Family Clip' }]}
+      />
+    )
+
+    expect(screen.getByText('No additional videos yet.')).toBeInTheDocument()
   })
 })

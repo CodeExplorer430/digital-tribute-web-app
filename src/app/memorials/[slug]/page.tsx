@@ -1,25 +1,66 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import { MemorialPageView } from '@/components/pages/public/MemorialPageView'
-import { canAccessMemorialPage } from '@/lib/server/page-access'
+import { canAccessMemorial, memorialRequiresProtectedMedia } from '@/lib/server/page-access'
+import { getMemorialMediaConsentCookieName, verifyMemorialMediaConsentToken } from '@/lib/server/media-consent'
+import { toMemorialRecord } from '@/lib/server/memorials'
 import { createSignedMediaToken } from '@/lib/server/private-media'
-import { PageUnlockForm } from '@/components/public/PageUnlockForm'
+import { MemorialUnlockForm } from '@/components/public/MemorialUnlockForm'
+import { getE2EMemorialFixtureBySlug } from '@/lib/server/e2e-public-fixtures'
+import { resolveMemorialAccessMode } from '@/lib/server/memorials'
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
+const DEFAULT_CONSENT_TITLE = 'Media Viewing Notice'
+const DEFAULT_CONSENT_BODY =
+  "The family has protected this memorial's photos and videos for respectful viewing. Continuing confirms that access to protected media is recorded for family oversight."
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
+  const fixture = getE2EMemorialFixtureBySlug(slug)
+  const memorial = fixture?.memorial
+
+  if (memorial) {
+    if (resolveMemorialAccessMode(memorial) !== 'public') {
+      const access = await canAccessMemorial(memorial)
+      if (!access.allowed && !access.requiresPassword) {
+        return {
+          title: 'Private Memorial | Everlume',
+          robots: { index: false, follow: false },
+        }
+      }
+
+      if (!access.allowed && access.requiresPassword) {
+        return {
+          title: 'Password Protected Memorial | Everlume',
+          robots: { index: false, follow: false },
+        }
+      }
+    }
+
+    return {
+      title: `${memorial.title} | Everlume`,
+      description: `A digital memorial for ${memorial.full_name || 'our loved one'}.`,
+      openGraph: {
+        title: memorial.title,
+        description: `A digital memorial for ${memorial.full_name || 'our loved one'}.`,
+        images: memorial.hero_image_url ? [memorial.hero_image_url] : [],
+        type: 'website',
+      },
+    }
+  }
+
   const supabase = await createClient()
+  const { data: databasePage } = await supabase.from('pages').select('*').eq('slug', slug).single()
 
-  const { data: page } = await supabase.from('pages').select('*').eq('slug', slug).single()
+  if (!databasePage) return {}
 
-  if (!page) return {}
-
-  if (page.access_mode === 'private' || page.access_mode === 'password' || page.privacy === 'private') {
-    const access = await canAccessMemorialPage(page)
+  if (resolveMemorialAccessMode(databasePage) !== 'public') {
+    const access = await canAccessMemorial(databasePage)
     if (!access.allowed && !access.requiresPassword) {
       return {
         title: 'Private Memorial | Everlume',
@@ -36,12 +77,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${page.title} | Everlume`,
-    description: `A digital memorial for ${page.full_name || 'our loved one'}.`,
+    title: `${databasePage.title} | Everlume`,
+    description: `A digital memorial for ${databasePage.full_name || 'our loved one'}.`,
     openGraph: {
-      title: page.title,
-      description: `A digital memorial for ${page.full_name || 'our loved one'}.`,
-      images: page.hero_image_url ? [page.hero_image_url] : [],
+      title: databasePage.title,
+      description: `A digital memorial for ${databasePage.full_name || 'our loved one'}.`,
+      images: databasePage.hero_image_url ? [databasePage.hero_image_url] : [],
       type: 'website',
     },
   }
@@ -49,41 +90,85 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicTributePage({ params }: PageProps) {
   const { slug } = await params
-  const supabase = await createClient()
+  const fixture = getE2EMemorialFixtureBySlug(slug)
+  const supabase = fixture ? null : await createClient()
 
-  const { data: page } = await supabase.from('pages').select('*').eq('slug', slug).single()
+  const memorial =
+    fixture?.memorial ||
+    (await supabase!.from('pages').select('*').eq('slug', slug).single()).data
+  const siteSettings =
+    fixture?.siteSettings ||
+    (
+      await supabase!
+        .from('site_settings')
+        .select(
+          'memorial_slideshow_enabled, memorial_slideshow_interval_ms, memorial_video_layout, protected_media_consent_title, protected_media_consent_body, protected_media_consent_version'
+        )
+        .eq('id', 1)
+        .single()
+    ).data
 
-  if (!page) {
+  if (!memorial) {
     notFound()
   }
 
-  if (page.access_mode === 'private' || page.access_mode === 'password' || page.privacy === 'private') {
-    const access = await canAccessMemorialPage(page)
+  if (resolveMemorialAccessMode(memorial) !== 'public') {
+    const access = await canAccessMemorial(memorial)
     if (!access.allowed && !access.requiresPassword) {
       notFound()
     }
 
     if (!access.allowed && access.requiresPassword) {
-      return <PageUnlockForm slug={slug} />
+      return <MemorialUnlockForm slug={slug} />
     }
   }
 
-  const { data: photos } = await supabase.from('photos').select('*').eq('page_id', page.id).order('sort_index', { ascending: true })
+  const photos =
+    fixture?.photos ||
+    (await supabase!.from('photos').select('*').eq('page_id', memorial.id).order('sort_index', { ascending: true })).data ||
+    []
 
-  const { data: guestbook } = await supabase
-    .from('guestbook')
-    .select('*')
-    .eq('page_id', page.id)
-    .eq('is_approved', true)
-    .order('created_at', { ascending: false })
+  const guestbook =
+    fixture?.guestbook.filter((entry) => entry.is_approved) ||
+    (
+      await supabase!
+        .from('guestbook')
+        .select('*')
+        .eq('page_id', memorial.id)
+        .eq('is_approved', true)
+        .order('created_at', { ascending: false })
+    ).data ||
+    []
 
-  const { data: timeline } = await supabase.from('timeline_events').select('*').eq('page_id', page.id).order('year', { ascending: true })
+  const timeline =
+    fixture?.timeline ||
+    (await supabase!.from('timeline_events').select('*').eq('page_id', memorial.id).order('year', { ascending: true })).data ||
+    []
 
-  const { data: videos } = await supabase.from('videos').select('*').eq('page_id', page.id).order('created_at', { ascending: true })
+  const videos =
+    fixture?.videos ||
+    (await supabase!.from('videos').select('*').eq('page_id', memorial.id).order('created_at', { ascending: true })).data ||
+    []
+
+  const protectedMediaEnabled = memorialRequiresProtectedMedia(memorial)
+  const cookieStore = protectedMediaEnabled ? await cookies() : null
+  const mediaConsentToken = protectedMediaEnabled ? cookieStore?.get(getMemorialMediaConsentCookieName(memorial.id))?.value : undefined
+  const hasMediaConsent = protectedMediaEnabled
+    ? verifyMemorialMediaConsentToken(
+        mediaConsentToken,
+        memorial.id,
+        memorial.password_updated_at || null,
+        Number(siteSettings?.protected_media_consent_version) || 1,
+        memorial.media_consent_revoked_at || null
+      )
+    : true
+  const requiresMediaConsent = protectedMediaEnabled && !hasMediaConsent && (Boolean(memorial.hero_image_url) || photos.length > 0 || videos.length > 0)
 
   const resolvedPhotos =
-    page.privacy === 'private' || page.access_mode === 'private' || page.access_mode === 'password'
-      ? (photos || []).map((photo) => {
+    requiresMediaConsent
+      ? []
+      : protectedMediaEnabled
+        ? photos.map((photo) => {
           const imageToken = createSignedMediaToken(photo.id, 'image')
           const thumbToken = createSignedMediaToken(photo.id, 'thumb')
           return {
@@ -92,7 +177,31 @@ export default async function PublicTributePage({ params }: PageProps) {
             thumb_url: `/api/public/media/${photo.id}?variant=thumb&token=${encodeURIComponent(thumbToken)}`,
           }
         })
-      : photos || []
+        : photos
 
-  return <MemorialPageView page={page} photos={resolvedPhotos} videos={videos || []} timeline={timeline || []} guestbook={guestbook || []} />
+  const resolvedMemorial = {
+    ...toMemorialRecord(memorial),
+    hero_image_url: requiresMediaConsent ? null : memorial.hero_image_url,
+    memorial_slideshow_enabled:
+      memorial.memorial_slideshow_enabled ?? (siteSettings?.memorial_slideshow_enabled !== false),
+    memorial_slideshow_interval_ms: memorial.memorial_slideshow_interval_ms ?? (Number(siteSettings?.memorial_slideshow_interval_ms) || 4500),
+    memorial_video_layout:
+      memorial.memorial_video_layout ?? (siteSettings?.memorial_video_layout === 'featured' ? 'featured' : 'grid'),
+  }
+
+  return (
+    <MemorialPageView
+      memorial={resolvedMemorial}
+      photos={resolvedPhotos}
+      videos={requiresMediaConsent ? [] : videos}
+      timeline={timeline}
+      guestbook={guestbook}
+      accessMode={resolveMemorialAccessMode(memorial)}
+      requiresMediaConsent={requiresMediaConsent}
+      mediaConsentSlug={requiresMediaConsent ? slug : undefined}
+      mediaConsentTitle={siteSettings?.protected_media_consent_title || DEFAULT_CONSENT_TITLE}
+      mediaConsentBody={siteSettings?.protected_media_consent_body || DEFAULT_CONSENT_BODY}
+      mediaConsentVersion={Number(siteSettings?.protected_media_consent_version) || 1}
+    />
+  )
 }

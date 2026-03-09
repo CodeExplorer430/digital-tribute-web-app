@@ -1,9 +1,11 @@
 import { render, screen } from '@testing-library/react'
 
 const mockMemorialPageView = vi.fn()
-const mockPageUnlockForm = vi.fn()
-const mockCanAccessMemorialPage = vi.fn()
+const mockMemorialUnlockForm = vi.fn()
+const mockCanAccessMemorial = vi.fn()
 const mockCreateSignedMediaToken = vi.fn()
+const mockVerifyMediaConsent = vi.fn()
+const mockCookies = vi.fn()
 const mockNotFound = vi.fn(() => {
   throw new Error('NEXT_NOT_FOUND')
 })
@@ -28,9 +30,16 @@ const mockTimelineSelect = vi.fn(() => ({ eq: mockTimelineEq }))
 const mockVideosOrder = vi.fn()
 const mockVideosEq = vi.fn(() => ({ order: mockVideosOrder }))
 const mockVideosSelect = vi.fn(() => ({ eq: mockVideosEq }))
+const mockSiteSettingsSingle = vi.fn()
+const mockSiteSettingsEq = vi.fn(() => ({ single: mockSiteSettingsSingle }))
+const mockSiteSettingsSelect = vi.fn(() => ({ eq: mockSiteSettingsEq }))
 
 vi.mock('next/navigation', () => ({
   notFound: () => mockNotFound(),
+}))
+
+vi.mock('next/headers', () => ({
+  cookies: () => mockCookies(),
 }))
 
 vi.mock('@/components/pages/public/MemorialPageView', () => ({
@@ -40,25 +49,35 @@ vi.mock('@/components/pages/public/MemorialPageView', () => ({
   },
 }))
 
-vi.mock('@/components/public/PageUnlockForm', () => ({
-  PageUnlockForm: (props: unknown) => {
-    mockPageUnlockForm(props)
-    return <div data-testid="page-unlock-form" />
+vi.mock('@/components/public/MemorialUnlockForm', () => ({
+  MemorialUnlockForm: (props: unknown) => {
+    mockMemorialUnlockForm(props)
+    return <div data-testid="memorial-unlock-form" />
   },
 }))
 
 vi.mock('@/lib/server/page-access', () => ({
-  canAccessMemorialPage: (...args: unknown[]) => mockCanAccessMemorialPage(...args),
+  canAccessMemorial: (...args: unknown[]) => mockCanAccessMemorial(...args),
+  resolveMemorialAccessMode: (page: { access_mode?: 'public' | 'private' | 'password' | null; privacy?: 'public' | 'private' | null }) =>
+    page.access_mode || (page.privacy === 'private' ? 'private' : 'public'),
+  memorialRequiresProtectedMedia: (page: { access_mode?: 'public' | 'private' | 'password' | null; privacy?: 'public' | 'private' | null }) =>
+    (page.access_mode || (page.privacy === 'private' ? 'private' : 'public')) !== 'public',
 }))
 
 vi.mock('@/lib/server/private-media', () => ({
   createSignedMediaToken: (...args: unknown[]) => mockCreateSignedMediaToken(...args),
 }))
 
+vi.mock('@/lib/server/media-consent', () => ({
+  getMemorialMediaConsentCookieName: (memorialId: string) => `everlume_memorial_media_consent_${memorialId}`,
+  verifyMemorialMediaConsentToken: (...args: unknown[]) => mockVerifyMediaConsent(...args),
+}))
+
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     from: (table: string) => {
       if (table === 'pages') return { select: mockPageSelect }
+      if (table === 'site_settings') return { select: mockSiteSettingsSelect }
       if (table === 'photos') return { select: mockPhotosSelect }
       if (table === 'guestbook') return { select: mockGuestbookSelect }
       if (table === 'timeline_events') return { select: mockTimelineSelect }
@@ -72,6 +91,7 @@ const publicPage = {
   slug: 'jane',
   title: 'In Loving Memory',
   full_name: 'Jane Doe',
+  dedication_text: 'Beloved in every season.',
   hero_image_url: 'https://cdn.example.com/hero.jpg',
   privacy: 'public',
   access_mode: 'public',
@@ -83,15 +103,29 @@ describe('/memorials/[slug] page', () => {
   beforeEach(() => {
     vi.resetModules()
     mockMemorialPageView.mockReset()
-    mockPageUnlockForm.mockReset()
-    mockCanAccessMemorialPage.mockReset()
+    mockMemorialUnlockForm.mockReset()
+    mockCanAccessMemorial.mockReset()
     mockCreateSignedMediaToken.mockReset()
+    mockVerifyMediaConsent.mockReset()
+    mockCookies.mockReset()
     mockNotFound.mockClear()
     mockPageSingle.mockReset()
     mockPhotosOrder.mockReset()
     mockGuestbookOrder.mockReset()
     mockTimelineOrder.mockReset()
     mockVideosOrder.mockReset()
+    mockSiteSettingsSingle.mockReset()
+    mockSiteSettingsSingle.mockResolvedValue({
+      data: {
+        memorial_slideshow_enabled: true,
+        memorial_slideshow_interval_ms: 4500,
+        memorial_video_layout: 'grid',
+      },
+    })
+    mockVerifyMediaConsent.mockReturnValue(true)
+    mockCookies.mockResolvedValue({
+      get: vi.fn(() => ({ value: 'valid-consent-token' })),
+    })
   })
 
   it('renders public memorial view with loaded resources', async () => {
@@ -108,7 +142,14 @@ describe('/memorials/[slug] page', () => {
     expect(screen.getByTestId('memorial-page-view')).toBeInTheDocument()
     expect(mockMemorialPageView).toHaveBeenCalledWith(
       expect.objectContaining({
-        page: publicPage,
+        memorial: expect.objectContaining({
+          id: 'page-1',
+          slug: 'jane',
+          title: 'In Loving Memory',
+          full_name: 'Jane Doe',
+          dedicationText: 'Beloved in every season.',
+          accessMode: 'public',
+        }),
         photos: expect.arrayContaining([expect.objectContaining({ id: 'photo-1' })]),
       })
     )
@@ -116,20 +157,20 @@ describe('/memorials/[slug] page', () => {
 
   it('returns unlock form when password access is required', async () => {
     mockPageSingle.mockResolvedValue({ data: { ...publicPage, access_mode: 'password', privacy: 'private' } })
-    mockCanAccessMemorialPage.mockResolvedValue({ allowed: false, requiresPassword: true })
+    mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: true })
 
     const mod = await import('@/app/memorials/[slug]/page')
     const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
     render(node)
 
-    expect(screen.getByTestId('page-unlock-form')).toBeInTheDocument()
-    expect(mockPageUnlockForm).toHaveBeenCalledWith({ slug: 'jane' })
+    expect(screen.getByTestId('memorial-unlock-form')).toBeInTheDocument()
+    expect(mockMemorialUnlockForm).toHaveBeenCalledWith({ slug: 'jane' })
     expect(mockMemorialPageView).not.toHaveBeenCalled()
   })
 
   it('throws notFound when memorial is inaccessible', async () => {
     mockPageSingle.mockResolvedValue({ data: { ...publicPage, access_mode: 'private', privacy: 'private' } })
-    mockCanAccessMemorialPage.mockResolvedValue({ allowed: false, requiresPassword: false })
+    mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: false })
 
     const mod = await import('@/app/memorials/[slug]/page')
     await expect(mod.default({ params: Promise.resolve({ slug: 'jane' }) })).rejects.toThrow('NEXT_NOT_FOUND')
@@ -138,7 +179,7 @@ describe('/memorials/[slug] page', () => {
 
   it('generates password-protected metadata when access requires password', async () => {
     mockPageSingle.mockResolvedValue({ data: { ...publicPage, access_mode: 'password', privacy: 'private' } })
-    mockCanAccessMemorialPage.mockResolvedValue({ allowed: false, requiresPassword: true })
+    mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: true })
 
     const mod = await import('@/app/memorials/[slug]/page')
     const metadata = await mod.generateMetadata({ params: Promise.resolve({ slug: 'jane' }) })
@@ -165,9 +206,25 @@ describe('/memorials/[slug] page', () => {
     )
   })
 
+  it('prefers canonical access_mode over conflicting legacy privacy when rendering a public memorial', async () => {
+    mockPageSingle.mockResolvedValue({ data: { ...publicPage, privacy: 'private', access_mode: 'public' } })
+    mockPhotosOrder.mockResolvedValue({ data: [{ id: 'photo-1', page_id: 'page-1', image_url: '/img.jpg', thumb_url: '/thumb.jpg', caption: null }] })
+    mockGuestbookOrder.mockResolvedValue({ data: [] })
+    mockTimelineOrder.mockResolvedValue({ data: [] })
+    mockVideosOrder.mockResolvedValue({ data: [] })
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
+    render(node)
+
+    expect(mockCanAccessMemorial).not.toHaveBeenCalled()
+    expect(mockCreateSignedMediaToken).not.toHaveBeenCalled()
+    expect(screen.getByTestId('memorial-page-view')).toBeInTheDocument()
+  })
+
   it('resolves signed photo urls for private memorial rendering', async () => {
     mockPageSingle.mockResolvedValue({ data: { ...publicPage, access_mode: 'password', privacy: 'private' } })
-    mockCanAccessMemorialPage.mockResolvedValue({ allowed: true, requiresPassword: false })
+    mockCanAccessMemorial.mockResolvedValue({ allowed: true, requiresPassword: false })
     mockCreateSignedMediaToken.mockImplementation((photoId: string, variant: string) => `${photoId}-${variant}-token`)
     mockPhotosOrder.mockResolvedValue({ data: [{ id: 'photo-1', page_id: 'page-1', image_url: null, thumb_url: null, caption: 'Memory' }] })
     mockGuestbookOrder.mockResolvedValue({ data: [] })
@@ -188,6 +245,35 @@ describe('/memorials/[slug] page', () => {
             thumb_url: '/api/public/media/photo-1?variant=thumb&token=photo-1-thumb-token',
           }),
         ],
+      })
+    )
+  })
+
+  it('requires explicit media consent before protected media is rendered', async () => {
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, access_mode: 'password', privacy: 'private', password_updated_at: '2026-03-01T00:00:00.000Z' },
+    })
+    mockCanAccessMemorial.mockResolvedValue({ allowed: true, requiresPassword: false })
+    mockVerifyMediaConsent.mockReturnValue(false)
+    mockPhotosOrder.mockResolvedValue({ data: [{ id: 'photo-1', page_id: 'page-1', image_url: '/img.jpg', thumb_url: '/thumb.jpg', caption: null }] })
+    mockGuestbookOrder.mockResolvedValue({ data: [] })
+    mockTimelineOrder.mockResolvedValue({ data: [] })
+    mockVideosOrder.mockResolvedValue({ data: [{ id: 'v1', provider_id: 'abcdefghijk', title: 'Memories' }] })
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
+    render(node)
+
+    expect(mockCreateSignedMediaToken).not.toHaveBeenCalled()
+    expect(mockMemorialPageView).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requiresMediaConsent: true,
+        mediaConsentSlug: 'jane',
+        memorial: expect.objectContaining({
+          hero_image_url: null,
+        }),
+        photos: [],
+        videos: [],
       })
     )
   })

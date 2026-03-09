@@ -3,8 +3,15 @@
 import { useMemo, useState } from 'react'
 import { QRCodeGenerator } from '@/components/admin/QRCodeGenerator'
 
-interface PageRecord {
+interface MemorialRecord {
   slug: string
+  qr_template?: 'classic' | 'minimal' | 'warm'
+  qr_caption?: string
+  qr_foreground_color?: '#111827' | '#14532d' | '#7c2d12'
+  qr_background_color?: '#ffffff' | '#f8fafc' | '#fffaf2'
+  qr_frame_style?: 'line' | 'rounded' | 'double'
+  qr_caption_font?: 'serif' | 'sans'
+  qr_show_logo?: boolean
 }
 
 interface RedirectRecord {
@@ -15,21 +22,21 @@ interface RedirectRecord {
 }
 
 interface AdminQRCodeSectionProps {
-  page: PageRecord
+  memorial: MemorialRecord
   redirects: RedirectRecord[]
 }
 
-export function AdminQRCodeSection({ page, redirects }: AdminQRCodeSectionProps) {
+export function AdminQRCodeSection({ memorial, redirects }: AdminQRCodeSectionProps) {
   const [selectedUrl, setSelectedUrl] = useState<string>('')
 
   const options = useMemo(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_SHORT_DOMAIN || window.location.origin
+    const baseUrl = (process.env.NEXT_PUBLIC_SHORT_DOMAIN || window.location.origin).replace(/\/+$/, '')
     const redirectOptions = (redirects || [])
       .filter((r) => r.is_active !== false)
       .map((r) => ({
       key: r.id,
-      label: `Short: /r/${r.shortcode}${r.print_status === 'verified' ? ' (verified)' : ''}`,
-      value: `${baseUrl}/r/${r.shortcode}`,
+      label: `Short: /${r.shortcode}${r.print_status === 'verified' ? ' (verified)' : ''}`,
+      value: `${baseUrl}/${r.shortcode}`,
       }))
 
     return redirectOptions
@@ -65,11 +72,20 @@ export function AdminQRCodeSection({ page, redirects }: AdminQRCodeSectionProps)
             <p className="w-full rounded-md border border-border bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
               QR links are generated from your short-domain redirect codes only.
             </p>
-            <QRCodeGenerator url={qrUrl} />
+            <QRCodeGenerator
+              url={qrUrl}
+              template={memorial.qr_template === 'minimal' || memorial.qr_template === 'warm' ? memorial.qr_template : 'classic'}
+              caption={(memorial.qr_caption || 'Scan me!').trim()}
+              foregroundColor={memorial.qr_foreground_color}
+              backgroundColor={memorial.qr_background_color}
+              frameStyle={memorial.qr_frame_style}
+              captionFont={memorial.qr_caption_font}
+              showLogo={memorial.qr_show_logo === true}
+            />
           </>
         ) : (
           <p className="w-full rounded-md border border-dashed border-border px-3 py-4 text-center text-sm text-muted-foreground">
-            Create and activate a short link in Settings before generating a plaque QR for {page.slug}.
+            Create and activate a short link in Settings before generating a plaque QR for {memorial.slug}.
           </p>
         )}
       </div>

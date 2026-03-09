@@ -8,7 +8,7 @@ describe('proxy matcher config', () => {
       '/auth/:path*',
       '/login',
       '/memorials/:path*',
-      '/api/public/pages/:path*',
+      '/api/public/memorials/:path*',
     ])
   })
 })

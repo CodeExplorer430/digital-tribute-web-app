@@ -10,12 +10,12 @@ describe('AdminQRCodeSection', () => {
   it('uses first redirect by default', () => {
     render(
       <AdminQRCodeSection
-        page={{ slug: 'jane' }}
+        memorial={{ slug: 'jane', qr_template: 'classic', qr_caption: 'Scan me!' }}
         redirects={[{ id: 'r1', shortcode: 'grandma' }]}
       />
     )
 
-    expect(screen.getByTestId('qr-url').textContent).toContain('/r/grandma')
+    expect(screen.getByTestId('qr-url').textContent).toContain('/grandma')
   })
 
   it('allows selecting another active redirect url', async () => {
@@ -23,7 +23,7 @@ describe('AdminQRCodeSection', () => {
 
     render(
       <AdminQRCodeSection
-        page={{ slug: 'jane' }}
+        memorial={{ slug: 'jane', qr_template: 'classic', qr_caption: 'Scan me!' }}
         redirects={[
           { id: 'r1', shortcode: 'grandma', is_active: true },
           { id: 'r2', shortcode: 'lola', is_active: true },
@@ -31,12 +31,12 @@ describe('AdminQRCodeSection', () => {
       />
     )
 
-    await user.selectOptions(screen.getByLabelText('Select URL for QR'), 'http://localhost:3000/r/lola')
-    expect(screen.getByTestId('qr-url').textContent).toContain('/r/lola')
+    await user.selectOptions(screen.getByLabelText('Select URL for QR'), 'http://localhost:3000/lola')
+    expect(screen.getByTestId('qr-url').textContent).toContain('/lola')
   })
 
   it('shows setup guidance when no active redirects exist', () => {
-    render(<AdminQRCodeSection page={{ slug: 'jane' }} redirects={[]} />)
+    render(<AdminQRCodeSection memorial={{ slug: 'jane', qr_template: 'classic', qr_caption: 'Scan me!' }} redirects={[]} />)
 
     expect(screen.getByText(/create and activate a short link/i)).toBeInTheDocument()
   })
@@ -44,7 +44,7 @@ describe('AdminQRCodeSection', () => {
   it('excludes inactive redirects from qr selector options', () => {
     render(
       <AdminQRCodeSection
-        page={{ slug: 'jane' }}
+        memorial={{ slug: 'jane', qr_template: 'classic', qr_caption: 'Scan me!' }}
         redirects={[
           { id: 'r1', shortcode: 'grandma', is_active: true },
           { id: 'r2', shortcode: 'legacy', is_active: false },
@@ -55,8 +55,8 @@ describe('AdminQRCodeSection', () => {
 
     const options = screen.getAllByRole('option')
     const labels = options.map((option) => option.textContent ?? '')
-    expect(labels.some((label) => label.includes('/r/grandma'))).toBe(true)
-    expect(labels.some((label) => label.includes('/r/nanay'))).toBe(true)
-    expect(labels.some((label) => label.includes('/r/legacy'))).toBe(false)
+    expect(labels.some((label) => label.includes('/grandma'))).toBe(true)
+    expect(labels.some((label) => label.includes('/nanay'))).toBe(true)
+    expect(labels.some((label) => label.includes('/legacy'))).toBe(false)
   })
 })

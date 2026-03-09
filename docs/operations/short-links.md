@@ -19,10 +19,12 @@
 - Inactive code (`is_active=false`) -> HTTP 404
 - Missing/invalid code -> HTTP 404
 - Root path -> redirect to `FALLBACK_URL` when provided
+- Worker accepts both `GET` and `HEAD` for monitoring/curl checks.
 
 ## App Redirect Route Rules (`/r/[code]`)
 - Active code -> HTTP 302 to `target_url` (short cache).
 - Missing/invalid/disabled code -> redirect to `/r/not-found` with reason query.
+- `/r/not-found` should only offer `Browse Public Memorials` when homepage directory is enabled; otherwise it should fall back to the home CTA only.
 - Redirect records carry:
   - `is_active` (boolean),
   - `print_status` (`unverified` | `verified`),
@@ -36,8 +38,28 @@
 ## Recommended Initial Setup (Before Vercel)
 - Use a real Cloudflare subdomain (example: `go.yourdomain.com`).
 - Route: `go.yourdomain.com/*` -> `everlume-redirector`.
-- Set `FALLBACK_URL` to a temporary public page so root `/` is not dead while frontend is still pending.
+- Set `FALLBACK_URL` to a temporary public memorial or holding page so root `/` is not dead while frontend is still pending.
+- Set `NEXT_PUBLIC_APP_URL=https://app.yourdomain.com` so metadata and public sharing use the canonical app origin.
 - Set `NEXT_PUBLIC_SHORT_DOMAIN` in app env to the same short domain.
+
+## Production Setup Commands
+From the repo root:
+
+```bash
+npm run test:worker
+cd workers/redirector
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_SECRET_KEY
+npx wrangler secret put FALLBACK_URL
+npx wrangler deploy
+```
+
+Then in app environment (Vercel):
+- Set `NEXT_PUBLIC_APP_URL=https://app.yourdomain.com`.
+- Set `NEXT_PUBLIC_SHORT_DOMAIN=https://go.yourdomain.com`.
+
+Then in Cloudflare DNS/Workers:
+- Attach route `go.yourdomain.com/*` to worker `everlume-redirector`.
 
 ## Quick Validation
 ```bash

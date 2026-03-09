@@ -19,6 +19,7 @@ export function GuestbookModerationScreen() {
   const [loading, setLoading] = useState(true)
   const [pendingAction, setPendingAction] = useState<{ id: string; kind: 'approve' | 'unapprove' | 'delete' } | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const fetchEntries = useCallback(async () => {
     setLoading(true)
@@ -34,6 +35,7 @@ export function GuestbookModerationScreen() {
     const payload = (await response.json()) as { entries?: Entry[] }
     setEntries(payload.entries ?? [])
     setErrorMessage(null)
+    setSuccessMessage(null)
     setLoading(false)
   }, [])
 
@@ -52,6 +54,7 @@ export function GuestbookModerationScreen() {
     setEntries((current) => current.map((entry) => (entry.id === id ? { ...entry, is_approved: true } : entry)))
 
     setErrorMessage(null)
+    setSuccessMessage(null)
     const response = await fetch(`/api/admin/guestbook/${id}/approve`, { method: 'POST' })
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as { message?: string } | null
@@ -60,6 +63,8 @@ export function GuestbookModerationScreen() {
       setPendingAction(null)
       return
     }
+    const entry = previous.find((item) => item.id === id)
+    setSuccessMessage(`Approved ${entry?.name || 'guestbook entry'} for public display.`)
     setPendingAction(null)
   }
 
@@ -71,6 +76,7 @@ export function GuestbookModerationScreen() {
     setEntries((current) => current.filter((entry) => entry.id !== id))
 
     setErrorMessage(null)
+    setSuccessMessage(null)
     const response = await fetch(`/api/admin/guestbook/${id}`, { method: 'DELETE' })
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as { message?: string } | null
@@ -79,6 +85,8 @@ export function GuestbookModerationScreen() {
       setPendingAction(null)
       return
     }
+    const entry = previous.find((item) => item.id === id)
+    setSuccessMessage(`Deleted ${entry?.name || 'guestbook entry'} from the moderation queue.`)
     setPendingAction(null)
   }
 
@@ -89,6 +97,7 @@ export function GuestbookModerationScreen() {
     setEntries((current) => current.map((entry) => (entry.id === id ? { ...entry, is_approved: false } : entry)))
 
     setErrorMessage(null)
+    setSuccessMessage(null)
     const response = await fetch(`/api/admin/guestbook/${id}/unapprove`, { method: 'POST' })
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as { message?: string } | null
@@ -97,16 +106,42 @@ export function GuestbookModerationScreen() {
       setPendingAction(null)
       return
     }
+    const entry = previous.find((item) => item.id === id)
+    setSuccessMessage(`Moved ${entry?.name || 'guestbook entry'} back to pending review.`)
     setPendingAction(null)
   }
 
   if (loading) return <div className="surface-card p-8 text-sm text-muted-foreground">Loading entries...</div>
 
+  const approvedCount = entries.filter((entry) => entry.is_approved).length
+  const pendingCount = entries.length - approvedCount
+
   return (
     <div className="space-y-5">
-      <section className="surface-card space-y-1 p-6">
-        <h2 className="text-3xl font-semibold tracking-tight">Guestbook Moderation</h2>
-        <p className="text-sm text-muted-foreground">Approve, unapprove, or remove messages before they appear publicly.</p>
+      <section className="dashboard-hero surface-card space-y-2 p-6">
+        <p className="section-kicker">Guestbook Review</p>
+        <h2 className="text-3xl font-semibold tracking-[-0.03em]">Guestbook Moderation</h2>
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Review messages with care before they appear on the public memorial. Pending messages stay private until approved.
+        </p>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <div className="surface-card p-4">
+          <p className="section-kicker">Pending</p>
+          <p className="mt-2 text-3xl font-semibold">{pendingCount}</p>
+          <p className="mt-1 text-sm text-muted-foreground">Waiting for family review before they can be shown publicly.</p>
+        </div>
+        <div className="surface-card p-4">
+          <p className="section-kicker">Approved</p>
+          <p className="mt-2 text-3xl font-semibold">{approvedCount}</p>
+          <p className="mt-1 text-sm text-muted-foreground">Already visible on the public memorial guestbook.</p>
+        </div>
+        <div className="surface-card p-4">
+          <p className="section-kicker">Total Messages</p>
+          <p className="mt-2 text-3xl font-semibold">{entries.length}</p>
+          <p className="mt-1 text-sm text-muted-foreground">Every message stays in this queue until the family updates its status.</p>
+        </div>
       </section>
 
       {errorMessage && (
@@ -119,10 +154,16 @@ export function GuestbookModerationScreen() {
         </div>
       )}
 
+      {successMessage && (
+        <div className="surface-card border-emerald-300/50 bg-emerald-100/60 p-4 text-sm text-emerald-900" role="status" aria-live="polite">
+          {successMessage}
+        </div>
+      )}
+
       <div className="surface-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-secondary/80 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+            <thead className="bg-secondary/80 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Status</th>
                 <th className="px-4 py-3 text-left">From / Page</th>
@@ -143,8 +184,8 @@ export function GuestbookModerationScreen() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium">{entry.name}</div>
-                      <div className="text-xs text-muted-foreground">{entry.pages?.title || 'Untitled page'}</div>
+                      <div className="font-medium text-foreground">{entry.name}</div>
+                      <div className="text-xs text-muted-foreground">{entry.pages?.title || 'Untitled memorial'}</div>
                     </td>
                     <td className="px-4 py-3">
                       <p className="line-clamp-3 leading-relaxed text-foreground/95" title={entry.message}>
@@ -203,7 +244,7 @@ export function GuestbookModerationScreen() {
               ) : (
                 <tr>
                   <td colSpan={5} className="px-4 py-10 text-center text-sm italic text-muted-foreground">
-                    No guestbook entries found yet.
+                    No guestbook entries need review right now. New messages will appear here before they are shown publicly.
                   </td>
                 </tr>
               )}

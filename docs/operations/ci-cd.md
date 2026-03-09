@@ -11,6 +11,7 @@ Checks:
 - `npm run typecheck`
 - `npm run test:coverage`
 - `npm run test:e2e` (webpack baseline)
+- `npm run test:e2e:auth` (password-based admin auth lane)
 - `npm run test:e2e:turbopack` (required parity run)
 - `e2e` alias check (passes only when both webpack + turbopack e2e jobs pass)
 - launch-readiness smoke (`/r/[code]` unit + short-links e2e flow)
@@ -28,16 +29,23 @@ Security/reliability note:
 This workflow should be configured as a required status check before merge.
 Required statuses: `lint`, `typecheck`, `unit_coverage`, `worker_tests`, `e2e`, `a11y`, `launch_readiness`, `perf_a11y_gate`, `build`.
 
-### 2) Next.js Deployment (Vercel)
-Vercel Git integration handles deployments:
-- PRs -> Preview deployments
-- Merges to production branch -> Production deployment
+### 2) Next.js Deployment (Vercel) (`.github/workflows/deploy-vercel.yml`)
+Automated via GitHub Actions + Vercel CLI:
+- Pull requests (same-repo branches) -> Preview deployment
+- Pushes to `main`/`master` -> Production deployment
+
+Required GitHub secrets:
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
 
 Required Vercel env vars:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
 - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
 - `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`
+- `NEXT_PUBLIC_SHORT_DOMAIN`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 - `RATE_LIMIT_BACKEND=upstash`
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
@@ -56,6 +64,11 @@ Required GitHub secrets:
 - `WORKER_SUPABASE_URL`
 - `WORKER_SUPABASE_SECRET_KEY` (or legacy `WORKER_SUPABASE_SERVICE_ROLE_KEY`)
 - `WORKER_FALLBACK_URL`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (or repo variable `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) for production prereq gate
+
+Where to get Cloudflare deploy credentials:
+- API token: Cloudflare Dashboard -> `My Profile` -> `API Tokens` -> create token with Workers deploy permissions.
+- Account ID: Cloudflare Dashboard sidebar -> `Workers & Pages` (or right rail in account overview).
 
 ### 4) DB Backup Automation (`.github/workflows/backup-db.yml`)
 Automated DB backups to Cloudflare R2:
