@@ -67,9 +67,13 @@ export function EditMemorialScreen({ memorialId }: EditMemorialScreenProps) {
 
   const fetchMemorial = useCallback(async () => {
     setErrorMessage(null)
-    const memorialResponse = await fetch(`/api/admin/memorials/${memorialId}`, { cache: 'no-store' })
+    const memorialResponse = await fetch(`/api/admin/memorials/${memorialId}`, {
+      cache: 'no-store',
+    })
     if (!memorialResponse.ok) {
-      const payload = (await memorialResponse.json().catch(() => null)) as { message?: string } | null
+      const payload = (await memorialResponse.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to load memorial.')
       setMemorial(null)
       setRedirects([])
@@ -77,23 +81,31 @@ export function EditMemorialScreen({ memorialId }: EditMemorialScreenProps) {
       setLoading(false)
       return
     }
-    const memorialPayload = (await memorialResponse.json()) as { memorial?: MemorialRecord }
+    const memorialPayload = (await memorialResponse.json()) as {
+      memorial?: MemorialRecord
+    }
     setMemorial(memorialPayload.memorial ?? null)
 
     const [redirectsResponse, photosResponse] = await Promise.all([
-      fetch(`/api/admin/memorials/${memorialId}/redirects`, { cache: 'no-store' }),
+      fetch(`/api/admin/memorials/${memorialId}/redirects`, {
+        cache: 'no-store',
+      }),
       fetch(`/api/admin/memorials/${memorialId}/photos`, { cache: 'no-store' }),
     ])
 
     if (redirectsResponse.ok) {
-      const redirectsPayload = (await redirectsResponse.json()) as { redirects?: RedirectRecord[] }
+      const redirectsPayload = (await redirectsResponse.json()) as {
+        redirects?: RedirectRecord[]
+      }
       setRedirects(redirectsPayload.redirects ?? [])
     } else {
       setRedirects([])
     }
 
     if (photosResponse.ok) {
-      const photosPayload = (await photosResponse.json()) as { photos?: PhotoRecord[] }
+      const photosPayload = (await photosResponse.json()) as {
+        photos?: PhotoRecord[]
+      }
       setPhotos(photosPayload.photos ?? [])
     } else {
       setPhotos([])
@@ -119,23 +131,37 @@ export function EditMemorialScreen({ memorialId }: EditMemorialScreenProps) {
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to update hero image.')
       return
     }
 
-    setMemorial((current) => (current ? { ...current, hero_image_url: photoUrl } : current))
+    setMemorial((current) =>
+      current ? { ...current, hero_image_url: photoUrl } : current
+    )
   }
 
-  if (loading) return <div className="surface-card p-8 text-sm text-muted-foreground">Loading memorial editor...</div>
-  if (!memorial) return <div className="surface-card p-8 text-sm">Memorial not found.</div>
+  if (loading)
+    return (
+      <div className="surface-card p-8 text-sm text-muted-foreground">
+        Loading memorial editor...
+      </div>
+    )
+  if (!memorial)
+    return <div className="surface-card p-8 text-sm">Memorial not found.</div>
 
   return (
     <div className="space-y-6">
       <div className="surface-card flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold">Edit Memorial: {memorial.title}</h2>
-          <p className="text-sm text-muted-foreground">Manage memorial details, media, timeline, and sharing tools.</p>
+          <h2 className="text-2xl font-semibold">
+            Edit Memorial: {memorial.title}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Manage memorial details, media, timeline, and sharing tools.
+          </p>
         </div>
         {memorial.accessMode === 'public' && (
           <Button variant="outline" asChild>
@@ -146,19 +172,27 @@ export function EditMemorialScreen({ memorialId }: EditMemorialScreenProps) {
           </Button>
         )}
       </div>
-      {errorMessage && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>}
+      {errorMessage && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {errorMessage}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <div className="space-y-6">
           <AdminMemorialInfo memorial={memorial} onUpdate={fetchMemorial} />
 
           <section className="surface-card space-y-4 p-6">
-            <h3 className="border-b border-border pb-2 text-base font-semibold">Video Links (YouTube)</h3>
+            <h3 className="border-b border-border pb-2 text-base font-semibold">
+              Video Links (YouTube)
+            </h3>
             <VideoManager memorialId={memorialId} />
           </section>
 
           <section className="surface-card space-y-4 p-6">
-            <h3 className="border-b border-border pb-2 text-base font-semibold">Timeline Events</h3>
+            <h3 className="border-b border-border pb-2 text-base font-semibold">
+              Timeline Events
+            </h3>
             <TimelineEditor memorialId={memorialId} />
           </section>
 
@@ -168,22 +202,34 @@ export function EditMemorialScreen({ memorialId }: EditMemorialScreenProps) {
             <div className="space-y-1 border-b border-border pb-3">
               <h3 className="text-base font-semibold">Export and Archive</h3>
               <p className="text-sm text-muted-foreground">
-                Download memorial records for handoff, review, or family archive requests.
+                Download memorial records for handoff, review, or family archive
+                requests.
               </p>
             </div>
-            <DataExport memorialId={memorialId} memorialTitle={memorial.title} />
+            <DataExport
+              memorialId={memorialId}
+              memorialTitle={memorial.title}
+            />
           </section>
 
           <MemorialConsentLog memorialId={memorialId} />
 
           <section className="space-y-4">
             <h3 className="px-1 text-base font-semibold">Upload Photos</h3>
-            <MediaUpload memorialId={memorialId} onUploadComplete={fetchMemorial} />
+            <MediaUpload
+              memorialId={memorialId}
+              onUploadComplete={fetchMemorial}
+            />
           </section>
         </div>
 
         <div className="space-y-6">
-          <AdminPhotoGallery photos={photos} heroImageUrl={memorial.hero_image_url} onRefresh={fetchMemorial} onSetHero={handleSetHero} />
+          <AdminPhotoGallery
+            photos={photos}
+            heroImageUrl={memorial.hero_image_url}
+            onRefresh={fetchMemorial}
+            onSetHero={handleSetHero}
+          />
         </div>
       </div>
     </div>

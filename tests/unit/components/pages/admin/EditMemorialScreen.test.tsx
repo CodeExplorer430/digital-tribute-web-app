@@ -28,7 +28,9 @@ vi.mock('@/components/admin/AdminQRCodeSection', () => ({
 
 vi.mock('@/components/admin/AdminPhotoGallery', () => ({
   AdminPhotoGallery: ({ onSetHero }: { onSetHero: (url: string) => void }) => (
-    <button onClick={() => onSetHero('https://cdn.example.com/hero.jpg')}>Set Hero Mock</button>
+    <button onClick={() => onSetHero('https://cdn.example.com/hero.jpg')}>
+      Set Hero Mock
+    </button>
   ),
 }))
 
@@ -42,7 +44,9 @@ describe('EditMemorialScreen', () => {
   })
 
   it('shows memorial not found when the memorial request fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'not found' }), { status: 404 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'not found' }), { status: 404 })
+    )
 
     render(<EditMemorialScreen memorialId="page-1" />)
 
@@ -50,50 +54,62 @@ describe('EditMemorialScreen', () => {
   })
 
   it('loads memorial data and allows setting hero image', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = String(input)
-      if (url === '/api/admin/memorials/page-1' && (!init || !init.method)) {
-        return new Response(
-          JSON.stringify({
-            memorial: {
-              id: 'page-1',
-              title: 'In Memory',
-              slug: 'in-memory',
-              full_name: 'Jane Doe',
-              dob: null,
-              dod: null,
-              accessMode: 'public',
-              hero_image_url: null,
-              memorial_theme: 'classic',
-              memorial_slideshow_enabled: true,
-              memorial_slideshow_interval_ms: 4500,
-              memorial_video_layout: 'grid',
-              qr_template: 'classic',
-              qr_caption: 'Scan me!',
-            },
-          }),
-          { status: 200 }
-        )
-      }
-      if (url === '/api/admin/memorials/page-1/redirects') {
-        return new Response(JSON.stringify({ redirects: [] }), { status: 200 })
-      }
-      if (url === '/api/admin/memorials/page-1/photos') {
-        return new Response(JSON.stringify({ photos: [] }), { status: 200 })
-      }
-      if (url === '/api/admin/memorials/page-1' && init?.method === 'PATCH') {
-        return new Response(JSON.stringify({ ok: true }), { status: 200 })
-      }
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/memorials/page-1' && (!init || !init.method)) {
+          return new Response(
+            JSON.stringify({
+              memorial: {
+                id: 'page-1',
+                title: 'In Memory',
+                slug: 'in-memory',
+                full_name: 'Jane Doe',
+                dob: null,
+                dod: null,
+                accessMode: 'public',
+                hero_image_url: null,
+                memorial_theme: 'classic',
+                memorial_slideshow_enabled: true,
+                memorial_slideshow_interval_ms: 4500,
+                memorial_video_layout: 'grid',
+                qr_template: 'classic',
+                qr_caption: 'Scan me!',
+              },
+            }),
+            { status: 200 }
+          )
+        }
+        if (url === '/api/admin/memorials/page-1/redirects') {
+          return new Response(JSON.stringify({ redirects: [] }), {
+            status: 200,
+          })
+        }
+        if (url === '/api/admin/memorials/page-1/photos') {
+          return new Response(JSON.stringify({ photos: [] }), { status: 200 })
+        }
+        if (url === '/api/admin/memorials/page-1' && init?.method === 'PATCH') {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 })
+        }
 
-      return new Response(JSON.stringify({}), { status: 200 })
-    })
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
 
     const user = userEvent.setup()
     render(<EditMemorialScreen memorialId="page-1" />)
 
-    expect(await screen.findByText('Edit Memorial: In Memory')).toBeInTheDocument()
-    expect(screen.getByText('Manage memorial details, media, timeline, and sharing tools.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /view public memorial/i })).toHaveAttribute('href', '/memorials/in-memory')
+    expect(
+      await screen.findByText('Edit Memorial: In Memory')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Manage memorial details, media, timeline, and sharing tools.'
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /view public memorial/i })
+    ).toHaveAttribute('href', '/memorials/in-memory')
 
     await user.click(screen.getByRole('button', { name: 'Set Hero Mock' }))
 

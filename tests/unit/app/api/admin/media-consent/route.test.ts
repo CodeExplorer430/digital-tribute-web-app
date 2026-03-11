@@ -8,7 +8,10 @@ const mockSelect = vi.fn(() => ({ order: mockOrder, eq: mockEq }))
 
 vi.mock('@/lib/server/admin-auth', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdminUser(...args),
-  databaseError: (message: string) => new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), { status: 500 }),
+  databaseError: (message: string) =>
+    new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), {
+      status: 500,
+    }),
 }))
 
 describe('GET /api/admin/media-consent', () => {
@@ -35,7 +38,11 @@ describe('GET /api/admin/media-consent', () => {
           ip_hash: 'ip-hash',
           user_agent_hash: 'ua-hash',
           created_at: '2026-03-09T00:00:00.000Z',
-          pages: { title: 'Memorial One', slug: 'memorial-one', owner_id: 'owner-1' },
+          pages: {
+            title: 'Memorial One',
+            slug: 'memorial-one',
+            owner_id: 'owner-1',
+          },
         },
       ],
       error: null,
@@ -86,7 +93,13 @@ describe('GET /api/admin/media-consent', () => {
           ip_hash: 'ip-hash',
           user_agent_hash: 'ua-hash',
           created_at: '2026-03-09T01:00:00.000Z',
-          pages: [{ title: 'Memorial Two', slug: 'memorial-two', owner_id: 'owner-2' }],
+          pages: [
+            {
+              title: 'Memorial Two',
+              slug: 'memorial-two',
+              owner_id: 'owner-2',
+            },
+          ],
         },
       ],
       error: null,
@@ -105,7 +118,12 @@ describe('GET /api/admin/media-consent', () => {
     const res = await GET()
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({
-      logs: [expect.objectContaining({ memorialTitle: 'Memorial Two', memorialSlug: 'memorial-two' })],
+      logs: [
+        expect.objectContaining({
+          memorialTitle: 'Memorial Two',
+          memorialSlug: 'memorial-two',
+        }),
+      ],
     })
   })
 
@@ -128,14 +146,20 @@ describe('GET /api/admin/media-consent', () => {
   })
 
   it('returns the auth failure response when admin access is denied', async () => {
-    mockRequireAdminUser.mockResolvedValue({ ok: false, response: new Response(null, { status: 403 }) })
+    mockRequireAdminUser.mockResolvedValue({
+      ok: false,
+      response: new Response(null, { status: 403 }),
+    })
 
     const res = await GET()
     expect(res.status).toBe(403)
   })
 
   it('returns a database error when the consent report query fails', async () => {
-    mockLimit.mockResolvedValue({ data: null, error: { message: 'read failed' } })
+    mockLimit.mockResolvedValue({
+      data: null,
+      error: { message: 'read failed' },
+    })
     mockRequireAdminUser.mockResolvedValue({
       ok: true,
       userId: 'admin-1',

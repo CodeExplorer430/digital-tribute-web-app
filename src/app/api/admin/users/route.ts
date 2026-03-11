@@ -16,11 +16,18 @@ async function assertAdminPrivileges() {
     return { ok: false as const, response: auth.response }
   }
 
-  return { ok: true as const, actorSupabase: auth.supabase, userId: auth.userId }
+  return {
+    ok: true as const,
+    actorSupabase: auth.supabase,
+    userId: auth.userId,
+  }
 }
 
 function getAuthRedirectTo(request: NextRequest) {
-  return new URL('/auth/callback?next=/login/reset-password', request.url).toString()
+  return new URL(
+    '/auth/callback?next=/login/reset-password',
+    request.url
+  ).toString()
 }
 
 function deriveAccountState(
@@ -43,26 +50,39 @@ export async function GET() {
     serviceRole = createServiceRoleClient()
   } catch {
     return NextResponse.json(
-      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.' },
+      {
+        code: 'CONFIG_ERROR',
+        message:
+          'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.',
+      },
       { status: 500 }
     )
   }
 
   const { data, error } = await serviceRole
     .from('profiles')
-    .select('id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
+    .select(
+      'id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at'
+    )
     .order('created_at', { ascending: false })
 
   if (error) {
     return databaseError('Unable to load users.')
   }
 
-  const { data: authData, error: authError } = await serviceRole.auth.admin.listUsers()
+  const { data: authData, error: authError } =
+    await serviceRole.auth.admin.listUsers()
   const authLookupAvailable = !authError
-  const authUsersById = new Map((authData?.users ?? []).map((user) => [user.id, user]))
+  const authUsersById = new Map(
+    (authData?.users ?? []).map((user) => [user.id, user])
+  )
   const users = (data ?? []).map((profile) => ({
     ...profile,
-    account_state: deriveAccountState(profile, authUsersById.get(profile.id), authLookupAvailable),
+    account_state: deriveAccountState(
+      profile,
+      authUsersById.get(profile.id),
+      authLookupAvailable
+    ),
   }))
 
   return NextResponse.json({ users }, { status: 200 })
@@ -77,13 +97,19 @@ export async function POST(request: NextRequest) {
   try {
     payload = await request.json()
   } catch {
-    return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid request payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'INVALID_JSON', message: 'Invalid request payload.' },
+      { status: 400 }
+    )
   }
 
   const parsed = createUserSchema.safeParse(payload)
   if (!parsed.success) {
     return NextResponse.json(
-      { code: 'VALIDATION_ERROR', message: 'Enter a valid email, full name, and role.' },
+      {
+        code: 'VALIDATION_ERROR',
+        message: 'Enter a valid email, full name, and role.',
+      },
       { status: 400 }
     )
   }
@@ -93,21 +119,32 @@ export async function POST(request: NextRequest) {
     serviceRole = createServiceRoleClient()
   } catch {
     return NextResponse.json(
-      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user invitations.' },
+      {
+        code: 'CONFIG_ERROR',
+        message:
+          'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user invitations.',
+      },
       { status: 500 }
     )
   }
 
   const { email, fullName, role } = parsed.data
 
-  const { data: inviteData, error: inviteError } = await serviceRole.auth.admin.inviteUserByEmail(email, {
-    data: { role, full_name: fullName },
-    redirectTo: getAuthRedirectTo(request),
-  })
+  const { data: inviteData, error: inviteError } =
+    await serviceRole.auth.admin.inviteUserByEmail(email, {
+      data: { role, full_name: fullName },
+      redirectTo: getAuthRedirectTo(request),
+    })
 
   if (inviteError || !inviteData.user) {
     if (inviteError?.message?.toLowerCase().includes('already')) {
-      return NextResponse.json({ code: 'EMAIL_EXISTS', message: 'A user with this email already exists.' }, { status: 409 })
+      return NextResponse.json(
+        {
+          code: 'EMAIL_EXISTS',
+          message: 'A user with this email already exists.',
+        },
+        { status: 409 }
+      )
     }
 
     return databaseError('Unable to invite user right now.')
@@ -127,7 +164,9 @@ export async function POST(request: NextRequest) {
       },
       { onConflict: 'id' }
     )
-    .select('id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
+    .select(
+      'id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at'
+    )
     .single()
 
   if (profileError) {
@@ -142,5 +181,8 @@ export async function POST(request: NextRequest) {
     metadata: { role: profileData.role },
   })
 
-  return NextResponse.json({ user: { ...profileData, account_state: 'invited' } }, { status: 201 })
+  return NextResponse.json(
+    { user: { ...profileData, account_state: 'invited' } },
+    { status: 201 }
+  )
 }

@@ -39,15 +39,23 @@ describe('/api/admin/redirects/[id]', () => {
     mockUpdateEq.mockClear()
     mockUpdateSelect.mockClear()
     mockUpdateSingle.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns forbidden for non-owner on delete', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockRedirectSingle.mockResolvedValue({ data: null })
 
-    const req = new Request('http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000', { method: 'DELETE' })
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'DELETE' }
+    )
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(403)
   })
 
@@ -56,20 +64,30 @@ describe('/api/admin/redirects/[id]', () => {
     mockRedirectSingle.mockResolvedValue({ data: { id: 'r1' } })
     mockDeleteEq.mockResolvedValue({ error: null })
 
-    const req = new Request('http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000', { method: 'DELETE' })
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'DELETE' }
+    )
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
   })
 
   it('rejects patch when no mutable fields are provided', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
 
-    const req = new Request('http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({}),
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      }
+    )
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
     })
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
     expect(res.status).toBe(400)
   })
 
@@ -89,14 +107,21 @@ describe('/api/admin/redirects/[id]', () => {
       error: null,
     })
 
-    const req = new Request('http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ printStatus: 'verified' }),
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ printStatus: 'verified' }),
+      }
+    )
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
     })
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
 
     expect(res.status).toBe(200)
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ print_status: 'verified' }))
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ print_status: 'verified' })
+    )
   })
 })

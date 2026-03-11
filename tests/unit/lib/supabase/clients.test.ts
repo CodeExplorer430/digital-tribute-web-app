@@ -22,7 +22,8 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@/lib/supabase/env', () => ({
   getSupabaseUrlOrThrow: () => mockGetSupabaseUrlOrThrow(),
-  getSupabasePublishableKeyOrThrow: () => mockGetSupabasePublishableKeyOrThrow(),
+  getSupabasePublishableKeyOrThrow: () =>
+    mockGetSupabasePublishableKeyOrThrow(),
   getSupabaseSecretKeyOrThrow: () => mockGetSupabaseSecretKeyOrThrow(),
 }))
 
@@ -49,7 +50,10 @@ describe('supabase client wrappers', () => {
     const client = mod.createClient()
 
     expect(client).toBe(expectedClient)
-    expect(mockCreateBrowserClient).toHaveBeenCalledWith('https://example.supabase.co', 'publishable-key')
+    expect(mockCreateBrowserClient).toHaveBeenCalledWith(
+      'https://example.supabase.co',
+      'publishable-key'
+    )
   })
 
   it('createPublicClient configures non-persistent auth', async () => {
@@ -118,13 +122,25 @@ describe('supabase client wrappers', () => {
     const options = mockCreateServerClient.mock.calls[0][2] as {
       cookies: {
         getAll: () => unknown
-        setAll: (cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) => void
+        setAll: (
+          cookiesToSet: Array<{
+            name: string
+            value: string
+            options?: Record<string, unknown>
+          }>
+        ) => void
       }
     }
 
-    expect(options.cookies.getAll()).toEqual([{ name: 'sb-access-token', value: 'abc' }])
-    options.cookies.setAll([{ name: 'sb-refresh-token', value: 'def', options: { path: '/' } }])
-    expect(cookieStore.set).toHaveBeenCalledWith('sb-refresh-token', 'def', { path: '/' })
+    expect(options.cookies.getAll()).toEqual([
+      { name: 'sb-access-token', value: 'abc' },
+    ])
+    options.cookies.setAll([
+      { name: 'sb-refresh-token', value: 'def', options: { path: '/' } },
+    ])
+    expect(cookieStore.set).toHaveBeenCalledWith('sb-refresh-token', 'def', {
+      path: '/',
+    })
   })
 
   it('createClient (server) ignores cookie set errors', async () => {
@@ -142,12 +158,20 @@ describe('supabase client wrappers', () => {
 
     const options = mockCreateServerClient.mock.calls[0][2] as {
       cookies: {
-        setAll: (cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) => void
+        setAll: (
+          cookiesToSet: Array<{
+            name: string
+            value: string
+            options?: Record<string, unknown>
+          }>
+        ) => void
       }
     }
 
     expect(() =>
-      options.cookies.setAll([{ name: 'sb-access-token', value: 'abc', options: { path: '/' } }])
+      options.cookies.setAll([
+        { name: 'sb-access-token', value: 'abc', options: { path: '/' } },
+      ])
     ).not.toThrow()
   })
 })

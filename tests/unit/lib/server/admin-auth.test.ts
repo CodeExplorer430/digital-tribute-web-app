@@ -47,7 +47,10 @@ describe('requireAdminUser', () => {
   it('returns 403 when role is below minimum', async () => {
     const { requireAdminUser } = await import('@/lib/server/admin-auth')
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
 
     const auth = await requireAdminUser({ minRole: 'admin' })
 
@@ -58,7 +61,10 @@ describe('requireAdminUser', () => {
   it('returns ok when role satisfies minimum', async () => {
     const { requireAdminUser } = await import('@/lib/server/admin-auth')
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
 
     const auth = await requireAdminUser({ minRole: 'viewer' })
 
@@ -69,7 +75,10 @@ describe('requireAdminUser', () => {
   it('returns 403 when profile is inactive', async () => {
     const { requireAdminUser } = await import('@/lib/server/admin-auth')
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: false }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: false },
+      error: null,
+    })
 
     const auth = await requireAdminUser({ minRole: 'viewer' })
 

@@ -35,7 +35,10 @@ describe('MemorialConsentLog', () => {
     render(<MemorialConsentLog memorialId="page-1" />)
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith('/api/admin/memorials/page-1/media-consent', expect.anything())
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/admin/memorials/page-1/media-consent',
+        expect.anything()
+      )
     })
     expect(await screen.findByText('Consent granted')).toBeInTheDocument()
     expect(screen.getByText(/IP 0123456789ab/)).toBeInTheDocument()
@@ -44,52 +47,117 @@ describe('MemorialConsentLog', () => {
 
   it('shows an explicit empty state when there are no records', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ logs: [], memorial: { mediaConsentRevokedAt: null }, consentNoticeVersion: 1 }), { status: 200 })
+      new Response(
+        JSON.stringify({
+          logs: [],
+          memorial: { mediaConsentRevokedAt: null },
+          consentNoticeVersion: 1,
+        }),
+        { status: 200 }
+      )
     )
 
     render(<MemorialConsentLog memorialId="page-1" />)
 
-    expect(await screen.findByText('No protected media consent events have been recorded yet.')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        'No protected media consent events have been recorded yet.'
+      )
+    ).toBeInTheDocument()
   })
 
   it('shows an error state when the log request fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Unable to load protected media consent records.' }), { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: 'Unable to load protected media consent records.',
+        }),
+        { status: 500 }
+      )
+    )
 
     render(<MemorialConsentLog memorialId="page-1" />)
 
-    expect(await screen.findByText('Unable to load protected media consent records.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Unable to load protected media consent records.')
+    ).toBeInTheDocument()
   })
 
   it('revokes existing consent cookies for the memorial', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = String(input)
-      if (url === '/api/admin/memorials/page-1/media-consent' && (!init || !init.method)) {
-        return new Response(JSON.stringify({ logs: [], memorial: { mediaConsentRevokedAt: null }, consentNoticeVersion: 3 }), { status: 200 })
-      }
-      if (url === '/api/admin/memorials/page-1/media-consent' && init?.method === 'POST') {
-        return new Response(JSON.stringify({ ok: true, revokedAt: '2026-03-09T12:00:00.000Z' }), { status: 200 })
-      }
-      return new Response(JSON.stringify({}), { status: 200 })
-    })
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (
+          url === '/api/admin/memorials/page-1/media-consent' &&
+          (!init || !init.method)
+        ) {
+          return new Response(
+            JSON.stringify({
+              logs: [],
+              memorial: { mediaConsentRevokedAt: null },
+              consentNoticeVersion: 3,
+            }),
+            { status: 200 }
+          )
+        }
+        if (
+          url === '/api/admin/memorials/page-1/media-consent' &&
+          init?.method === 'POST'
+        ) {
+          return new Response(
+            JSON.stringify({ ok: true, revokedAt: '2026-03-09T12:00:00.000Z' }),
+            { status: 200 }
+          )
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
 
     const user = userEvent.setup()
     render(<MemorialConsentLog memorialId="page-1" />)
 
     await screen.findByText('Active notice version 3')
-    await user.click(screen.getByRole('button', { name: 'Revoke Existing Consent' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Revoke Existing Consent' })
+    )
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/admin/memorials/page-1/media-consent', { method: 'POST' })
-    expect(await screen.findByText('Existing protected-media consent cookies were revoked for this memorial.')).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/memorials/page-1/media-consent',
+      { method: 'POST' }
+    )
+    expect(
+      await screen.findByText(
+        'Existing protected-media consent cookies were revoked for this memorial.'
+      )
+    ).toBeInTheDocument()
   })
 
   it('shows a revoke error when consent revocation fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       const url = String(input)
-      if (url === '/api/admin/memorials/page-1/media-consent' && (!init || !init.method)) {
-        return new Response(JSON.stringify({ logs: [], memorial: { mediaConsentRevokedAt: null }, consentNoticeVersion: 3 }), { status: 200 })
+      if (
+        url === '/api/admin/memorials/page-1/media-consent' &&
+        (!init || !init.method)
+      ) {
+        return new Response(
+          JSON.stringify({
+            logs: [],
+            memorial: { mediaConsentRevokedAt: null },
+            consentNoticeVersion: 3,
+          }),
+          { status: 200 }
+        )
       }
-      if (url === '/api/admin/memorials/page-1/media-consent' && init?.method === 'POST') {
-        return new Response(JSON.stringify({ message: 'Unable to revoke protected media consent.' }), { status: 500 })
+      if (
+        url === '/api/admin/memorials/page-1/media-consent' &&
+        init?.method === 'POST'
+      ) {
+        return new Response(
+          JSON.stringify({
+            message: 'Unable to revoke protected media consent.',
+          }),
+          { status: 500 }
+        )
       }
       return new Response(JSON.stringify({}), { status: 200 })
     })
@@ -98,8 +166,12 @@ describe('MemorialConsentLog', () => {
     render(<MemorialConsentLog memorialId="page-1" />)
 
     await screen.findByText('Active notice version 3')
-    await user.click(screen.getByRole('button', { name: 'Revoke Existing Consent' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Revoke Existing Consent' })
+    )
 
-    expect(await screen.findByText('Unable to revoke protected media consent.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Unable to revoke protected media consent.')
+    ).toBeInTheDocument()
   })
 })

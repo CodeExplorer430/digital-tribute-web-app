@@ -8,7 +8,11 @@ describe('MemorialUnlockForm', () => {
   })
 
   it('submits password and calls unlock endpoint', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Invalid password' }), { status: 401 }))
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Invalid password' }), {
+        status: 401,
+      })
+    )
 
     const user = userEvent.setup()
     render(<MemorialUnlockForm slug="jane" />)
@@ -26,11 +30,19 @@ describe('MemorialUnlockForm', () => {
       )
     })
 
-    expect(screen.getByText(/Protected memorials are shared by direct link and do not appear in the public directory\./)).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Protected memorials are shared by direct link and do not appear in the public directory\./
+      )
+    ).toBeInTheDocument()
   })
 
   it('shows error when unlock fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Invalid password' }), { status: 401 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Invalid password' }), {
+        status: 401,
+      })
+    )
 
     const user = userEvent.setup()
     render(<MemorialUnlockForm slug="jane" />)
@@ -38,7 +50,9 @@ describe('MemorialUnlockForm', () => {
     await user.type(screen.getByLabelText('Access Password'), 'wrong')
     await user.click(screen.getByRole('button', { name: 'Unlock Memorial' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid password')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Invalid password'
+    )
   })
 
   it('shows loading state while unlock request is pending', async () => {

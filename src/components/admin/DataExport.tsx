@@ -94,7 +94,13 @@ type MemorialRow = {
 }
 
 function sanitizeFileStem(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'memorial'
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'memorial'
+  )
 }
 
 export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
@@ -118,16 +124,29 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
   }
 
   const downloadCSV = (content: string, filename: string) => {
-    downloadBlob(new Blob([content], { type: 'text/csv;charset=utf-8;' }), filename)
+    downloadBlob(
+      new Blob([content], { type: 'text/csv;charset=utf-8;' }),
+      filename
+    )
   }
 
   const downloadJSON = (content: unknown, filename: string) => {
-    downloadBlob(new Blob([JSON.stringify(content, null, 2)], { type: 'application/json;charset=utf-8;' }), filename)
+    downloadBlob(
+      new Blob([JSON.stringify(content, null, 2)], {
+        type: 'application/json;charset=utf-8;',
+      }),
+      filename
+    )
   }
 
-  const readJsonOrThrow = async <T,>(response: Response, defaultMessage: string): Promise<T> => {
+  const readJsonOrThrow = async <T,>(
+    response: Response,
+    defaultMessage: string
+  ): Promise<T> => {
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       throw new Error(payload?.message || defaultMessage)
     }
 
@@ -141,7 +160,9 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
 
     try {
       const payload = await readJsonOrThrow<{ entries?: GuestbookRow[] }>(
-        await fetch(`/api/admin/memorials/${memorialId}/guestbook`, { cache: 'no-store' }),
+        await fetch(`/api/admin/memorials/${memorialId}/guestbook`, {
+          cache: 'no-store',
+        }),
         'Unable to load guestbook entries.'
       )
       const data = payload.entries ?? []
@@ -160,8 +181,14 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
         entry.is_approved ? 'Yes' : 'No',
       ])
 
-      const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n')
-      downloadCSV(csvContent, `${sanitizeFileStem(memorialTitle)}_guestbook.csv`)
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((row) => row.join(',')),
+      ].join('\n')
+      downloadCSV(
+        csvContent,
+        `${sanitizeFileStem(memorialTitle)}_guestbook.csv`
+      )
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Export failed.'
       setErrorMessage(`Export failed: ${message}`)
@@ -177,7 +204,9 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
 
     try {
       const payload = await readJsonOrThrow<{ photos?: PhotoRow[] }>(
-        await fetch(`/api/admin/memorials/${memorialId}/photos`, { cache: 'no-store' }),
+        await fetch(`/api/admin/memorials/${memorialId}/photos`, {
+          cache: 'no-store',
+        }),
         'Unable to load photos.'
       )
       const data = payload.photos ?? []
@@ -187,7 +216,15 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
         return
       }
 
-      const headers = ['ID', 'Caption', 'Cloudinary Public ID', 'Image URL', 'Thumb URL', 'Taken At', 'Uploaded At']
+      const headers = [
+        'ID',
+        'Caption',
+        'Cloudinary Public ID',
+        'Image URL',
+        'Thumb URL',
+        'Taken At',
+        'Uploaded At',
+      ]
       const rows = data.map((photo) => [
         photo.id,
         `"${photo.caption?.replace(/"/g, '""') || ''}"`,
@@ -198,8 +235,14 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
         `"${new Date(photo.created_at).toLocaleString()}"`,
       ])
 
-      const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n')
-      downloadCSV(csvContent, `${sanitizeFileStem(memorialTitle)}_photo_metadata.csv`)
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((row) => row.join(',')),
+      ].join('\n')
+      downloadCSV(
+        csvContent,
+        `${sanitizeFileStem(memorialTitle)}_photo_metadata.csv`
+      )
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Export failed.'
       setErrorMessage(`Export failed: ${message}`)
@@ -214,7 +257,12 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
     setErrorMessage(null)
 
     try {
-      const payload = await readJsonOrThrow<{ photos?: PhotoRow[] }>(await fetch(`/api/admin/memorials/${memorialId}/photos`, { cache: 'no-store' }), 'Unable to load photos.')
+      const payload = await readJsonOrThrow<{ photos?: PhotoRow[] }>(
+        await fetch(`/api/admin/memorials/${memorialId}/photos`, {
+          cache: 'no-store',
+        }),
+        'Unable to load photos.'
+      )
       const data = payload.photos ?? []
 
       if (data.length === 0) {
@@ -230,15 +278,21 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
 
         const imageResponse = await fetch(photo.image_url)
         if (!imageResponse.ok) {
-          console.error(`Error downloading ${photo.image_url}:`, imageResponse.statusText)
+          console.error(
+            `Error downloading ${photo.image_url}:`,
+            imageResponse.statusText
+          )
           continue
         }
 
         const fileBytes = await imageResponse.arrayBuffer()
-        const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
+        const contentType =
+          imageResponse.headers.get('content-type') || 'image/jpeg'
         const publicIdSegment = photo.cloudinary_public_id?.split('/').pop()
         const extension = contentType.split('/').pop() || 'jpg'
-        const fileName = publicIdSegment ? `${publicIdSegment}.${extension}` : `photo_${index + 1}.${extension}`
+        const fileName = publicIdSegment
+          ? `${publicIdSegment}.${extension}`
+          : `photo_${index + 1}.${extension}`
         folder?.file(fileName, fileBytes)
       }
 
@@ -258,14 +312,57 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
     setErrorMessage(null)
 
     try {
-      const [memorialPayload, photosPayload, videosPayload, timelinePayload, guestbookPayload, redirectsPayload, consentPayload] = await Promise.all([
-        readJsonOrThrow<{ memorial?: MemorialRow }>(await fetch(`/api/admin/memorials/${memorialId}`, { cache: 'no-store' }), 'Unable to load memorial details.'),
-        readJsonOrThrow<{ photos?: PhotoRow[] }>(await fetch(`/api/admin/memorials/${memorialId}/photos`, { cache: 'no-store' }), 'Unable to load photos.'),
-        readJsonOrThrow<{ videos?: VideoRow[] }>(await fetch(`/api/admin/memorials/${memorialId}/videos`, { cache: 'no-store' }), 'Unable to load videos.'),
-        readJsonOrThrow<{ events?: TimelineRow[] }>(await fetch(`/api/admin/memorials/${memorialId}/timeline`, { cache: 'no-store' }), 'Unable to load timeline events.'),
-        readJsonOrThrow<{ entries?: GuestbookRow[] }>(await fetch(`/api/admin/memorials/${memorialId}/guestbook`, { cache: 'no-store' }), 'Unable to load guestbook entries.'),
-        readJsonOrThrow<{ redirects?: RedirectRow[] }>(await fetch(`/api/admin/memorials/${memorialId}/redirects`, { cache: 'no-store' }), 'Unable to load redirects.'),
-        readJsonOrThrow<{ logs?: MediaConsentRow[] }>(await fetch(`/api/admin/memorials/${memorialId}/media-consent`, { cache: 'no-store' }), 'Unable to load protected media consent records.'),
+      const [
+        memorialPayload,
+        photosPayload,
+        videosPayload,
+        timelinePayload,
+        guestbookPayload,
+        redirectsPayload,
+        consentPayload,
+      ] = await Promise.all([
+        readJsonOrThrow<{ memorial?: MemorialRow }>(
+          await fetch(`/api/admin/memorials/${memorialId}`, {
+            cache: 'no-store',
+          }),
+          'Unable to load memorial details.'
+        ),
+        readJsonOrThrow<{ photos?: PhotoRow[] }>(
+          await fetch(`/api/admin/memorials/${memorialId}/photos`, {
+            cache: 'no-store',
+          }),
+          'Unable to load photos.'
+        ),
+        readJsonOrThrow<{ videos?: VideoRow[] }>(
+          await fetch(`/api/admin/memorials/${memorialId}/videos`, {
+            cache: 'no-store',
+          }),
+          'Unable to load videos.'
+        ),
+        readJsonOrThrow<{ events?: TimelineRow[] }>(
+          await fetch(`/api/admin/memorials/${memorialId}/timeline`, {
+            cache: 'no-store',
+          }),
+          'Unable to load timeline events.'
+        ),
+        readJsonOrThrow<{ entries?: GuestbookRow[] }>(
+          await fetch(`/api/admin/memorials/${memorialId}/guestbook`, {
+            cache: 'no-store',
+          }),
+          'Unable to load guestbook entries.'
+        ),
+        readJsonOrThrow<{ redirects?: RedirectRow[] }>(
+          await fetch(`/api/admin/memorials/${memorialId}/redirects`, {
+            cache: 'no-store',
+          }),
+          'Unable to load redirects.'
+        ),
+        readJsonOrThrow<{ logs?: MediaConsentRow[] }>(
+          await fetch(`/api/admin/memorials/${memorialId}/media-consent`, {
+            cache: 'no-store',
+          }),
+          'Unable to load protected media consent records.'
+        ),
       ])
 
       const memorial = memorialPayload.memorial
@@ -303,7 +400,9 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
 
     try {
       const payload = await readJsonOrThrow<{ logs?: MediaConsentRow[] }>(
-        await fetch(`/api/admin/memorials/${memorialId}/media-consent`, { cache: 'no-store' }),
+        await fetch(`/api/admin/memorials/${memorialId}/media-consent`, {
+          cache: 'no-store',
+        }),
         'Unable to load protected media consent records.'
       )
       const data = payload.logs ?? []
@@ -313,7 +412,17 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
         return
       }
 
-      const headers = ['Event', 'Media Kind', 'Media Variant', 'Access Mode', 'Consent Version', 'Consent Source', 'IP Hash', 'User Agent Hash', 'Recorded At']
+      const headers = [
+        'Event',
+        'Media Kind',
+        'Media Variant',
+        'Access Mode',
+        'Consent Version',
+        'Consent Source',
+        'IP Hash',
+        'User Agent Hash',
+        'Recorded At',
+      ]
       const rows = data.map((entry) => [
         entry.event_type,
         entry.media_kind || '',
@@ -326,7 +435,10 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
         `"${new Date(entry.created_at).toLocaleString()}"`,
       ])
 
-      downloadCSV([headers.join(','), ...rows.map((row) => row.join(','))].join('\n'), `${sanitizeFileStem(memorialTitle)}_media_consent.csv`)
+      downloadCSV(
+        [headers.join(','), ...rows.map((row) => row.join(','))].join('\n'),
+        `${sanitizeFileStem(memorialTitle)}_media_consent.csv`
+      )
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Export failed.'
       setErrorMessage(`Export failed: ${message}`)
@@ -338,42 +450,88 @@ export function DataExport({ memorialId, memorialTitle }: DataExportProps) {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border/70 bg-secondary/35 p-4">
-        <p className="text-sm font-medium text-foreground">Memorial export center</p>
+        <p className="text-sm font-medium text-foreground">
+          Memorial export center
+        </p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Export guestbook, media metadata, and a full memorial JSON package for handoff or archive review. Photo ZIP downloads the current
-          image files only. Automated backups remain the operational recovery path.
+          Export guestbook, media metadata, and a full memorial JSON package for
+          handoff or archive review. Photo ZIP downloads the current image files
+          only. Automated backups remain the operational recovery path.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3">
-        <Button variant="outline" onClick={exportMemorialPackage} disabled={loadingPackage} className="w-full justify-start">
-          {loadingPackage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileJson className="mr-2 h-4 w-4" />}
-          {loadingPackage ? 'Preparing package...' : 'Export Memorial Package (JSON)'}
+        <Button
+          variant="outline"
+          onClick={exportMemorialPackage}
+          disabled={loadingPackage}
+          className="w-full justify-start"
+        >
+          {loadingPackage ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileJson className="mr-2 h-4 w-4" />
+          )}
+          {loadingPackage
+            ? 'Preparing package...'
+            : 'Export Memorial Package (JSON)'}
         </Button>
 
-        <Button variant="outline" onClick={exportGuestbook} disabled={loadingGuestbook} className="w-full justify-start">
+        <Button
+          variant="outline"
+          onClick={exportGuestbook}
+          disabled={loadingGuestbook}
+          className="w-full justify-start"
+        >
           <FileText className="mr-2 h-4 w-4" />
           {loadingGuestbook ? 'Exporting...' : 'Export Guestbook (CSV)'}
         </Button>
 
-        <Button variant="outline" onClick={exportMediaConsent} disabled={loadingConsent} className="w-full justify-start">
+        <Button
+          variant="outline"
+          onClick={exportMediaConsent}
+          disabled={loadingConsent}
+          className="w-full justify-start"
+        >
           <FileText className="mr-2 h-4 w-4" />
           {loadingConsent ? 'Exporting...' : 'Export Media Consent (CSV)'}
         </Button>
 
-        <Button variant="outline" onClick={exportPhotoMetadata} disabled={loadingPhotos} className="w-full justify-start">
+        <Button
+          variant="outline"
+          onClick={exportPhotoMetadata}
+          disabled={loadingPhotos}
+          className="w-full justify-start"
+        >
           <Images className="mr-2 h-4 w-4" />
           {loadingPhotos ? 'Exporting...' : 'Export Photo Metadata (CSV)'}
         </Button>
 
-        <Button variant="outline" onClick={exportPhotosZip} disabled={loadingZip} className="w-full justify-start">
-          {loadingZip ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2 h-4 w-4" />}
+        <Button
+          variant="outline"
+          onClick={exportPhotosZip}
+          disabled={loadingZip}
+          className="w-full justify-start"
+        >
+          {loadingZip ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Archive className="mr-2 h-4 w-4" />
+          )}
           {loadingZip ? 'Preparing ZIP...' : 'Download All Photos (ZIP)'}
         </Button>
       </div>
 
-      {noticeMessage && <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">{noticeMessage}</p>}
-      {errorMessage && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{errorMessage}</p>}
+      {noticeMessage && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {noticeMessage}
+        </p>
+      )}
+      {errorMessage && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {errorMessage}
+        </p>
+      )}
     </div>
   )
 }

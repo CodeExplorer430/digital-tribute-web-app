@@ -18,7 +18,10 @@ vi.mock('@/lib/supabase/server', () => ({
     from: (table: string) => {
       if (table !== 'profiles') return { select: vi.fn() }
       return {
-        select: (columns: string) => (columns === 'role, is_active' ? { eq: mockProfileEq } : { eq: mockTargetEq }),
+        select: (columns: string) =>
+          columns === 'role, is_active'
+            ? { eq: mockProfileEq }
+            : { eq: mockTargetEq },
       }
     },
   }),
@@ -50,43 +53,76 @@ describe('admin users [id] invite route', () => {
 
   it('resends an invite email', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
     mockTargetSingle.mockResolvedValue({
-      data: { id: 'user-2', email: 'invitee@example.com', full_name: 'Invitee', role: 'editor', is_active: true },
+      data: {
+        id: 'user-2',
+        email: 'invitee@example.com',
+        full_name: 'Invitee',
+        role: 'editor',
+        is_active: true,
+      },
       error: null,
     })
     mockInviteUserByEmail.mockResolvedValue({ error: null })
-    mockUpdateSingle.mockResolvedValue({ data: { id: 'user-2', email: 'invitee@example.com' }, error: null })
-
-    const req = new Request('https://everlume.test/api/admin/users/550e8400-e29b-41d4-a716-446655440000/invite', {
-      method: 'POST',
+    mockUpdateSingle.mockResolvedValue({
+      data: { id: 'user-2', email: 'invitee@example.com' },
+      error: null,
     })
 
-    const res = await POST(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'https://everlume.test/api/admin/users/550e8400-e29b-41d4-a716-446655440000/invite',
+      {
+        method: 'POST',
+      }
+    )
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
 
     expect(res.status).toBe(200)
     expect(mockInviteUserByEmail).toHaveBeenCalledWith(
       'invitee@example.com',
       expect.objectContaining({
-        redirectTo: 'https://everlume.test/auth/callback?next=/login/reset-password',
+        redirectTo:
+          'https://everlume.test/auth/callback?next=/login/reset-password',
       })
     )
     await expect(res.json()).resolves.toMatchObject({
-      user: { id: 'user-2', email: 'invitee@example.com', account_state: 'invited' },
+      user: {
+        id: 'user-2',
+        email: 'invitee@example.com',
+        account_state: 'invited',
+      },
       message: 'Invite email sent.',
     })
   })
 
   it('returns not found when the invite target does not exist', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockTargetSingle.mockResolvedValue({ data: null, error: { message: 'missing' } })
-
-    const req = new Request('https://everlume.test/api/admin/users/550e8400-e29b-41d4-a716-446655440000/invite', {
-      method: 'POST',
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'missing' },
     })
 
-    const res = await POST(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'https://everlume.test/api/admin/users/550e8400-e29b-41d4-a716-446655440000/invite',
+      {
+        method: 'POST',
+      }
+    )
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(404)
   })
 })

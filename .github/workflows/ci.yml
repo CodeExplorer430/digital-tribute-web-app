@@ -2,15 +2,27 @@ name: CI
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ['main', 'master']
   pull_request:
-    branches: ["main", "master"]
+    branches: ['main', 'master']
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run format:check
+
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -225,7 +237,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [lint, typecheck, unit_coverage, worker_tests, e2e, a11y, launch_readiness, perf_a11y_gate]
+    needs:
+      [
+        format,
+        lint,
+        typecheck,
+        unit_coverage,
+        worker_tests,
+        e2e,
+        a11y,
+        launch_readiness,
+        perf_a11y_gate,
+      ]
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test_publishable_key

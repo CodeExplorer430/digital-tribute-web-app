@@ -1,10 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { getE2EAuthSessionFromRequest, isE2EFakeAuthEnabled } from '@/lib/server/e2e-auth'
-import { getSupabasePublishableKeyOrThrow, getSupabaseUrlOrThrow } from '@/lib/supabase/env'
+import {
+  getE2EAuthSessionFromRequest,
+  isE2EFakeAuthEnabled,
+} from '@/lib/server/e2e-auth'
+import {
+  getSupabasePublishableKeyOrThrow,
+  getSupabaseUrlOrThrow,
+} from '@/lib/supabase/env'
 
 export async function updateSession(request: NextRequest) {
-  if (process.env.E2E_BYPASS_ADMIN_AUTH === '1' && request.nextUrl.pathname.startsWith('/admin')) {
+  if (
+    process.env.E2E_BYPASS_ADMIN_AUTH === '1' &&
+    request.nextUrl.pathname.startsWith('/admin')
+  ) {
     return NextResponse.next({ request })
   }
 
@@ -32,7 +41,9 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
           supabaseResponse = NextResponse.next({
             request,
           })

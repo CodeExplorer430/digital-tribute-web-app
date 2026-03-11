@@ -35,7 +35,10 @@ describe('rate limit helper', () => {
   })
 
   it('resets window for memory backend', async () => {
-    vi.spyOn(Date, 'now').mockReturnValueOnce(1000).mockReturnValueOnce(1200).mockReturnValueOnce(2200)
+    vi.spyOn(Date, 'now')
+      .mockReturnValueOnce(1000)
+      .mockReturnValueOnce(1200)
+      .mockReturnValueOnce(2200)
 
     const first = await checkRateLimit('test:key:3', 1, 500)
     const second = await checkRateLimit('test:key:3', 1, 500)
@@ -51,7 +54,8 @@ describe('rate limit helper', () => {
     process.env.UPSTASH_REDIS_REST_URL = 'https://upstash.example.com'
     process.env.UPSTASH_REDIS_REST_TOKEN = 'token'
 
-    const fetchMock = vi.spyOn(globalThis, 'fetch')
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         new Response(JSON.stringify([{ result: 1 }]), { status: 200 })
       )
@@ -74,7 +78,9 @@ describe('rate limit helper', () => {
     process.env.UPSTASH_REDIS_REST_URL = 'https://upstash.example.com'
     process.env.UPSTASH_REDIS_REST_TOKEN = 'token'
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('err', { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('err', { status: 500 })
+    )
 
     const first = await checkRateLimit('test:key:fallback', 1, 60_000)
     const second = await checkRateLimit('test:key:fallback', 1, 60_000)

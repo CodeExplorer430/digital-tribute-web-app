@@ -25,7 +25,9 @@ export function MemorialUnlockForm({ slug }: MemorialUnlockFormProps) {
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to unlock this memorial.')
       setLoading(false)
       return
@@ -35,19 +37,26 @@ export function MemorialUnlockForm({ slug }: MemorialUnlockFormProps) {
   }
 
   return (
-    <main id="main-content" className="page-container flex min-h-[70vh] items-center justify-center py-12">
+    <main
+      id="main-content"
+      className="page-container flex min-h-[70vh] items-center justify-center py-12"
+    >
       <section className="surface-card w-full max-w-md space-y-5 p-6 md:p-8">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">Memorial Access Required</h1>
           <p className="text-sm text-muted-foreground">
-            This memorial is password protected. Enter the family-provided password to continue. Protected memorials are shared by direct link
+            This memorial is password protected. Enter the family-provided
+            password to continue. Protected memorials are shared by direct link
             and do not appear in the public directory.
           </p>
         </div>
 
         <form onSubmit={handleUnlock} className="space-y-4">
           <div>
-            <label htmlFor="memorial-password" className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor="memorial-password"
+              className="mb-1.5 block text-sm font-medium"
+            >
               Access Password
             </label>
             <Input
@@ -62,7 +71,10 @@ export function MemorialUnlockForm({ slug }: MemorialUnlockFormProps) {
           </div>
 
           {errorMessage && (
-            <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
               {errorMessage}
             </p>
           )}

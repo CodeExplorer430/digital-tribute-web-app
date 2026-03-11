@@ -2,10 +2,10 @@ name: Deploy Cloudflare Worker
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ['main', 'master']
     paths:
-      - "workers/redirector/**"
-      - ".github/workflows/deploy-worker.yml"
+      - 'workers/redirector/**'
+      - '.github/workflows/deploy-worker.yml'
   workflow_dispatch:
 
 concurrency:
@@ -40,6 +40,19 @@ jobs:
           CAPTCHA_ENABLED: '1'
           CAPTCHA_SECRET: ${{ secrets.CAPTCHA_SECRET }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          VIDEO_TRANSCODE_API_BASE: ${{ secrets.VIDEO_TRANSCODE_API_BASE }}
+          VIDEO_TRANSCODE_API_TOKEN: ${{ secrets.VIDEO_TRANSCODE_API_TOKEN }}
+          VIDEO_TRANSCODE_CALLBACK_TOKEN: ${{ secrets.VIDEO_TRANSCODE_CALLBACK_TOKEN }}
+          VIDEO_TRANSCODE_APP_BASE: ${{ vars.NEXT_PUBLIC_APP_URL || secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || secrets.NEXT_PUBLIC_APP_URL }}
+
+      - name: Worker env/config gate
+        run: npm run ops:check-worker-prereqs
+        env:
+          WORKER_SUPABASE_URL: ${{ secrets.WORKER_SUPABASE_URL }}
+          WORKER_SUPABASE_SECRET_KEY: ${{ secrets.WORKER_SUPABASE_SECRET_KEY || secrets.WORKER_SUPABASE_SERVICE_ROLE_KEY }}
+          WORKER_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.WORKER_SUPABASE_SERVICE_ROLE_KEY || secrets.WORKER_SUPABASE_SECRET_KEY }}
+          WORKER_FALLBACK_URL: ${{ secrets.WORKER_FALLBACK_URL }}
 
       - name: Run worker unit tests
         run: npm run test:worker

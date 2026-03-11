@@ -23,7 +23,10 @@ test('admin invites and updates users', async ({ page }) => {
     }
 
     if (req.method() === 'POST' && url.endsWith('/api/admin/users')) {
-      const body = req.postDataJSON() as { fullName: string; role: 'admin' | 'editor' | 'viewer' }
+      const body = req.postDataJSON() as {
+        fullName: string
+        role: 'admin' | 'editor' | 'viewer'
+      }
       const created = {
         id: 'u-2',
         email: 'editor@everlume.test',
@@ -39,7 +42,10 @@ test('admin invites and updates users', async ({ page }) => {
 
     if (req.method() === 'PATCH' && /\/api\/admin\/users\/.+/.test(url)) {
       const id = url.split('/').pop() as string
-      const body = req.postDataJSON() as { role?: 'admin' | 'editor' | 'viewer'; isActive?: boolean }
+      const body = req.postDataJSON() as {
+        role?: 'admin' | 'editor' | 'viewer'
+        isActive?: boolean
+      }
       const user = users.find((u) => u.id === id)
       if (user) {
         if (body.role) user.role = body.role
@@ -61,7 +67,9 @@ test('admin invites and updates users', async ({ page }) => {
   })
 
   await page.goto('/admin/users')
-  await expect(page.getByRole('heading', { name: /user management/i })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: /user management/i })
+  ).toBeVisible()
 
   await page.getByPlaceholder('name@example.com').fill('editor@everlume.test')
   await page.getByPlaceholder('Alex Santos').fill('Editor Person')

@@ -40,8 +40,12 @@ describe('ResetPasswordScreen', () => {
 
     render(<ResetPasswordScreen />)
 
-    fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'password123' } })
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText('New Password'), {
+      target: { value: 'password123' },
+    })
+    fireEvent.change(screen.getByLabelText('Confirm Password'), {
+      target: { value: 'password123' },
+    })
     fireEvent.click(screen.getByRole('button', { name: /update password/i }))
 
     expect(mockUpdateUser).toHaveBeenCalledWith({ password: 'password123' })
@@ -51,22 +55,34 @@ describe('ResetPasswordScreen', () => {
   it('blocks submission when passwords do not match', async () => {
     render(<ResetPasswordScreen />)
 
-    fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'password123' } })
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'different' } })
+    fireEvent.change(screen.getByLabelText('New Password'), {
+      target: { value: 'password123' },
+    })
+    fireEvent.change(screen.getByLabelText('Confirm Password'), {
+      target: { value: 'different' },
+    })
 
     expect(screen.getByText('Passwords do not match.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /update password/i })).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: /update password/i })
+    ).toBeDisabled()
   })
 
   it('uses fake auth password reset flow when enabled', async () => {
     process.env.NEXT_PUBLIC_E2E_FAKE_AUTH = '1'
     mockSearchParams.set('email', 'pending-admin@everlume.local')
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    )
 
     render(<ResetPasswordScreen />)
 
-    fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'ChangedPass1!' } })
-    fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'ChangedPass1!' } })
+    fireEvent.change(screen.getByLabelText('New Password'), {
+      target: { value: 'ChangedPass1!' },
+    })
+    fireEvent.change(screen.getByLabelText('Confirm Password'), {
+      target: { value: 'ChangedPass1!' },
+    })
     fireEvent.click(screen.getByRole('button', { name: /update password/i }))
 
     expect(fetchMock).toHaveBeenCalledWith(

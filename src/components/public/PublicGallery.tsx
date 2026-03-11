@@ -43,11 +43,15 @@ export function PublicGallery({
   }, [])
 
   const nextImage = useCallback(() => {
-    setSelectedIndex((current) => (current !== null ? (current + 1) % photos.length : current))
+    setSelectedIndex((current) =>
+      current !== null ? (current + 1) % photos.length : current
+    )
   }, [photos.length])
 
   const prevImage = useCallback(() => {
-    setSelectedIndex((current) => (current !== null ? (current - 1 + photos.length) % photos.length : current))
+    setSelectedIndex((current) =>
+      current !== null ? (current - 1 + photos.length) % photos.length : current
+    )
   }, [photos.length])
 
   useEffect(() => {
@@ -76,25 +80,49 @@ export function PublicGallery({
     if (selectedIndex === null) return
     if (!slideshowEnabled || slideshowPaused || photos.length < 2) return
 
-    const intervalMs = Math.min(12000, Math.max(2000, slideshowIntervalMs || 4500))
+    const intervalMs = Math.min(
+      12000,
+      Math.max(2000, slideshowIntervalMs || 4500)
+    )
     const timer = window.setInterval(() => {
       nextImage()
     }, intervalMs)
 
     return () => window.clearInterval(timer)
-  }, [selectedIndex, slideshowEnabled, slideshowPaused, slideshowIntervalMs, photos.length, nextImage])
+  }, [
+    selectedIndex,
+    slideshowEnabled,
+    slideshowPaused,
+    slideshowIntervalMs,
+    photos.length,
+    nextImage,
+  ])
 
   return (
     <>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="section-kicker">Gallery</p>
+          <h2 className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">
+            Shared photographs and keepsakes
+          </h2>
+        </div>
+        <div className="status-pill">
+          {photos.length} photo{photos.length === 1 ? '' : 's'}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4">
         {photos.map((photo, index) => {
           const thumbUrl = photo.thumb_url || photo.image_url || ''
-          const usesProtectedMediaProxy = thumbUrl.startsWith('/api/public/media/') || (photo.image_url || '').startsWith('/api/public/media/')
+          const usesProtectedMediaProxy =
+            thumbUrl.startsWith('/api/public/media/') ||
+            (photo.image_url || '').startsWith('/api/public/media/')
           return (
             <button
               key={photo.id}
               onClick={() => openLightbox(index)}
-              className="surface-card relative aspect-square overflow-hidden text-left transition hover:-translate-y-0.5 hover:shadow-md"
+              className="surface-card group relative aspect-square overflow-hidden text-left transition hover:-translate-y-0.5 hover:shadow-md"
               aria-label={`Open photo ${index + 1}${photo.caption ? `: ${photo.caption}` : ''}`}
             >
               {thumbUrl ? (
@@ -104,11 +132,16 @@ export function PublicGallery({
                   fill
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                   unoptimized={usesProtectedMediaProxy}
-                  className={`${fit === 'contain' ? 'object-contain bg-white/80 p-1.5' : 'object-cover'} transition-transform duration-500 hover:scale-105`}
+                  className={`${fit === 'contain' ? 'object-contain bg-white/80 p-1.5' : 'object-cover'} transition-transform duration-500 group-hover:scale-105`}
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Missing image URL</div>
+                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                  Missing image URL
+                </div>
               )}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-3 py-3 text-xs font-medium text-white/90 opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
+                {photo.caption || `Open photo ${index + 1}`}
+              </div>
             </button>
           )
         })}
@@ -119,7 +152,7 @@ export function PublicGallery({
           role="dialog"
           aria-modal="true"
           aria-label="Photo lightbox"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 p-4 md:p-10"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_top,rgba(50,59,50,0.34),rgba(2,2,2,0.95))] p-4 md:p-10"
         >
           <button
             ref={closeButtonRef}
@@ -134,9 +167,15 @@ export function PublicGallery({
             <button
               onClick={() => setSlideshowPaused((current) => !current)}
               className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-md border border-white/25 bg-black/35 px-3 py-1.5 text-sm text-white/90 transition-colors hover:bg-black/55"
-              aria-label={slideshowPaused ? 'Resume slideshow' : 'Pause slideshow'}
+              aria-label={
+                slideshowPaused ? 'Resume slideshow' : 'Pause slideshow'
+              }
             >
-              {slideshowPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              {slideshowPaused ? (
+                <Play className="h-4 w-4" />
+              ) : (
+                <Pause className="h-4 w-4" />
+              )}
               {slideshowPaused ? 'Resume' : 'Pause'}
             </button>
           )}
@@ -158,14 +197,33 @@ export function PublicGallery({
           </button>
 
           <div className="relative flex h-full w-full flex-col items-center justify-center">
+            <div className="mb-4 flex w-full max-w-6xl items-center justify-between gap-3 text-sm text-white/72">
+              <p>
+                Photo {selectedIndex + 1} of {photos.length}
+              </p>
+              <p className="hidden md:block">
+                Use arrow keys to move between photos.
+              </p>
+            </div>
             <div className="relative h-[84vh] w-full max-w-6xl">
               <Image
-                src={photos[selectedIndex].image_url || photos[selectedIndex].thumb_url || ''}
-                alt={photos[selectedIndex].caption || `Memorial photo ${selectedIndex + 1}`}
+                src={
+                  photos[selectedIndex].image_url ||
+                  photos[selectedIndex].thumb_url ||
+                  ''
+                }
+                alt={
+                  photos[selectedIndex].caption ||
+                  `Memorial photo ${selectedIndex + 1}`
+                }
                 fill
                 sizes="100vw"
-                unoptimized={(photos[selectedIndex].image_url || photos[selectedIndex].thumb_url || '').startsWith('/api/public/media/')}
-                className={`rounded-md ${fit === 'contain' ? 'object-contain' : 'object-cover'} shadow-2xl transition-all duration-700`}
+                unoptimized={(
+                  photos[selectedIndex].image_url ||
+                  photos[selectedIndex].thumb_url ||
+                  ''
+                ).startsWith('/api/public/media/')}
+                className={`rounded-[1.5rem] ${fit === 'contain' ? 'object-contain' : 'object-cover'} shadow-2xl transition-all duration-700`}
                 priority
               />
             </div>

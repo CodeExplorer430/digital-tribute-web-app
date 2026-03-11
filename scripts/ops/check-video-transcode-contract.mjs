@@ -1,25 +1,39 @@
 #!/usr/bin/env node
 
 import { loadLocalEnv } from './load-env.mjs'
+import {
+  getTrimmedEnv,
+  isPlaceholderVideoTranscodeApiBase,
+  normalizeUrl,
+} from './env-validation.mjs'
 
 loadLocalEnv()
 
-const base = process.env.VIDEO_TRANSCODE_API_BASE
-const apiToken = process.env.VIDEO_TRANSCODE_API_TOKEN
-const callbackToken = process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN
+const base = getTrimmedEnv('VIDEO_TRANSCODE_API_BASE')
+const apiToken = getTrimmedEnv('VIDEO_TRANSCODE_API_TOKEN')
+const callbackToken = getTrimmedEnv('VIDEO_TRANSCODE_CALLBACK_TOKEN')
 
 if (!base || !apiToken || !callbackToken) {
-  console.error('Missing required env vars: VIDEO_TRANSCODE_API_BASE, VIDEO_TRANSCODE_API_TOKEN, VIDEO_TRANSCODE_CALLBACK_TOKEN')
+  console.error(
+    'Missing required env vars: VIDEO_TRANSCODE_API_BASE, VIDEO_TRANSCODE_API_TOKEN, VIDEO_TRANSCODE_CALLBACK_TOKEN'
+  )
   process.exit(1)
 }
 
-const health = await fetch(`${base.replace(/\/+$/, '')}/healthz`).catch(() => null)
+if (isPlaceholderVideoTranscodeApiBase(base)) {
+  console.error(
+    'VIDEO_TRANSCODE_API_BASE points to a placeholder host. Configure a real transcode service before production checks.'
+  )
+  process.exit(1)
+}
+
+const health = await fetch(`${normalizeUrl(base)}/healthz`).catch(() => null)
 if (!health || !health.ok) {
   console.error('Transcode health check failed.')
   process.exit(1)
 }
 
-const init = await fetch(`${base.replace(/\/+$/, '')}/jobs/init`, {
+const init = await fetch(`${normalizeUrl(base)}/jobs/init`, {
   method: 'POST',
   headers: {
     authorization: `Bearer ${apiToken}`,
@@ -47,4 +61,6 @@ if (!payload?.uploadUrl || !payload?.uploadMethod) {
   process.exit(1)
 }
 
-console.log('Transcode contract check passed: health + init endpoint are reachable and shaped correctly.')
+console.log(
+  'Transcode contract check passed: health + init endpoint are reachable and shaped correctly.'
+)

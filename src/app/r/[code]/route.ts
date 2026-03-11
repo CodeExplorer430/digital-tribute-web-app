@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import { getE2ERedirectFixtureByCode, isE2EPublicFixturesEnabled } from '@/lib/server/e2e-public-fixtures'
+import {
+  getE2ERedirectFixtureByCode,
+  isE2EPublicFixturesEnabled,
+} from '@/lib/server/e2e-public-fixtures'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function GET(
@@ -35,8 +38,14 @@ export async function GET(
       return response
     }
 
-    const response = NextResponse.redirect(new URL(fixture.target_url, request.url), 302)
-    response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=60, stale-while-revalidate=60')
+    const response = NextResponse.redirect(
+      new URL(fixture.target_url, request.url),
+      302
+    )
+    response.headers.set(
+      'Cache-Control',
+      'public, max-age=60, s-maxage=60, stale-while-revalidate=60'
+    )
     return response
   }
 
@@ -62,6 +71,9 @@ export async function GET(
   }
 
   const response = NextResponse.redirect(data.target_url, 302)
-  response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=60, stale-while-revalidate=60')
+  response.headers.set(
+    'Cache-Control',
+    'public, max-age=60, s-maxage=60, stale-while-revalidate=60'
+  )
   return response
 }

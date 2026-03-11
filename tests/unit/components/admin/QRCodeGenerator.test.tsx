@@ -19,16 +19,30 @@ describe('QRCodeGenerator', () => {
     mockToCanvas.mockReset()
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:qr')
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
-    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,mock')
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/png;base64,mock'
+    )
   })
 
   it('generates svg/canvas and supports SVG/PNG downloads', async () => {
-    mockToString.mockImplementation((_: string, __: unknown, callback: (err: Error | null, svg: string) => void) => {
-      callback(null, '<svg><rect /></svg>')
-    })
+    mockToString.mockImplementation(
+      (
+        _: string,
+        __: unknown,
+        callback: (err: Error | null, svg: string) => void
+      ) => {
+        callback(null, '<svg><rect /></svg>')
+      }
+    )
 
     const user = userEvent.setup()
-    render(<QRCodeGenerator url="https://example.com/r/jane" template="warm" caption="Remember me" />)
+    render(
+      <QRCodeGenerator
+        url="https://example.com/r/jane"
+        template="warm"
+        caption="Remember me"
+      />
+    )
 
     await waitFor(() => {
       expect(mockToString).toHaveBeenCalledWith(
@@ -45,16 +59,30 @@ describe('QRCodeGenerator', () => {
     await expect(svgBlob.text()).resolves.toContain('Remember me')
 
     await user.click(screen.getByRole('button', { name: /Download PNG/i }))
-    expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith('image/png')
+    expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith(
+      'image/png'
+    )
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled()
   })
 
   it('keeps qr container rendered when svg generation fails', async () => {
-    mockToString.mockImplementation((_: string, __: unknown, callback: (err: Error | null, svg: string) => void) => {
-      callback(new Error('generation failed'), '')
-    })
+    mockToString.mockImplementation(
+      (
+        _: string,
+        __: unknown,
+        callback: (err: Error | null, svg: string) => void
+      ) => {
+        callback(new Error('generation failed'), '')
+      }
+    )
 
-    render(<QRCodeGenerator url="https://example.com/r/jane" template="minimal" caption="Visit memorial" />)
+    render(
+      <QRCodeGenerator
+        url="https://example.com/r/jane"
+        template="minimal"
+        caption="Visit memorial"
+      />
+    )
 
     await waitFor(() => {
       expect(mockToString).toHaveBeenCalled()
@@ -63,31 +91,54 @@ describe('QRCodeGenerator', () => {
   })
 
   it('falls back to the hidden canvas data url when export context is unavailable', async () => {
-    mockToString.mockImplementation((_: string, __: unknown, callback: (err: Error | null, svg: string) => void) => {
-      callback(null, '<svg><rect /></svg>')
-    })
+    mockToString.mockImplementation(
+      (
+        _: string,
+        __: unknown,
+        callback: (err: Error | null, svg: string) => void
+      ) => {
+        callback(null, '<svg><rect /></svg>')
+      }
+    )
 
     const originalGetContext = HTMLCanvasElement.prototype.getContext
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement) {
-      if (this.width === 1800 && this.height === 2400) return null
-      return originalGetContext.call(this, '2d')
-    })
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+      function (this: HTMLCanvasElement) {
+        if (this.width === 1800 && this.height === 2400) return null
+        return originalGetContext.call(this, '2d')
+      }
+    )
 
     const user = userEvent.setup()
-    render(<QRCodeGenerator url="https://example.com/r/jane" template="classic" caption="Visit memorial" showLogo />)
+    render(
+      <QRCodeGenerator
+        url="https://example.com/r/jane"
+        template="classic"
+        caption="Visit memorial"
+        showLogo
+      />
+    )
 
     await waitFor(() => {
       expect(mockToString).toHaveBeenCalled()
     })
 
     await user.click(screen.getByRole('button', { name: /Download PNG/i }))
-    expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith('image/png')
+    expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith(
+      'image/png'
+    )
   })
 
   it('includes double frame and logo markup in the exported svg template', async () => {
-    mockToString.mockImplementation((_: string, __: unknown, callback: (err: Error | null, svg: string) => void) => {
-      callback(null, '<svg><rect /></svg>')
-    })
+    mockToString.mockImplementation(
+      (
+        _: string,
+        __: unknown,
+        callback: (err: Error | null, svg: string) => void
+      ) => {
+        callback(null, '<svg><rect /></svg>')
+      }
+    )
 
     const user = userEvent.setup()
     render(
@@ -105,7 +156,9 @@ describe('QRCodeGenerator', () => {
     })
 
     await user.click(screen.getByRole('button', { name: /Download SVG/i }))
-    const svgBlob = vi.mocked(URL.createObjectURL).mock.calls.at(-1)?.[0] as Blob
+    const svgBlob = vi
+      .mocked(URL.createObjectURL)
+      .mock.calls.at(-1)?.[0] as Blob
     const svgText = await svgBlob.text()
     expect(svgText).toContain('For Lola')
     expect(svgText).toContain('stroke-width="3"')
@@ -113,9 +166,15 @@ describe('QRCodeGenerator', () => {
   })
 
   it('renders the png export with logo and sans caption when canvas context is available', async () => {
-    mockToString.mockImplementation((_: string, __: unknown, callback: (err: Error | null, svg: string) => void) => {
-      callback(null, '<svg><rect /></svg>')
-    })
+    mockToString.mockImplementation(
+      (
+        _: string,
+        __: unknown,
+        callback: (err: Error | null, svg: string) => void
+      ) => {
+        callback(null, '<svg><rect /></svg>')
+      }
+    )
 
     const arc = vi.fn()
     const fill = vi.fn()
@@ -141,10 +200,13 @@ describe('QRCodeGenerator', () => {
     }
 
     const originalGetContext = HTMLCanvasElement.prototype.getContext
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (this: HTMLCanvasElement) {
-      if (this.width === 1800 && this.height === 2400) return exportContext as unknown as CanvasRenderingContext2D
-      return originalGetContext.call(this, '2d')
-    })
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+      function (this: HTMLCanvasElement) {
+        if (this.width === 1800 && this.height === 2400)
+          return exportContext as unknown as CanvasRenderingContext2D
+        return originalGetContext.call(this, '2d')
+      }
+    )
 
     const user = userEvent.setup()
     render(
@@ -172,12 +234,24 @@ describe('QRCodeGenerator', () => {
   })
 
   it('does not try to download an svg before qr markup is available', async () => {
-    mockToString.mockImplementation((_: string, __: unknown, callback: (err: Error | null, svg: string) => void) => {
-      callback(new Error('generation failed'), '')
-    })
+    mockToString.mockImplementation(
+      (
+        _: string,
+        __: unknown,
+        callback: (err: Error | null, svg: string) => void
+      ) => {
+        callback(new Error('generation failed'), '')
+      }
+    )
 
     const user = userEvent.setup()
-    render(<QRCodeGenerator url="https://example.com/r/jane" template="minimal" caption="Visit memorial" />)
+    render(
+      <QRCodeGenerator
+        url="https://example.com/r/jane"
+        template="minimal"
+        caption="Visit memorial"
+      />
+    )
 
     await user.click(screen.getByRole('button', { name: /Download SVG/i }))
     expect(URL.createObjectURL).not.toHaveBeenCalled()

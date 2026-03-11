@@ -26,17 +26,22 @@ interface AdminQRCodeSectionProps {
   redirects: RedirectRecord[]
 }
 
-export function AdminQRCodeSection({ memorial, redirects }: AdminQRCodeSectionProps) {
+export function AdminQRCodeSection({
+  memorial,
+  redirects,
+}: AdminQRCodeSectionProps) {
   const [selectedUrl, setSelectedUrl] = useState<string>('')
 
   const options = useMemo(() => {
-    const baseUrl = (process.env.NEXT_PUBLIC_SHORT_DOMAIN || window.location.origin).replace(/\/+$/, '')
+    const baseUrl = (
+      process.env.NEXT_PUBLIC_SHORT_DOMAIN || window.location.origin
+    ).replace(/\/+$/, '')
     const redirectOptions = (redirects || [])
       .filter((r) => r.is_active !== false)
       .map((r) => ({
-      key: r.id,
-      label: `Short: /${r.shortcode}${r.print_status === 'verified' ? ' (verified)' : ''}`,
-      value: `${baseUrl}/${r.shortcode}`,
+        key: r.id,
+        label: `Short: /${r.shortcode}${r.print_status === 'verified' ? ' (verified)' : ''}`,
+        value: `${baseUrl}/${r.shortcode}`,
       }))
 
     return redirectOptions
@@ -46,11 +51,16 @@ export function AdminQRCodeSection({ memorial, redirects }: AdminQRCodeSectionPr
 
   return (
     <div className="surface-card space-y-4 p-6">
-      <h3 className="border-b border-border pb-2 text-base font-semibold">QR Code for Plaque</h3>
+      <h3 className="border-b border-border pb-2 text-base font-semibold">
+        QR Code for Plaque
+      </h3>
       <div className="flex flex-col items-center space-y-4">
         {options.length > 1 && (
           <div className="w-full">
-            <label htmlFor="qr-url-selector" className="mb-1 block text-xs font-medium text-muted-foreground">
+            <label
+              htmlFor="qr-url-selector"
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+            >
               Select URL for QR
             </label>
             <select
@@ -74,7 +84,12 @@ export function AdminQRCodeSection({ memorial, redirects }: AdminQRCodeSectionPr
             </p>
             <QRCodeGenerator
               url={qrUrl}
-              template={memorial.qr_template === 'minimal' || memorial.qr_template === 'warm' ? memorial.qr_template : 'classic'}
+              template={
+                memorial.qr_template === 'minimal' ||
+                memorial.qr_template === 'warm'
+                  ? memorial.qr_template
+                  : 'classic'
+              }
               caption={(memorial.qr_caption || 'Scan me!').trim()}
               foregroundColor={memorial.qr_foreground_color}
               backgroundColor={memorial.qr_background_color}
@@ -85,7 +100,8 @@ export function AdminQRCodeSection({ memorial, redirects }: AdminQRCodeSectionPr
           </>
         ) : (
           <p className="w-full rounded-md border border-dashed border-border px-3 py-4 text-center text-sm text-muted-foreground">
-            Create and activate a short link in Settings before generating a plaque QR for {memorial.slug}.
+            Create and activate a short link in Settings before generating a
+            plaque QR for {memorial.slug}.
           </p>
         )}
       </div>

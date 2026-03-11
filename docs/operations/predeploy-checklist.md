@@ -3,9 +3,11 @@
 Use this checklist before Vercel production deploy.
 
 ## 1) Cloudinary Upload Preset
+
 Cloudinary Console -> Settings -> Upload -> Upload presets -> Add upload preset.
 
 Use these values:
+
 - Preset name: `everlume_unsigned_upload`
 - Signing mode: `Unsigned`
 - Asset folder: `everlume`
@@ -14,11 +16,13 @@ Use these values:
 - Optional allowed formats: `jpg,jpeg,png,webp,heic`
 
 Then set:
+
 - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
 - `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=everlume_unsigned_upload`
 - `NEXT_PUBLIC_APP_URL=https://app.yourdomain.com`
 
 ## 2) Cloudflare Worker + Short Domain
+
 1. Deploy worker `everlume-redirector`.
 2. Add route: `go.yourdomain.com/*` -> `everlume-redirector`.
 3. Set worker secrets:
@@ -28,30 +32,43 @@ Then set:
 4. Set app env:
    - `NEXT_PUBLIC_APP_URL=https://app.yourdomain.com`
    - `NEXT_PUBLIC_SHORT_DOMAIN=https://go.yourdomain.com`
+5. Run worker env check:
+
+```bash
+npm run ops:check-worker-prereqs
+```
 
 ## 3) Redirect Smoke Test
+
 Insert one row in `redirects` table:
+
 - `shortcode`: `test`
 - `target_url`: temporary public memorial or staging memorial URL
 
 Check:
+
 - `https://go.yourdomain.com/test` -> `302` to target.
 - `https://go.yourdomain.com/unknown` -> `404`.
 - `https://go.yourdomain.com/` -> `302` to fallback (if set).
 
 Also verify app-side fallback:
+
 - `https://app.yourdomain.com/r/unknown` -> `/r/not-found?reason=missing`.
 - `https://app.yourdomain.com/r/test` -> `302` to target URL.
 - When homepage directory is enabled, `/r/not-found` should expose `Browse Public Memorials` linking to `/#memorial-directory`.
 
 ## 4) Video Transcode Service
+
 Deploy a compatible transcode callback service before enabling direct video upload in production.
 
 ### Cloud Run reference path
+
 1. Build/deploy service:
+
 ```bash
 ./scripts/ops/deploy-video-transcode-cloud-run.sh everlume-video-transcode us-central1 <gcp-project-id>
 ```
+
 2. Set Cloud Run env vars:
    - `VIDEO_TRANSCODE_API_TOKEN`
    - `VIDEO_TRANSCODE_CALLBACK_TOKEN`
@@ -64,29 +81,38 @@ Deploy a compatible transcode callback service before enabling direct video uplo
    - `VIDEO_TRANSCODE_API_TOKEN=<same-as-service-token>`
    - `VIDEO_TRANSCODE_CALLBACK_TOKEN=<same-as-service-callback-token>`
    - `VIDEO_TRANSCODE_APP_BASE=<app-base-url>` (for synthetic callback checks, e.g. `https://app.yourdomain.com`)
+   - `VIDEO_TRANSCODE_API_BASE` must point to a real service, not a placeholder host such as `your-cloud-run-service.run.app`
+   - `VIDEO_TRANSCODE_APP_BASE` must match `NEXT_PUBLIC_APP_URL` in production
 4. Run contract check:
+
 ```bash
 npm run ops:check-video-transcode
 npm run ops:check-video-transcode:synthetic
 ```
 
 ### Platform alternatives
+
 Any platform is valid as long as it exposes the same API contract used by the checks above:
+
 - `GET /healthz`
 - `POST /jobs/init`
 - callback support for app `/api/internal/video-transcode/callback`
 
 Common alternatives:
+
 - Cloud Run Jobs/Service (reference implementation)
 - Fly.io app service
 - Render web service
 - Railway service
 
 ## 5) Local Validation
+
 Run before deploy:
+
 ```bash
 npm run ops:check-prereqs
 npm run ops:check-prereqs:production
+npm run ops:check-worker-prereqs
 npm run ops:check-db-schema
 npm run ops:check-video-transcode
 npm run ops:check-video-transcode:synthetic
@@ -98,12 +124,14 @@ npm run test:e2e:auth
 ```
 
 Production gate note:
+
 - `ops:check-prereqs:production` enforces durable anti-spam config:
   - `RATE_LIMIT_BACKEND=upstash`
   - `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`
   - `CAPTCHA_ENABLED=1` + `CAPTCHA_SECRET` + `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 
 ## 6) QR Print Validation
+
 - Generate QR assets from admin memorial editor.
 - Print test one small and one large sample.
 - Scan on iOS and Android.

@@ -77,11 +77,19 @@ export function MemorialPageView({
   mediaConsentVersion,
 }: MemorialPageViewProps) {
   const slideshowEnabled = memorial.memorial_slideshow_enabled !== false
-  const slideshowIntervalMs = Number(memorial.memorial_slideshow_interval_ms) || 4500
-  const memorialVideoLayout = memorial.memorial_video_layout === 'featured' ? 'featured' : 'grid'
-  const memorialPhotoFit = memorial.memorial_photo_fit === 'contain' ? 'contain' : 'cover'
-  const memorialCaptionStyle = memorial.memorial_caption_style === 'minimal' ? 'minimal' : 'classic'
-  const themePreset = memorial.memorial_theme === 'serene' || memorial.memorial_theme === 'editorial' ? memorial.memorial_theme : 'classic'
+  const slideshowIntervalMs =
+    Number(memorial.memorial_slideshow_interval_ms) || 4500
+  const memorialVideoLayout =
+    memorial.memorial_video_layout === 'featured' ? 'featured' : 'grid'
+  const memorialPhotoFit =
+    memorial.memorial_photo_fit === 'contain' ? 'contain' : 'cover'
+  const memorialCaptionStyle =
+    memorial.memorial_caption_style === 'minimal' ? 'minimal' : 'classic'
+  const themePreset =
+    memorial.memorial_theme === 'serene' ||
+    memorial.memorial_theme === 'editorial'
+      ? memorial.memorial_theme
+      : 'classic'
   const themeShellClass =
     themePreset === 'serene'
       ? 'bg-[radial-gradient(circle_at_12%_8%,rgba(164,194,173,0.24),transparent_44%),linear-gradient(180deg,#f3f7f3_0%,#edf3ee_100%)]'
@@ -94,16 +102,35 @@ export function MemorialPageView({
     `Welcome to the memorial for ${memorial.full_name || 'our loved one'}. We invite you to explore the gallery and leave a message for the family.`
 
   return (
-    <div className={`min-h-screen pb-14 ${themeShellClass}`} data-memorial-theme={themePreset} data-memorial-access={accessMode}>
+    <div
+      className={`page-shell min-h-screen pb-14 ${themeShellClass}`}
+      data-memorial-theme={themePreset}
+      data-memorial-access={accessMode}
+    >
       <TributeHero memorial={memorial} />
 
-      <main id="main-content" className="page-container memorial-print-layout space-y-12 py-10 md:space-y-16 md:py-14">
-        <MemorialActionBar memorialTitle={memorial.title} guestbookHref="#guestbook" />
+      <main
+        id="main-content"
+        className="page-container memorial-print-layout space-y-12 py-10 md:space-y-16 md:py-14"
+      >
+        <MemorialActionBar
+          memorialTitle={memorial.title}
+          guestbookHref="#guestbook"
+        />
 
-        <section id="remembrance" className="surface-card print-avoid-break mx-auto max-w-4xl px-6 py-8 text-center md:px-10">
+        <section
+          id="remembrance"
+          className="surface-card print-avoid-break mx-auto max-w-4xl px-6 py-8 text-center md:px-10"
+        >
           <p className="section-kicker">Remembrance</p>
           <h2 className="section-title mt-2">Our Memories</h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">{remembranceCopy}</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
+            {remembranceCopy}
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <span className="status-pill">Theme: {themePreset}</span>
+            <span className="status-pill">Access: {accessMode}</span>
+          </div>
         </section>
 
         <section id="photos" className="space-y-6 print-avoid-break">
@@ -116,7 +143,10 @@ export function MemorialPageView({
             />
           ) : photos.length > 0 ? (
             <PublicGallery
-              photos={photos.map((photo) => ({ ...photo, caption: photo.caption ?? undefined }))}
+              photos={photos.map((photo) => ({
+                ...photo,
+                caption: photo.caption ?? undefined,
+              }))}
               slideshowEnabled={slideshowEnabled}
               slideshowIntervalMs={slideshowIntervalMs}
               fit={memorialPhotoFit}
@@ -125,22 +155,35 @@ export function MemorialPageView({
           ) : (
             <div className="surface-card mx-auto max-w-3xl px-6 py-12 text-center">
               <p className="section-kicker">Gallery</p>
-              <h2 className="mt-2 text-2xl font-semibold text-foreground">Photos will be added here</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">
+                Photos will be added here
+              </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                The family has opened this memorial before the gallery is complete. Return later for portraits, keepsakes, and shared photographs.
+                The family has opened this memorial before the gallery is
+                complete. Return later for portraits, keepsakes, and shared
+                photographs.
               </p>
             </div>
           )}
         </section>
 
-        {!requiresMediaConsent && <TributeVideos videos={videos} layout={memorialVideoLayout} />}
+        {!requiresMediaConsent && (
+          <TributeVideos videos={videos} layout={memorialVideoLayout} />
+        )}
 
         <TributeTimeline timeline={timeline} />
 
-        <TributeGuestbook memorialId={memorial.id} fullName={memorial.full_name} entries={guestbook} />
+        <TributeGuestbook
+          memorialId={memorial.id}
+          fullName={memorial.full_name}
+          entries={guestbook}
+        />
       </main>
 
-      <footer className="border-t border-border/80 py-10 text-center text-xs text-muted-foreground md:text-sm" data-print-hide="true">
+      <footer
+        className="border-t border-border/80 py-10 text-center text-xs text-muted-foreground md:text-sm"
+        data-print-hide="true"
+      >
         <p>© {new Date().getFullYear()} Everlume</p>
       </footer>
     </div>

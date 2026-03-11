@@ -1,6 +1,15 @@
-import { assertMemorialOwnership, databaseError, forbidden, getOwnedMemorial, requireAdminUser } from '@/lib/server/admin-auth'
+import {
+  assertMemorialOwnership,
+  databaseError,
+  forbidden,
+  getOwnedMemorial,
+  requireAdminUser,
+} from '@/lib/server/admin-auth'
 import { logAdminAudit } from '@/lib/server/admin-audit'
-import { persistLegacyMemorialPrivacy, toMemorialRecord } from '@/lib/server/memorials'
+import {
+  persistLegacyMemorialPrivacy,
+  toMemorialRecord,
+} from '@/lib/server/memorials'
 import { hashMemorialPassword } from '@/lib/server/page-password'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -12,7 +21,12 @@ const paramsSchema = z.object({
 const memorialUpdateSchema = z
   .object({
     title: z.string().trim().min(2).max(120).optional(),
-    slug: z.string().trim().toLowerCase().regex(/^[a-z0-9-]{3,80}$/).optional(),
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9-]{3,80}$/)
+      .optional(),
     fullName: z.string().trim().max(120).nullable().optional(),
     dedicationText: z.string().trim().max(600).nullable().optional(),
     dob: z.string().nullable().optional(),
@@ -22,7 +36,12 @@ const memorialUpdateSchema = z
     heroImageUrl: z.string().trim().url().nullable().optional(),
     memorialTheme: z.enum(['classic', 'serene', 'editorial']).optional(),
     memorialSlideshowEnabled: z.boolean().optional(),
-    memorialSlideshowIntervalMs: z.number().int().min(2000).max(12000).optional(),
+    memorialSlideshowIntervalMs: z
+      .number()
+      .int()
+      .min(2000)
+      .max(12000)
+      .optional(),
     memorialVideoLayout: z.enum(['grid', 'featured']).optional(),
     memorialPhotoFit: z.enum(['cover', 'contain']).optional(),
     memorialCaptionStyle: z.enum(['classic', 'minimal']).optional(),
@@ -34,19 +53,30 @@ const memorialUpdateSchema = z
     qrCaptionFont: z.enum(['serif', 'sans']).optional(),
     qrShowLogo: z.boolean().optional(),
   })
-  .refine((value) => value.accessMode !== 'password' || Boolean(value.password), {
-    message: 'Password is required when access mode is password.',
+  .refine(
+    (value) => value.accessMode !== 'password' || Boolean(value.password),
+    {
+      message: 'Password is required when access mode is password.',
+    }
+  )
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'No fields to update.',
   })
-  .refine((value) => Object.keys(value).length > 0, { message: 'No fields to update.' })
 
 const memorialSelect =
   'id, title, slug, full_name, dedication_text, dob, dod, privacy, access_mode, hero_image_url, memorial_theme, memorial_slideshow_enabled, memorial_slideshow_interval_ms, memorial_video_layout, memorial_photo_fit, memorial_caption_style, qr_template, qr_caption, qr_foreground_color, qr_background_color, qr_frame_style, qr_caption_font, qr_show_logo'
 
-export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const params = await context.params
   const parsedParams = paramsSchema.safeParse(params)
   if (!parsedParams.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid memorial id.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid memorial id.' },
+      { status: 400 }
+    )
   }
 
   const auth = await requireAdminUser({ minRole: 'viewer' })
@@ -60,23 +90,38 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
   return NextResponse.json({ memorial }, { status: 200 })
 }
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const params = await context.params
   const parsedParams = paramsSchema.safeParse(params)
   if (!parsedParams.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid memorial id.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid memorial id.' },
+      { status: 400 }
+    )
   }
 
   let payload: unknown
   try {
     payload = await request.json()
   } catch {
-    return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid request payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'INVALID_JSON', message: 'Invalid request payload.' },
+      { status: 400 }
+    )
   }
 
   const parsedPayload = memorialUpdateSchema.safeParse(payload)
   if (!parsedPayload.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Please check memorial details and try again.' }, { status: 400 })
+    return NextResponse.json(
+      {
+        code: 'VALIDATION_ERROR',
+        message: 'Please check memorial details and try again.',
+      },
+      { status: 400 }
+    )
   }
 
   const auth = await requireAdminUser({ minRole: 'editor' })
@@ -84,8 +129,14 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const { supabase, userId, role } = auth
 
   const memorialId = parsedParams.data.id
-  const ownsMemorial = await assertMemorialOwnership(supabase, memorialId, userId, role)
-  if (!ownsMemorial) return forbidden('You do not have access to this memorial.')
+  const ownsMemorial = await assertMemorialOwnership(
+    supabase,
+    memorialId,
+    userId,
+    role
+  )
+  if (!ownsMemorial)
+    return forbidden('You do not have access to this memorial.')
 
   const body = parsedPayload.data
   const updatePayload = {
@@ -97,7 +148,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     dod: body.dod,
     access_mode: body.accessMode,
     privacy: persistLegacyMemorialPrivacy(body.accessMode),
-    password_hash: body.password ? hashMemorialPassword(body.password) : undefined,
+    password_hash: body.password
+      ? hashMemorialPassword(body.password)
+      : undefined,
     password_updated_at: body.password ? new Date().toISOString() : undefined,
     hero_image_url: body.heroImageUrl,
     memorial_theme: body.memorialTheme,
@@ -116,7 +169,12 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     updated_at: new Date().toISOString(),
   }
 
-  const { data, error } = await supabase.from('pages').update(updatePayload).eq('id', memorialId).select(memorialSelect).single()
+  const { data, error } = await supabase
+    .from('pages')
+    .update(updatePayload)
+    .eq('id', memorialId)
+    .select(memorialSelect)
+    .single()
   if (error || !data) {
     return databaseError('Unable to update memorial.')
   }
@@ -129,5 +187,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     metadata: { fields: Object.keys(parsedPayload.data) },
   })
 
-  return NextResponse.json({ memorial: toMemorialRecord(data) }, { status: 200 })
+  return NextResponse.json(
+    { memorial: toMemorialRecord(data) },
+    { status: 200 }
+  )
 }

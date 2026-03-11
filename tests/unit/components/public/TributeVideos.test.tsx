@@ -8,13 +8,22 @@ describe('TributeVideos', () => {
 
   it('renders empty state when videos are unavailable', () => {
     render(<TributeVideos videos={[]} />)
-    expect(screen.getByText('No videos have been shared yet.')).toBeInTheDocument()
+    expect(
+      screen.getByText('No videos have been shared yet.')
+    ).toBeInTheDocument()
   })
 
   it('renders iframe and title for each video', () => {
     render(
       <TributeVideos
-        videos={[{ id: 'v1', provider: 'youtube', provider_id: 'abcdefghijk', title: 'Family Clip' }]}
+        videos={[
+          {
+            id: 'v1',
+            provider: 'youtube',
+            provider_id: 'abcdefghijk',
+            title: 'Family Clip',
+          },
+        ]}
       />
     )
 
@@ -28,7 +37,14 @@ describe('TributeVideos', () => {
   it('renders html5 video for cloudinary provider', () => {
     const { container } = render(
       <TributeVideos
-        videos={[{ id: 'v2', provider: 'cloudinary', provider_id: 'everlume/page/video-1', title: 'Cloudinary Clip' }]}
+        videos={[
+          {
+            id: 'v2',
+            provider: 'cloudinary',
+            provider_id: 'everlume/page/video-1',
+            title: 'Cloudinary Clip',
+          },
+        ]}
       />
     )
 
@@ -41,7 +57,14 @@ describe('TributeVideos', () => {
     render(
       <TributeVideos
         layout="featured"
-        videos={[{ id: 'v1', provider: 'youtube', provider_id: 'abcdefghijk', title: 'Family Clip' }]}
+        videos={[
+          {
+            id: 'v1',
+            provider: 'youtube',
+            provider_id: 'abcdefghijk',
+            title: 'Family Clip',
+          },
+        ]}
       />
     )
 

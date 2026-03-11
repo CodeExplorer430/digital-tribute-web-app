@@ -7,14 +7,25 @@ function isPublicApiRequest(route: Route) {
   return pathname === '/api/guestbook' || pathname.startsWith('/api/public/')
 }
 
-export async function mockPublicApiFallback(page: Page, fallbackBody: Json = { ok: true }) {
+export async function mockPublicApiFallback(
+  page: Page,
+  fallbackBody: Json = { ok: true }
+) {
   await page.route('**/api/**', async (route) => {
     if (!isPublicApiRequest(route)) return route.fallback()
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fallbackBody) })
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(fallbackBody),
+    })
   })
 }
 
-export async function mockPublicRoute(page: Page, matcher: RegExp, handler: (route: Route) => Promise<void> | void) {
+export async function mockPublicRoute(
+  page: Page,
+  matcher: RegExp,
+  handler: (route: Route) => Promise<void> | void
+) {
   await page.route('**/api/**', async (route) => {
     if (!isPublicApiRequest(route)) return route.fallback()
 
@@ -32,5 +43,9 @@ export async function mockPublicRoute(page: Page, matcher: RegExp, handler: (rou
 }
 
 export async function fulfillJson(route: Route, body: Json, status = 200) {
-  await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  await route.fulfill({
+    status,
+    contentType: 'application/json',
+    body: JSON.stringify(body),
+  })
 }

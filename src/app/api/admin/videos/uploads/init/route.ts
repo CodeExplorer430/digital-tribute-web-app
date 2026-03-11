@@ -1,20 +1,35 @@
-import { assertMemorialOwnership, databaseError, forbidden, requireAdminUser } from '@/lib/server/admin-auth'
+import {
+  assertMemorialOwnership,
+  databaseError,
+  forbidden,
+  requireAdminUser,
+} from '@/lib/server/admin-auth'
 import { logAdminAudit } from '@/lib/server/admin-audit'
 import { resolveMemorialId } from '@/lib/server/memorials'
-import { getVideoTranscodeApiBaseOrThrow, getVideoTranscodeApiTokenOrThrow, isVideoTranscodeConfigured } from '@/lib/server/video-upload'
+import {
+  getVideoTranscodeApiBaseOrThrow,
+  getVideoTranscodeApiTokenOrThrow,
+  isVideoTranscodeConfigured,
+} from '@/lib/server/video-upload'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
-const initSchema = z.object({
-  memorialId: z.string().uuid().optional(),
-  pageId: z.string().uuid().optional(),
-  fileName: z.string().trim().min(1).max(200),
-  fileSize: z.number().int().positive().max(1024 * 1024 * 1024),
-  mimeType: z.string().trim().min(1).max(100),
-  title: z.string().trim().max(120).optional().default(''),
-}).refine((value) => Boolean(resolveMemorialId(value)), {
-  message: 'Memorial id is required.',
-})
+const initSchema = z
+  .object({
+    memorialId: z.string().uuid().optional(),
+    pageId: z.string().uuid().optional(),
+    fileName: z.string().trim().min(1).max(200),
+    fileSize: z
+      .number()
+      .int()
+      .positive()
+      .max(1024 * 1024 * 1024),
+    mimeType: z.string().trim().min(1).max(100),
+    title: z.string().trim().max(120).optional().default(''),
+  })
+  .refine((value) => Boolean(resolveMemorialId(value)), {
+    message: 'Memorial id is required.',
+  })
 
 const transcodeInitResponseSchema = z.object({
   cloudJobId: z.string().trim().min(1).optional(),
@@ -27,13 +42,20 @@ export async function POST(request: NextRequest) {
   try {
     payload = await request.json()
   } catch {
-    return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid request payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'INVALID_JSON', message: 'Invalid request payload.' },
+      { status: 400 }
+    )
   }
 
   const parsed = initSchema.safeParse(payload)
   if (!parsed.success) {
     return NextResponse.json(
-      { code: 'VALIDATION_ERROR', message: 'Provide a valid memorial id, filename, mime type, and file size.' },
+      {
+        code: 'VALIDATION_ERROR',
+        message:
+          'Provide a valid memorial id, filename, mime type, and file size.',
+      },
       { status: 400 }
     )
   }
@@ -45,10 +67,19 @@ export async function POST(request: NextRequest) {
   const { fileName, fileSize, mimeType, title } = parsed.data
   const memorialId = resolveMemorialId(parsed.data)
   if (!memorialId) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Memorial id is required.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Memorial id is required.' },
+      { status: 400 }
+    )
   }
-  const ownsMemorial = await assertMemorialOwnership(supabase, memorialId, userId, role)
-  if (!ownsMemorial) return forbidden('You do not have access to this memorial.')
+  const ownsMemorial = await assertMemorialOwnership(
+    supabase,
+    memorialId,
+    userId,
+    role
+  )
+  if (!ownsMemorial)
+    return forbidden('You do not have access to this memorial.')
 
   const { data: job, error: jobError } = await supabase
     .from('video_upload_jobs')
@@ -61,7 +92,9 @@ export async function POST(request: NextRequest) {
       source_mime: mimeType,
       source_bytes: fileSize,
     })
-    .select('id, page_id, created_by, status, title, source_filename, source_mime, source_bytes, created_at, updated_at')
+    .select(
+      'id, page_id, created_by, status, title, source_filename, source_mime, source_bytes, created_at, updated_at'
+    )
     .single()
 
   if (jobError || !job) {
@@ -72,7 +105,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         code: 'TRANSCODE_UNAVAILABLE',
-        message: 'Video transcode service is not configured. Use YouTube Unlisted for videos above 100MB.',
+        message:
+          'Video transcode service is not configured. Use YouTube Unlisted for videos above 100MB.',
       },
       { status: 503 }
     )
@@ -100,7 +134,13 @@ export async function POST(request: NextRequest) {
       }),
     })
   } catch {
-    return NextResponse.json({ code: 'TRANSCODE_UNAVAILABLE', message: 'Transcode service is unreachable.' }, { status: 503 })
+    return NextResponse.json(
+      {
+        code: 'TRANSCODE_UNAVAILABLE',
+        message: 'Transcode service is unreachable.',
+      },
+      { status: 503 }
+    )
   }
 
   const upstreamPayload = await upstream.json().catch(() => null)
@@ -108,7 +148,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         code: 'TRANSCODE_INIT_FAILED',
-        message: (upstreamPayload as { message?: string } | null)?.message || 'Unable to initialize video upload.',
+        message:
+          (upstreamPayload as { message?: string } | null)?.message ||
+          'Unable to initialize video upload.',
       },
       { status: 502 }
     )
@@ -116,7 +158,13 @@ export async function POST(request: NextRequest) {
 
   const transcodeInit = transcodeInitResponseSchema.safeParse(upstreamPayload)
   if (!transcodeInit.success) {
-    return NextResponse.json({ code: 'TRANSCODE_INVALID_RESPONSE', message: 'Invalid transcode service response.' }, { status: 502 })
+    return NextResponse.json(
+      {
+        code: 'TRANSCODE_INVALID_RESPONSE',
+        message: 'Invalid transcode service response.',
+      },
+      { status: 502 }
+    )
   }
 
   const { data: updated, error: updateError } = await supabase

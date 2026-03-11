@@ -25,14 +25,21 @@ export async function GET(request: NextRequest) {
   } else if (tokenHash && type) {
     const result = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type: type as 'invite' | 'recovery' | 'email_change' | 'magiclink' | 'signup',
+      type: type as
+        | 'invite'
+        | 'recovery'
+        | 'email_change'
+        | 'magiclink'
+        | 'signup',
     })
     error = result.error
   } else {
     error = { message: 'Missing auth token.' }
   }
 
-  const redirectPath = error ? `/login?error=${encodeURIComponent(error.message || 'Unable to complete sign in.')}` : next
+  const redirectPath = error
+    ? `/login?error=${encodeURIComponent(error.message || 'Unable to complete sign in.')}`
+    : next
 
   return NextResponse.redirect(new URL(redirectPath, request.url))
 }

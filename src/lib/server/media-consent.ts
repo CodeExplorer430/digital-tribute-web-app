@@ -28,11 +28,17 @@ type MediaConsentTokenInput = {
 }
 
 function getConsentSecret() {
-  return process.env.PAGE_ACCESS_TOKEN_SECRET || process.env.PRIVATE_MEDIA_TOKEN_SECRET || 'dev-page-access-secret'
+  return (
+    process.env.PAGE_ACCESS_TOKEN_SECRET ||
+    process.env.PRIVATE_MEDIA_TOKEN_SECRET ||
+    'dev-page-access-secret'
+  )
 }
 
 function signPayload(payload: string) {
-  return createHmac('sha256', getConsentSecret()).update(payload).digest('base64url')
+  return createHmac('sha256', getConsentSecret())
+    .update(payload)
+    .digest('base64url')
 }
 
 function getVisitorIp(request: NextRequest) {
@@ -45,7 +51,9 @@ function getVisitorIp(request: NextRequest) {
 }
 
 function hashVisitorValue(value: string) {
-  return createHmac('sha256', getConsentSecret()).update(value).digest('base64url')
+  return createHmac('sha256', getConsentSecret())
+    .update(value)
+    .digest('base64url')
 }
 
 export function createMemorialMediaConsentToken({
@@ -55,8 +63,12 @@ export function createMemorialMediaConsentToken({
   consentRevokedAt,
 }: MediaConsentTokenInput) {
   const issuedAt = Math.floor(Date.now() / 1000)
-  const passwordVersion = Buffer.from(passwordUpdatedAt || 'unset').toString('base64url')
-  const consentRevocationVersion = Buffer.from(consentRevokedAt || 'unset').toString('base64url')
+  const passwordVersion = Buffer.from(passwordUpdatedAt || 'unset').toString(
+    'base64url'
+  )
+  const consentRevocationVersion = Buffer.from(
+    consentRevokedAt || 'unset'
+  ).toString('base64url')
   const payload = `${COOKIE_VERSION}.${memorialId}.${issuedAt}.${passwordVersion}.${consentVersion}.${consentRevocationVersion}`
   return `${payload}.${signPayload(payload)}`
 }
@@ -73,7 +85,15 @@ export function verifyMemorialMediaConsentToken(
   const segments = token.split('.')
   if (segments.length !== 7) return false
 
-  const [version, tokenMemorialId, issuedAtString, passwordVersionEncoded, tokenConsentVersionString, consentRevocationVersionEncoded, signature] = segments
+  const [
+    version,
+    tokenMemorialId,
+    issuedAtString,
+    passwordVersionEncoded,
+    tokenConsentVersionString,
+    consentRevocationVersionEncoded,
+    signature,
+  ] = segments
   if (version !== COOKIE_VERSION || tokenMemorialId !== memorialId) return false
 
   const issuedAt = Number(issuedAtString)
@@ -83,15 +103,26 @@ export function verifyMemorialMediaConsentToken(
   if (issuedAt > now || now - issuedAt > COOKIE_MAX_AGE_SECONDS) return false
 
   const expectedPasswordVersion = passwordUpdatedAt || 'unset'
-  const tokenPasswordVersion = Buffer.from(passwordVersionEncoded, 'base64url').toString('utf8')
+  const tokenPasswordVersion = Buffer.from(
+    passwordVersionEncoded,
+    'base64url'
+  ).toString('utf8')
   if (tokenPasswordVersion !== expectedPasswordVersion) return false
 
   const tokenConsentVersion = Number(tokenConsentVersionString)
-  if (!Number.isFinite(tokenConsentVersion) || tokenConsentVersion !== consentVersion) return false
+  if (
+    !Number.isFinite(tokenConsentVersion) ||
+    tokenConsentVersion !== consentVersion
+  )
+    return false
 
   const expectedConsentRevocationVersion = consentRevokedAt || 'unset'
-  const tokenConsentRevocationVersion = Buffer.from(consentRevocationVersionEncoded, 'base64url').toString('utf8')
-  if (tokenConsentRevocationVersion !== expectedConsentRevocationVersion) return false
+  const tokenConsentRevocationVersion = Buffer.from(
+    consentRevocationVersionEncoded,
+    'base64url'
+  ).toString('utf8')
+  if (tokenConsentRevocationVersion !== expectedConsentRevocationVersion)
+    return false
 
   const payload = `${version}.${tokenMemorialId}.${issuedAtString}.${passwordVersionEncoded}.${tokenConsentVersionString}.${consentRevocationVersionEncoded}`
   const expectedSignature = signPayload(payload)
@@ -130,20 +161,28 @@ export function buildMemorialMediaConsentRecord({
     media_kind: mediaKind,
     media_variant: mediaVariant,
     ip_hash: hashVisitorValue(getVisitorIp(request)),
-    user_agent_hash: hashVisitorValue(request.headers.get('user-agent') || 'unknown'),
+    user_agent_hash: hashVisitorValue(
+      request.headers.get('user-agent') || 'unknown'
+    ),
   }
 }
 
-export async function insertMemorialMediaConsent(input: MediaConsentRecordInput) {
+export async function insertMemorialMediaConsent(
+  input: MediaConsentRecordInput
+) {
   const supabase = createServiceRoleClient()
-  const { error } = await supabase.from('media_access_consents').insert(buildMemorialMediaConsentRecord(input))
+  const { error } = await supabase
+    .from('media_access_consents')
+    .insert(buildMemorialMediaConsentRecord(input))
 
   if (error) {
     throw new Error(error.message || 'Unable to record media consent.')
   }
 }
 
-export async function tryInsertMemorialMediaAccess(input: MediaConsentRecordInput) {
+export async function tryInsertMemorialMediaAccess(
+  input: MediaConsentRecordInput
+) {
   try {
     await insertMemorialMediaConsent(input)
   } catch (error) {

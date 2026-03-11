@@ -22,7 +22,8 @@ export function LoginScreen() {
   const bannerMessage = useMemo(() => {
     const errorParam = searchParams.get('error')
     if (errorParam) return decodeURIComponent(errorParam)
-    if (searchParams.get('reset') === 'success') return 'Password updated. Sign in with your new password.'
+    if (searchParams.get('reset') === 'success')
+      return 'Password updated. Sign in with your new password.'
     return null
   }, [searchParams])
 
@@ -39,7 +40,9 @@ export function LoginScreen() {
       })
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string
+        } | null
         setError(payload?.message || 'Unable to sign in.')
         setLoading(false)
         return
@@ -50,7 +53,10 @@ export function LoginScreen() {
       return
     }
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
     if (authError) {
       setError(authError.message)
@@ -69,7 +75,8 @@ export function LoginScreen() {
       description="Use your individual admin account to manage memorials, moderate tributes, and maintain short-link access without sharing one family login."
       sideNote={
         <p className="leading-relaxed">
-          Invited admins receive their own setup email. Existing admins can request a password reset at any time.
+          Invited admins receive their own setup email. Existing admins can
+          request a password reset at any time.
         </p>
       }
       form={
@@ -101,7 +108,10 @@ export function LoginScreen() {
               <label htmlFor="password" className="text-sm font-medium">
                 Password
               </label>
-              <Link href="/login/forgot-password" className="text-xs font-medium text-primary underline-offset-4 hover:underline">
+              <Link
+                href="/login/forgot-password"
+                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -118,7 +128,10 @@ export function LoginScreen() {
           </div>
 
           {error && (
-            <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div
+              role="alert"
+              className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
               {error}
             </div>
           )}

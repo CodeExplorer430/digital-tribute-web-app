@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
 const redirectSchema = z.object({
-  shortcode: z.string().trim().toLowerCase().regex(/^[a-z0-9-]{3,32}$/),
+  shortcode: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9-]{3,32}$/),
   targetUrl: z.string().trim().url(),
 })
 
@@ -15,7 +19,9 @@ export async function GET() {
 
   let query = supabase
     .from('redirects')
-    .select('id, shortcode, target_url, print_status, last_verified_at, is_active, created_at')
+    .select(
+      'id, shortcode, target_url, print_status, last_verified_at, is_active, created_at'
+    )
   if (role !== 'admin') {
     query = query.eq('created_by', userId)
   }
@@ -33,13 +39,19 @@ export async function POST(request: NextRequest) {
   try {
     payload = await request.json()
   } catch {
-    return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid request payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'INVALID_JSON', message: 'Invalid request payload.' },
+      { status: 400 }
+    )
   }
 
   const parsed = redirectSchema.safeParse(payload)
   if (!parsed.success) {
     return NextResponse.json(
-      { code: 'VALIDATION_ERROR', message: 'Enter a valid short code and URL.' },
+      {
+        code: 'VALIDATION_ERROR',
+        message: 'Enter a valid short code and URL.',
+      },
       { status: 400 }
     )
   }
@@ -59,12 +71,20 @@ export async function POST(request: NextRequest) {
       is_active: true,
       created_by: userId,
     })
-    .select('id, shortcode, target_url, print_status, last_verified_at, is_active, created_at')
+    .select(
+      'id, shortcode, target_url, print_status, last_verified_at, is_active, created_at'
+    )
     .single()
 
   if (error) {
     if (error.code === '23505') {
-      return NextResponse.json({ code: 'SHORTCODE_EXISTS', message: 'This short code is already in use.' }, { status: 409 })
+      return NextResponse.json(
+        {
+          code: 'SHORTCODE_EXISTS',
+          message: 'This short code is already in use.',
+        },
+        { status: 409 }
+      )
     }
     return databaseError('Unable to create redirect right now.')
   }

@@ -20,7 +20,10 @@ describe('app/manifest', () => {
           }),
         ]),
         shortcuts: expect.arrayContaining([
-          expect.objectContaining({ name: 'Browse Memorials', url: '/#memorial-directory' }),
+          expect.objectContaining({
+            name: 'Browse Memorials',
+            url: '/#memorial-directory',
+          }),
           expect.objectContaining({ name: 'Offline Help', url: '/offline' }),
         ]),
       })

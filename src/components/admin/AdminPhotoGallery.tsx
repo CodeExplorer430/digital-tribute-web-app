@@ -24,7 +24,12 @@ interface AdminPhotoGalleryProps {
   onSetHero: (url: string) => void
 }
 
-export function AdminPhotoGallery({ photos, heroImageUrl, onRefresh, onSetHero }: AdminPhotoGalleryProps) {
+export function AdminPhotoGallery({
+  photos,
+  heroImageUrl,
+  onRefresh,
+  onSetHero,
+}: AdminPhotoGalleryProps) {
   const [editingPhoto, setEditingPhoto] = useState<string | null>(null)
   const [tempCaption, setTempCaption] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -33,9 +38,13 @@ export function AdminPhotoGallery({ photos, heroImageUrl, onRefresh, onSetHero }
     if (!confirm('Are you sure you want to delete this photo?')) return
     setErrorMessage(null)
 
-    const response = await fetch(`/api/admin/photos/${photoId}`, { method: 'DELETE' })
+    const response = await fetch(`/api/admin/photos/${photoId}`, {
+      method: 'DELETE',
+    })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to delete photo.')
       return
     }
@@ -60,7 +69,9 @@ export function AdminPhotoGallery({ photos, heroImageUrl, onRefresh, onSetHero }
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to update caption.')
       return
     }
@@ -71,17 +82,27 @@ export function AdminPhotoGallery({ photos, heroImageUrl, onRefresh, onSetHero }
 
   return (
     <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-      <h3 className="font-semibold text-foreground border-b border-border pb-2 mb-6">Photo Gallery</h3>
-      {errorMessage && <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{errorMessage}</p>}
+      <h3 className="font-semibold text-foreground border-b border-border pb-2 mb-6">
+        Photo Gallery
+      </h3>
+      {errorMessage && (
+        <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {errorMessage}
+        </p>
+      )}
 
       {photos.length === 0 ? (
-        <p className="text-center py-12 text-muted-foreground italic">No photos uploaded yet.</p>
+        <p className="text-center py-12 text-muted-foreground italic">
+          No photos uploaded yet.
+        </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
           {photos.map((photo) => {
             const publicUrl = photo.thumb_url || photo.image_url || ''
             const fullImageUrl = photo.image_url || photo.thumb_url || ''
-            const isHero = Boolean(heroImageUrl && fullImageUrl && heroImageUrl === fullImageUrl)
+            const isHero = Boolean(
+              heroImageUrl && fullImageUrl && heroImageUrl === fullImageUrl
+            )
 
             return (
               <div key={photo.id} className="group flex flex-col space-y-2">
@@ -110,7 +131,12 @@ export function AdminPhotoGallery({ photos, heroImageUrl, onRefresh, onSetHero }
                       <ImageIcon className="mr-1 h-3 w-3" />
                       Set as Hero
                     </Button>
-                    <Button variant="danger" size="sm" className="h-8 text-xs" onClick={() => deletePhoto(photo.id)}>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => deletePhoto(photo.id)}
+                    >
                       <Trash2 className="mr-1 h-3 w-3" />
                       Delete
                     </Button>
@@ -130,7 +156,11 @@ export function AdminPhotoGallery({ photos, heroImageUrl, onRefresh, onSetHero }
                       onChange={(e) => setTempCaption(e.target.value)}
                       className="h-8 text-xs bg-background border-input"
                     />
-                    <Button size="sm" className="h-8 px-2" onClick={() => saveCaption(photo.id)}>
+                    <Button
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => saveCaption(photo.id)}
+                    >
                       Save
                     </Button>
                   </div>

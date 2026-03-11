@@ -20,7 +20,10 @@ async function checkWorkerReachability() {
 
 export async function GET() {
   const supabase = await createClient()
-  const { error } = await supabase.from('redirects').select('id', { head: true, count: 'exact' }).limit(1)
+  const { error } = await supabase
+    .from('redirects')
+    .select('id', { head: true, count: 'exact' })
+    .limit(1)
 
   const dbOk = !error
   const workerReachable = await checkWorkerReachability()

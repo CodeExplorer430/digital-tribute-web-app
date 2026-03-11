@@ -12,7 +12,14 @@ describe('AdminPhotoGallery', () => {
   })
 
   it('renders empty state when there are no photos', () => {
-    render(<AdminPhotoGallery photos={[]} heroImageUrl={null} onRefresh={vi.fn()} onSetHero={vi.fn()} />)
+    render(
+      <AdminPhotoGallery
+        photos={[]}
+        heroImageUrl={null}
+        onRefresh={vi.fn()}
+        onSetHero={vi.fn()}
+      />
+    )
 
     expect(screen.getByText('No photos uploaded yet.')).toBeInTheDocument()
   })
@@ -20,7 +27,11 @@ describe('AdminPhotoGallery', () => {
   it('sets hero image and edits caption', async () => {
     const onSetHero = vi.fn()
     const onRefresh = vi.fn()
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 200 })
+      )
 
     const user = userEvent.setup()
     render(
@@ -62,7 +73,11 @@ describe('AdminPhotoGallery', () => {
   it('respects delete confirmation and shows delete API error', async () => {
     const onRefresh = vi.fn()
     const confirmMock = vi.spyOn(window, 'confirm')
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Delete failed' }), { status: 500 }))
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Delete failed' }), {
+        status: 500,
+      })
+    )
 
     const user = userEvent.setup()
     render(
@@ -84,7 +99,10 @@ describe('AdminPhotoGallery', () => {
 
     confirmMock.mockReturnValueOnce(false)
     await user.click(screen.getByRole('button', { name: 'Delete' }))
-    expect(fetchMock).not.toHaveBeenCalledWith('/api/admin/photos/photo-1', expect.objectContaining({ method: 'DELETE' }))
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/photos/photo-1',
+      expect.objectContaining({ method: 'DELETE' })
+    )
 
     confirmMock.mockReturnValueOnce(true)
     await user.click(screen.getByRole('button', { name: 'Delete' }))

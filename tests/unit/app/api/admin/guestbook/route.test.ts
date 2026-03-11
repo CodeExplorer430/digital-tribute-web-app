@@ -37,7 +37,10 @@ describe('GET /api/admin/guestbook', () => {
     mockProfileSingle.mockReset()
     mockPagesEq.mockReset()
     mockGuestbookOrder.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns unauthorized without user', async () => {
@@ -48,7 +51,10 @@ describe('GET /api/admin/guestbook', () => {
 
   it('returns entries for owner', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockPagesEq.mockResolvedValue({ data: [{ id: 'page-1', title: 'My Page' }], error: null })
+    mockPagesEq.mockResolvedValue({
+      data: [{ id: 'page-1', title: 'My Page' }],
+      error: null,
+    })
     mockGuestbookOrder.mockResolvedValue({
       data: [
         {

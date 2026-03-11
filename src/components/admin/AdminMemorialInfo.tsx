@@ -34,8 +34,17 @@ interface AdminMemorialInfoProps {
   onUpdate: () => void
 }
 
-export function AdminMemorialInfo({ memorial, onUpdate }: AdminMemorialInfoProps) {
-  return <AdminMemorialInfoForm key={serializeMemorialKey(memorial)} memorial={memorial} onUpdate={onUpdate} />
+export function AdminMemorialInfo({
+  memorial,
+  onUpdate,
+}: AdminMemorialInfoProps) {
+  return (
+    <AdminMemorialInfoForm
+      key={serializeMemorialKey(memorial)}
+      memorial={memorial}
+      onUpdate={onUpdate}
+    />
+  )
 }
 
 function serializeMemorialKey(memorial: AdminMemorial) {
@@ -64,17 +73,22 @@ function serializeMemorialKey(memorial: AdminMemorial) {
   ].join('|')
 }
 
-const accessModeDescriptions: Record<'public' | 'private' | 'password', { title: string; body: string }> = {
+const accessModeDescriptions: Record<
+  'public' | 'private' | 'password',
+  { title: string; body: string }
+> = {
   public: {
     title: 'Visible by direct link and eligible for the homepage directory.',
     body: 'Use this when the memorial should be discoverable to visitors. Public memorials may appear on the landing-page directory when that setting is enabled.',
   },
   private: {
-    title: 'Hidden from public visitors and excluded from the homepage directory.',
+    title:
+      'Hidden from public visitors and excluded from the homepage directory.',
     body: 'Use this for memorials that should remain internal to the family or admin team. Visitors without admin access will not be able to open the memorial.',
   },
   password: {
-    title: 'Protected by a family-managed password and excluded from the homepage directory.',
+    title:
+      'Protected by a family-managed password and excluded from the homepage directory.',
     body: 'Use this when visitors should access the memorial by direct link plus password. Protected memorials keep media behind signed access and require a current password to enter.',
   },
 }
@@ -92,7 +106,8 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
     ...memorial,
     memorial_theme: memorial.memorial_theme || 'classic',
     memorial_slideshow_enabled: memorial.memorial_slideshow_enabled !== false,
-    memorial_slideshow_interval_ms: memorial.memorial_slideshow_interval_ms || 4500,
+    memorial_slideshow_interval_ms:
+      memorial.memorial_slideshow_interval_ms || 4500,
     memorial_video_layout: memorial.memorial_video_layout || 'grid',
     memorial_photo_fit: memorial.memorial_photo_fit || 'cover',
     memorial_caption_style: memorial.memorial_caption_style || 'classic',
@@ -138,11 +153,13 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
         qrFrameStyle: formData.qr_frame_style,
         qrCaptionFont: formData.qr_caption_font,
         qrShowLogo: formData.qr_show_logo,
-      })
+      }),
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to save memorial details.')
       setUpdating(false)
       return
@@ -155,7 +172,9 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
 
   return (
     <form onSubmit={handleUpdate} className="surface-card space-y-4 p-6">
-      <h3 className="border-b border-border pb-2 text-base font-semibold">Basic Information</h3>
+      <h3 className="border-b border-border pb-2 text-base font-semibold">
+        Basic Information
+      </h3>
 
       <div className="flex items-center justify-between rounded-md border border-border bg-secondary/55 p-3">
         <div className="flex items-center gap-2 text-sm font-medium">
@@ -189,13 +208,20 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
       </div>
 
       <div className="rounded-md border border-border/70 bg-secondary/25 px-3 py-2">
-        <p className="text-sm font-medium text-foreground">{accessModeDescriptions[formData.accessMode].title}</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{accessModeDescriptions[formData.accessMode].body}</p>
+        <p className="text-sm font-medium text-foreground">
+          {accessModeDescriptions[formData.accessMode].title}
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {accessModeDescriptions[formData.accessMode].body}
+        </p>
       </div>
 
       {formData.accessMode === 'password' && (
         <div>
-          <label htmlFor={passwordId} className="mb-1.5 block text-sm font-medium">
+          <label
+            htmlFor={passwordId}
+            className="mb-1.5 block text-sm font-medium"
+          >
             Set or Rotate Password
           </label>
           <Input
@@ -206,7 +232,10 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
             minLength={6}
             placeholder="Enter a new access password"
           />
-          <p className="mt-1 text-xs text-muted-foreground">Password must be at least 6 characters. Leave blank to keep current password.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Password must be at least 6 characters. Leave blank to keep current
+            password.
+          </p>
         </div>
       )}
 
@@ -214,62 +243,109 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
         <label htmlFor={titleId} className="mb-1.5 block text-sm font-medium">
           Memorial Title
         </label>
-        <Input id={titleId} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+        <Input
+          id={titleId}
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+        />
       </div>
       <div>
         <label htmlFor={slugId} className="mb-1.5 block text-sm font-medium">
           Slug
         </label>
-        <Input id={slugId} value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} />
+        <Input
+          id={slugId}
+          value={formData.slug}
+          onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+        />
       </div>
       <div>
-        <label htmlFor={fullNameId} className="mb-1.5 block text-sm font-medium">
+        <label
+          htmlFor={fullNameId}
+          className="mb-1.5 block text-sm font-medium"
+        >
           Full Name
         </label>
-        <Input id={fullNameId} value={formData.full_name || ''} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} />
+        <Input
+          id={fullNameId}
+          value={formData.full_name || ''}
+          onChange={(e) =>
+            setFormData({ ...formData, full_name: e.target.value })
+          }
+        />
       </div>
       <div>
-        <label htmlFor={dedicationId} className="mb-1.5 block text-sm font-medium">
+        <label
+          htmlFor={dedicationId}
+          className="mb-1.5 block text-sm font-medium"
+        >
           Dedication Text
         </label>
         <textarea
           id={dedicationId}
           value={formData.dedicationText || ''}
-          onChange={(e) => setFormData({ ...formData, dedicationText: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, dedicationText: e.target.value })
+          }
           rows={4}
           maxLength={600}
           className="flex min-h-[112px] w-full rounded-xl border border-input bg-[var(--surface-1)] px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           placeholder="Add a short dedication, prayer, or welcome message for visitors."
         />
-        <p className="mt-1 text-xs text-muted-foreground">Shown near the top of the memorial before the gallery and guestbook.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Shown near the top of the memorial before the gallery and guestbook.
+        </p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor={dobId} className="mb-1.5 block text-sm font-medium">
             DOB
           </label>
-          <Input id={dobId} type="date" value={formData.dob || ''} onChange={(e) => setFormData({ ...formData, dob: e.target.value })} />
+          <Input
+            id={dobId}
+            type="date"
+            value={formData.dob || ''}
+            onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+          />
         </div>
         <div>
           <label htmlFor={dodId} className="mb-1.5 block text-sm font-medium">
             DOD
           </label>
-          <Input id={dodId} type="date" value={formData.dod || ''} onChange={(e) => setFormData({ ...formData, dod: e.target.value })} />
+          <Input
+            id={dodId}
+            type="date"
+            value={formData.dod || ''}
+            onChange={(e) => setFormData({ ...formData, dod: e.target.value })}
+          />
         </div>
       </div>
 
       <section className="space-y-4 rounded-md border border-border bg-secondary/30 p-4">
-        <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">Memorial Experience</h4>
+        <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          Memorial Experience
+        </h4>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="memorial-theme">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="memorial-theme"
+            >
               Theme Preset
             </label>
             <select
               id="memorial-theme"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.memorial_theme}
-              onChange={(e) => setFormData({ ...formData, memorial_theme: e.target.value as 'classic' | 'serene' | 'editorial' })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  memorial_theme: e.target.value as
+                    | 'classic'
+                    | 'serene'
+                    | 'editorial',
+                })
+              }
             >
               <option value="classic">Classic</option>
               <option value="serene">Serene</option>
@@ -277,35 +353,56 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="video-layout">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="video-layout"
+            >
               Video Layout
             </label>
             <select
               id="video-layout"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.memorial_video_layout}
-              onChange={(e) => setFormData({ ...formData, memorial_video_layout: e.target.value as 'grid' | 'featured' })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  memorial_video_layout: e.target.value as 'grid' | 'featured',
+                })
+              }
             >
               <option value="grid">Grid</option>
               <option value="featured">Featured + List</option>
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="slideshow-enabled">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="slideshow-enabled"
+            >
               Slideshow
             </label>
             <select
               id="slideshow-enabled"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
-              value={formData.memorial_slideshow_enabled ? 'enabled' : 'disabled'}
-              onChange={(e) => setFormData({ ...formData, memorial_slideshow_enabled: e.target.value === 'enabled' })}
+              value={
+                formData.memorial_slideshow_enabled ? 'enabled' : 'disabled'
+              }
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  memorial_slideshow_enabled: e.target.value === 'enabled',
+                })
+              }
             >
               <option value="enabled">Enabled</option>
               <option value="disabled">Disabled</option>
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="slideshow-interval">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="slideshow-interval"
+            >
               Slideshow Interval (ms)
             </label>
             <Input
@@ -315,46 +412,78 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
               max={12000}
               step={500}
               value={formData.memorial_slideshow_interval_ms || 4500}
-              onChange={(e) => setFormData({ ...formData, memorial_slideshow_interval_ms: Number(e.target.value) || 4500 })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  memorial_slideshow_interval_ms:
+                    Number(e.target.value) || 4500,
+                })
+              }
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="photo-fit">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="photo-fit"
+            >
               Photo Fit
             </label>
             <select
               id="photo-fit"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.memorial_photo_fit}
-              onChange={(e) => setFormData({ ...formData, memorial_photo_fit: e.target.value as 'cover' | 'contain' })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  memorial_photo_fit: e.target.value as 'cover' | 'contain',
+                })
+              }
             >
               <option value="cover">Cover (immersive)</option>
               <option value="contain">Contain (full image)</option>
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="caption-style">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="caption-style"
+            >
               Caption Style
             </label>
             <select
               id="caption-style"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.memorial_caption_style}
-              onChange={(e) => setFormData({ ...formData, memorial_caption_style: e.target.value as 'classic' | 'minimal' })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  memorial_caption_style: e.target.value as
+                    | 'classic'
+                    | 'minimal',
+                })
+              }
             >
               <option value="classic">Classic</option>
               <option value="minimal">Minimal</option>
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-template">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="qr-template"
+            >
               QR Template
             </label>
             <select
               id="qr-template"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.qr_template}
-              onChange={(e) => setFormData({ ...formData, qr_template: e.target.value as 'classic' | 'minimal' | 'warm' })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  qr_template: e.target.value as 'classic' | 'minimal' | 'warm',
+                })
+              }
             >
               <option value="classic">Classic Plaque</option>
               <option value="minimal">Minimal</option>
@@ -362,18 +491,26 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-caption">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="qr-caption"
+            >
               QR Caption
             </label>
             <Input
               id="qr-caption"
               maxLength={40}
               value={formData.qr_caption || 'Scan me!'}
-              onChange={(e) => setFormData({ ...formData, qr_caption: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, qr_caption: e.target.value })
+              }
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-foreground-color">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="qr-foreground-color"
+            >
               QR Foreground Color
             </label>
             <select
@@ -381,7 +518,13 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.qr_foreground_color}
               onChange={(e) =>
-                setFormData({ ...formData, qr_foreground_color: e.target.value as '#111827' | '#14532d' | '#7c2d12' })
+                setFormData({
+                  ...formData,
+                  qr_foreground_color: e.target.value as
+                    | '#111827'
+                    | '#14532d'
+                    | '#7c2d12',
+                })
               }
             >
               <option value="#111827">Slate</option>
@@ -390,7 +533,10 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-background-color">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="qr-background-color"
+            >
               QR Background Color
             </label>
             <select
@@ -398,7 +544,13 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.qr_background_color}
               onChange={(e) =>
-                setFormData({ ...formData, qr_background_color: e.target.value as '#ffffff' | '#f8fafc' | '#fffaf2' })
+                setFormData({
+                  ...formData,
+                  qr_background_color: e.target.value as
+                    | '#ffffff'
+                    | '#f8fafc'
+                    | '#fffaf2',
+                })
               }
             >
               <option value="#ffffff">Pure White</option>
@@ -407,14 +559,25 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-frame-style">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="qr-frame-style"
+            >
               QR Frame Style
             </label>
             <select
               id="qr-frame-style"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.qr_frame_style}
-              onChange={(e) => setFormData({ ...formData, qr_frame_style: e.target.value as 'line' | 'rounded' | 'double' })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  qr_frame_style: e.target.value as
+                    | 'line'
+                    | 'rounded'
+                    | 'double',
+                })
+              }
             >
               <option value="line">Line</option>
               <option value="rounded">Rounded</option>
@@ -422,28 +585,44 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-caption-font">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="qr-caption-font"
+            >
               QR Caption Font
             </label>
             <select
               id="qr-caption-font"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.qr_caption_font}
-              onChange={(e) => setFormData({ ...formData, qr_caption_font: e.target.value as 'serif' | 'sans' })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  qr_caption_font: e.target.value as 'serif' | 'sans',
+                })
+              }
             >
               <option value="serif">Serif</option>
               <option value="sans">Sans</option>
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium" htmlFor="qr-show-logo">
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              htmlFor="qr-show-logo"
+            >
               QR Monogram
             </label>
             <select
               id="qr-show-logo"
               className="h-10 w-full rounded-md border border-input bg-[var(--surface-1)] px-2 text-sm"
               value={formData.qr_show_logo ? 'enabled' : 'disabled'}
-              onChange={(e) => setFormData({ ...formData, qr_show_logo: e.target.value === 'enabled' })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  qr_show_logo: e.target.value === 'enabled',
+                })
+              }
             >
               <option value="disabled">Disabled</option>
               <option value="enabled">Enabled</option>
@@ -451,7 +630,11 @@ function AdminMemorialInfoForm({ memorial, onUpdate }: AdminMemorialInfoProps) {
           </div>
         </div>
       </section>
-      {errorMessage && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>}
+      {errorMessage && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {errorMessage}
+        </p>
+      )}
       <Button type="submit" className="w-full" disabled={updating}>
         {updating ? 'Saving...' : 'Save Changes'}
       </Button>

@@ -33,20 +33,28 @@ describe('PATCH /api/admin/memorials/[id]', () => {
     mockPageSingle.mockReset()
     mockUpdate.mockClear()
     mockUpdateEq.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns forbidden when user does not own memorial', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockPageSingle.mockResolvedValue({ data: null })
 
-    const req = new Request('http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: 'Updated' }),
-    })
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: 'Updated' }),
+      }
+    )
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(403)
   })
 
@@ -54,17 +62,33 @@ describe('PATCH /api/admin/memorials/[id]', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1' } })
     mockUpdateSingle.mockResolvedValue({
-      data: { id: 'page-1', title: 'Updated', slug: 'my-page', dedication_text: 'Forever remembered.', access_mode: 'private', privacy: 'private' },
+      data: {
+        id: 'page-1',
+        title: 'Updated',
+        slug: 'my-page',
+        dedication_text: 'Forever remembered.',
+        access_mode: 'private',
+        privacy: 'private',
+      },
       error: null,
     })
 
-    const req = new Request('http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: 'Updated', dedicationText: 'Forever remembered.', accessMode: 'private' }),
-    })
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Updated',
+          dedicationText: 'Forever remembered.',
+          accessMode: 'private',
+        }),
+      }
+    )
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -87,24 +111,35 @@ describe('PATCH /api/admin/memorials/[id]', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1' } })
     mockUpdateSingle.mockResolvedValue({
-      data: { id: 'page-1', title: 'My Page', slug: 'my-page', access_mode: 'public', privacy: 'public' },
+      data: {
+        id: 'page-1',
+        title: 'My Page',
+        slug: 'my-page',
+        access_mode: 'public',
+        privacy: 'public',
+      },
       error: null,
     })
 
-    const req = new Request('http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        memorialTheme: 'serene',
-        memorialSlideshowEnabled: true,
-        memorialSlideshowIntervalMs: 6000,
-        memorialVideoLayout: 'featured',
-        qrTemplate: 'warm',
-        qrCaption: 'Remember me',
-      }),
-    })
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          memorialTheme: 'serene',
+          memorialSlideshowEnabled: true,
+          memorialSlideshowIntervalMs: 6000,
+          memorialVideoLayout: 'featured',
+          qrTemplate: 'warm',
+          qrCaption: 'Remember me',
+        }),
+      }
+    )
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -124,7 +159,10 @@ describe('GET /api/admin/memorials/[id]', () => {
     mockGetUser.mockReset()
     mockProfileSingle.mockReset()
     mockPageSingle.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns memorial details for owner', async () => {
@@ -141,8 +179,12 @@ describe('GET /api/admin/memorials/[id]', () => {
       error: null,
     })
 
-    const req = new Request('http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000')
-    const res = await GET(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000'
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
     const payload = await res.json()
     expect(payload.memorial).toMatchObject({

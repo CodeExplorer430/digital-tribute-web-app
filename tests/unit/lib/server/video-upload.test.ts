@@ -2,6 +2,7 @@ import {
   getVideoTranscodeApiBaseOrThrow,
   getVideoTranscodeApiTokenOrThrow,
   getVideoTranscodeCallbackTokenOrThrow,
+  isPlaceholderVideoTranscodeApiBase,
   isVideoTranscodeConfigured,
   videoUploadStatusSchema,
 } from '@/lib/server/video-upload'
@@ -27,9 +28,30 @@ describe('video-upload helpers', () => {
   })
 
   it('throws when required env vars are missing', () => {
-    expect(() => getVideoTranscodeApiBaseOrThrow()).toThrow('Missing VIDEO_TRANSCODE_API_BASE')
-    expect(() => getVideoTranscodeApiTokenOrThrow()).toThrow('Missing VIDEO_TRANSCODE_API_TOKEN')
-    expect(() => getVideoTranscodeCallbackTokenOrThrow()).toThrow('Missing VIDEO_TRANSCODE_CALLBACK_TOKEN')
+    expect(() => getVideoTranscodeApiBaseOrThrow()).toThrow(
+      'Missing VIDEO_TRANSCODE_API_BASE'
+    )
+    expect(() => getVideoTranscodeApiTokenOrThrow()).toThrow(
+      'Missing VIDEO_TRANSCODE_API_TOKEN'
+    )
+    expect(() => getVideoTranscodeCallbackTokenOrThrow()).toThrow(
+      'Missing VIDEO_TRANSCODE_CALLBACK_TOKEN'
+    )
+  })
+
+  it('treats placeholder transcode endpoints as unconfigured', () => {
+    process.env.VIDEO_TRANSCODE_API_BASE =
+      'https://your-cloud-run-service.run.app'
+    process.env.VIDEO_TRANSCODE_API_TOKEN = 'api-token'
+    process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN = 'callback-token'
+
+    expect(
+      isPlaceholderVideoTranscodeApiBase(process.env.VIDEO_TRANSCODE_API_BASE)
+    ).toBe(true)
+    expect(isVideoTranscodeConfigured()).toBe(false)
+    expect(() => getVideoTranscodeApiBaseOrThrow()).toThrow(
+      'Missing VIDEO_TRANSCODE_API_BASE'
+    )
   })
 
   it('reports whether the video transcode stack is fully configured', () => {
@@ -44,7 +66,11 @@ describe('video-upload helpers', () => {
 
   it('accepts the expected upload job states', () => {
     expect(videoUploadStatusSchema.safeParse('completed').success).toBe(true)
-    expect(videoUploadStatusSchema.safeParse('fallback_required').success).toBe(true)
-    expect(videoUploadStatusSchema.safeParse('not-a-status').success).toBe(false)
+    expect(videoUploadStatusSchema.safeParse('fallback_required').success).toBe(
+      true
+    )
+    expect(videoUploadStatusSchema.safeParse('not-a-status').success).toBe(
+      false
+    )
   })
 })

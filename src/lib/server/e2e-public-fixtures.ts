@@ -1,4 +1,7 @@
-import { hashMemorialPassword, verifyMemorialPassword } from '@/lib/server/page-password'
+import {
+  hashMemorialPassword,
+  verifyMemorialPassword,
+} from '@/lib/server/page-password'
 
 type FixtureAccessMode = 'public' | 'password' | 'private'
 
@@ -96,7 +99,8 @@ const memorialFixtures: E2EMemorialFixture[] = [
       owner_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
       title: 'In Loving Memory of Amelia Stone',
       full_name: 'Amelia Grace Stone',
-      dedication_text: 'Amelia taught our family to sing, to serve, and to carry gentleness into every room. May this memorial keep her music close to us.',
+      dedication_text:
+        'Amelia taught our family to sing, to serve, and to carry gentleness into every room. May this memorial keep her music close to us.',
       hero_image_url: '/next.svg',
       dob: '1940-05-12',
       dod: '2025-12-03',
@@ -159,7 +163,8 @@ const memorialFixtures: E2EMemorialFixture[] = [
         id: '51111111-1111-1111-1111-111111111111',
         page_id: '11111111-1111-1111-1111-111111111111',
         name: 'Maria Santos',
-        message: 'Amelia taught three generations of our family to sing with courage.',
+        message:
+          'Amelia taught three generations of our family to sing with courage.',
         created_at: '2026-03-02T00:00:00.000Z',
         is_approved: true,
       },
@@ -181,7 +186,8 @@ const memorialFixtures: E2EMemorialFixture[] = [
       owner_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
       title: 'In Loving Memory of Mateo Rivera',
       full_name: 'Mateo Luis Rivera',
-      dedication_text: 'This memorial is shared quietly with those who knew Mateo best. Thank you for entering with care and carrying his craft forward.',
+      dedication_text:
+        'This memorial is shared quietly with those who knew Mateo best. Thank you for entering with care and carrying his craft forward.',
       hero_image_url: '/window.svg',
       dob: '1938-09-21',
       dod: '2026-01-17',
@@ -252,7 +258,8 @@ const memorialFixtures: E2EMemorialFixture[] = [
       owner_id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
       title: 'In Loving Memory of Clara Reyes',
       full_name: 'Clara Isabel Reyes',
-      dedication_text: 'Clara kept our family rooted in prayer, discipline, and laughter across every season.',
+      dedication_text:
+        'Clara kept our family rooted in prayer, discipline, and laughter across every season.',
       hero_image_url: '/globe.svg',
       dob: '1945-04-02',
       dod: '2026-02-11',
@@ -303,7 +310,9 @@ export function isE2EPublicFixturesEnabled() {
 
 export function getE2EMemorialFixtureBySlug(slug: string) {
   if (!isE2EPublicFixturesEnabled()) return null
-  return memorialFixtures.find((fixture) => fixture.memorial.slug === slug) || null
+  return (
+    memorialFixtures.find((fixture) => fixture.memorial.slug === slug) || null
+  )
 }
 
 export function getE2ERedirectFixtureByCode(code: string) {
@@ -317,7 +326,11 @@ export function getE2EPhotoFixtureById(photoId: string) {
   for (const fixture of memorialFixtures) {
     const photo = fixture.photos.find((candidate) => candidate.id === photoId)
     if (photo) {
-      return { photo, memorial: fixture.memorial, siteSettings: fixture.siteSettings }
+      return {
+        photo,
+        memorial: fixture.memorial,
+        siteSettings: fixture.siteSettings,
+      }
     }
   }
 

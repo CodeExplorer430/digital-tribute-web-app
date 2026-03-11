@@ -89,7 +89,14 @@ function parseSessionCookie(value: string | undefined | null) {
 
   try {
     const parsed = JSON.parse(value) as Partial<E2EAuthSession>
-    if (!parsed.userId || !parsed.email || !parsed.role || typeof parsed.isActive !== 'boolean' || !parsed.fullName || !parsed.state) {
+    if (
+      !parsed.userId ||
+      !parsed.email ||
+      !parsed.role ||
+      typeof parsed.isActive !== 'boolean' ||
+      !parsed.fullName ||
+      !parsed.state
+    ) {
       return null
     }
 
@@ -112,7 +119,10 @@ export function getE2EAuthSessionFromCookieSource(cookieSource: CookieSource) {
   return parseSessionCookie(cookieSource.get(E2E_AUTH_COOKIE)?.value)
 }
 
-export function applyE2EAuthSession(response: NextResponse, session: E2EAuthSession) {
+export function applyE2EAuthSession(
+  response: NextResponse,
+  session: E2EAuthSession
+) {
   response.cookies.set(E2E_AUTH_COOKIE, JSON.stringify(session), {
     httpOnly: true,
     sameSite: 'lax',
@@ -133,41 +143,65 @@ export function clearE2EAuthSession(response: NextResponse) {
 }
 
 export function authenticateE2EUser(email: string, password: string) {
-  const user = getMutableUsers().find((candidate) => candidate.email.toLowerCase() === email.trim().toLowerCase())
+  const user = getMutableUsers().find(
+    (candidate) => candidate.email.toLowerCase() === email.trim().toLowerCase()
+  )
 
   if (!user || user.password !== password) {
-    return { ok: false as const, status: 401, message: 'Invalid email or password.' }
+    return {
+      ok: false as const,
+      status: 401,
+      message: 'Invalid email or password.',
+    }
   }
 
   if (!user.isActive || user.state === 'deactivated') {
-    return { ok: false as const, status: 403, message: 'This account has been deactivated.' }
+    return {
+      ok: false as const,
+      status: 403,
+      message: 'This account has been deactivated.',
+    }
   }
 
   if (user.state === 'invited') {
-    return { ok: false as const, status: 403, message: 'This account is still pending password setup.' }
+    return {
+      ok: false as const,
+      status: 403,
+      message: 'This account is still pending password setup.',
+    }
   }
 
   return { ok: true as const, session: sanitizeUser(user) }
 }
 
 export function requestE2EPasswordReset(email: string) {
-  const user = getMutableUsers().find((candidate) => candidate.email.toLowerCase() === email.trim().toLowerCase())
+  const user = getMutableUsers().find(
+    (candidate) => candidate.email.toLowerCase() === email.trim().toLowerCase()
+  )
 
   return {
     ok: true as const,
-    resetPath: user ? `/login/reset-password?email=${encodeURIComponent(user.email)}` : null,
+    resetPath: user
+      ? `/login/reset-password?email=${encodeURIComponent(user.email)}`
+      : null,
   }
 }
 
 export function completeE2EPasswordReset(email: string, password: string) {
-  const user = getMutableUsers().find((candidate) => candidate.email.toLowerCase() === email.trim().toLowerCase())
+  const user = getMutableUsers().find(
+    (candidate) => candidate.email.toLowerCase() === email.trim().toLowerCase()
+  )
 
   if (!user) {
     return { ok: false as const, status: 404, message: 'Account not found.' }
   }
 
   if (!user.isActive || user.state === 'deactivated') {
-    return { ok: false as const, status: 403, message: 'This account has been deactivated.' }
+    return {
+      ok: false as const,
+      status: 403,
+      message: 'This account has been deactivated.',
+    }
   }
 
   user.password = password

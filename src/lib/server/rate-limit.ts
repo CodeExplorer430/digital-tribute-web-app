@@ -11,7 +11,11 @@ type RateLimitResult = {
   resetAt: number
 }
 
-function checkRateLimitInMemory(key: string, limit: number, windowMs: number): RateLimitResult {
+function checkRateLimitInMemory(
+  key: string,
+  limit: number,
+  windowMs: number
+): RateLimitResult {
   const now = Date.now()
   const current = store.get(key)
 
@@ -26,7 +30,11 @@ function checkRateLimitInMemory(key: string, limit: number, windowMs: number): R
 
   current.count += 1
   store.set(key, current)
-  return { allowed: true, remaining: Math.max(limit - current.count, 0), resetAt: current.resetAt }
+  return {
+    allowed: true,
+    remaining: Math.max(limit - current.count, 0),
+    resetAt: current.resetAt,
+  }
 }
 
 async function upstashCommand<T>(command: string[]) {
@@ -49,7 +57,11 @@ async function upstashCommand<T>(command: string[]) {
   return body[0]?.result ?? null
 }
 
-async function checkRateLimitUpstash(key: string, limit: number, windowMs: number): Promise<RateLimitResult | null> {
+async function checkRateLimitUpstash(
+  key: string,
+  limit: number,
+  windowMs: number
+): Promise<RateLimitResult | null> {
   const count = await upstashCommand<number>(['INCR', key])
   if (!count) return null
 
@@ -66,7 +78,11 @@ async function checkRateLimitUpstash(key: string, limit: number, windowMs: numbe
   }
 }
 
-export async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
+export async function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number
+): Promise<RateLimitResult> {
   const backend = process.env.RATE_LIMIT_BACKEND || 'memory'
   if (backend === 'upstash') {
     const distributed = await checkRateLimitUpstash(key, limit, windowMs)

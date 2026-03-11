@@ -3,8 +3,14 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import { MemorialPageView } from '@/components/pages/public/MemorialPageView'
-import { canAccessMemorial, memorialRequiresProtectedMedia } from '@/lib/server/page-access'
-import { getMemorialMediaConsentCookieName, verifyMemorialMediaConsentToken } from '@/lib/server/media-consent'
+import {
+  canAccessMemorial,
+  memorialRequiresProtectedMedia,
+} from '@/lib/server/page-access'
+import {
+  getMemorialMediaConsentCookieName,
+  verifyMemorialMediaConsentToken,
+} from '@/lib/server/media-consent'
 import { toMemorialRecord } from '@/lib/server/memorials'
 import { createSignedMediaToken } from '@/lib/server/private-media'
 import { MemorialUnlockForm } from '@/components/public/MemorialUnlockForm'
@@ -19,7 +25,9 @@ const DEFAULT_CONSENT_TITLE = 'Media Viewing Notice'
 const DEFAULT_CONSENT_BODY =
   "The family has protected this memorial's photos and videos for respectful viewing. Continuing confirms that access to protected media is recorded for family oversight."
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { slug } = await params
   const fixture = getE2EMemorialFixtureBySlug(slug)
   const memorial = fixture?.memorial
@@ -55,7 +63,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const supabase = await createClient()
-  const { data: databasePage } = await supabase.from('pages').select('*').eq('slug', slug).single()
+  const { data: databasePage } = await supabase
+    .from('pages')
+    .select('*')
+    .eq('slug', slug)
+    .single()
 
   if (!databasePage) return {}
 
@@ -125,7 +137,13 @@ export default async function PublicTributePage({ params }: PageProps) {
 
   const photos =
     fixture?.photos ||
-    (await supabase!.from('photos').select('*').eq('page_id', memorial.id).order('sort_index', { ascending: true })).data ||
+    (
+      await supabase!
+        .from('photos')
+        .select('*')
+        .eq('page_id', memorial.id)
+        .order('sort_index', { ascending: true })
+    ).data ||
     []
 
   const guestbook =
@@ -142,17 +160,31 @@ export default async function PublicTributePage({ params }: PageProps) {
 
   const timeline =
     fixture?.timeline ||
-    (await supabase!.from('timeline_events').select('*').eq('page_id', memorial.id).order('year', { ascending: true })).data ||
+    (
+      await supabase!
+        .from('timeline_events')
+        .select('*')
+        .eq('page_id', memorial.id)
+        .order('year', { ascending: true })
+    ).data ||
     []
 
   const videos =
     fixture?.videos ||
-    (await supabase!.from('videos').select('*').eq('page_id', memorial.id).order('created_at', { ascending: true })).data ||
+    (
+      await supabase!
+        .from('videos')
+        .select('*')
+        .eq('page_id', memorial.id)
+        .order('created_at', { ascending: true })
+    ).data ||
     []
 
   const protectedMediaEnabled = memorialRequiresProtectedMedia(memorial)
   const cookieStore = protectedMediaEnabled ? await cookies() : null
-  const mediaConsentToken = protectedMediaEnabled ? cookieStore?.get(getMemorialMediaConsentCookieName(memorial.id))?.value : undefined
+  const mediaConsentToken = protectedMediaEnabled
+    ? cookieStore?.get(getMemorialMediaConsentCookieName(memorial.id))?.value
+    : undefined
   const hasMediaConsent = protectedMediaEnabled
     ? verifyMemorialMediaConsentToken(
         mediaConsentToken,
@@ -162,13 +194,15 @@ export default async function PublicTributePage({ params }: PageProps) {
         memorial.media_consent_revoked_at || null
       )
     : true
-  const requiresMediaConsent = protectedMediaEnabled && !hasMediaConsent && (Boolean(memorial.hero_image_url) || photos.length > 0 || videos.length > 0)
+  const requiresMediaConsent =
+    protectedMediaEnabled &&
+    !hasMediaConsent &&
+    (Boolean(memorial.hero_image_url) || photos.length > 0 || videos.length > 0)
 
-  const resolvedPhotos =
-    requiresMediaConsent
-      ? []
-      : protectedMediaEnabled
-        ? photos.map((photo) => {
+  const resolvedPhotos = requiresMediaConsent
+    ? []
+    : protectedMediaEnabled
+      ? photos.map((photo) => {
           const imageToken = createSignedMediaToken(photo.id, 'image')
           const thumbToken = createSignedMediaToken(photo.id, 'thumb')
           return {
@@ -177,16 +211,22 @@ export default async function PublicTributePage({ params }: PageProps) {
             thumb_url: `/api/public/media/${photo.id}?variant=thumb&token=${encodeURIComponent(thumbToken)}`,
           }
         })
-        : photos
+      : photos
 
   const resolvedMemorial = {
     ...toMemorialRecord(memorial),
     hero_image_url: requiresMediaConsent ? null : memorial.hero_image_url,
     memorial_slideshow_enabled:
-      memorial.memorial_slideshow_enabled ?? (siteSettings?.memorial_slideshow_enabled !== false),
-    memorial_slideshow_interval_ms: memorial.memorial_slideshow_interval_ms ?? (Number(siteSettings?.memorial_slideshow_interval_ms) || 4500),
+      memorial.memorial_slideshow_enabled ??
+      siteSettings?.memorial_slideshow_enabled !== false,
+    memorial_slideshow_interval_ms:
+      memorial.memorial_slideshow_interval_ms ??
+      (Number(siteSettings?.memorial_slideshow_interval_ms) || 4500),
     memorial_video_layout:
-      memorial.memorial_video_layout ?? (siteSettings?.memorial_video_layout === 'featured' ? 'featured' : 'grid'),
+      memorial.memorial_video_layout ??
+      (siteSettings?.memorial_video_layout === 'featured'
+        ? 'featured'
+        : 'grid'),
   }
 
   return (
@@ -199,9 +239,15 @@ export default async function PublicTributePage({ params }: PageProps) {
       accessMode={resolveMemorialAccessMode(memorial)}
       requiresMediaConsent={requiresMediaConsent}
       mediaConsentSlug={requiresMediaConsent ? slug : undefined}
-      mediaConsentTitle={siteSettings?.protected_media_consent_title || DEFAULT_CONSENT_TITLE}
-      mediaConsentBody={siteSettings?.protected_media_consent_body || DEFAULT_CONSENT_BODY}
-      mediaConsentVersion={Number(siteSettings?.protected_media_consent_version) || 1}
+      mediaConsentTitle={
+        siteSettings?.protected_media_consent_title || DEFAULT_CONSENT_TITLE
+      }
+      mediaConsentBody={
+        siteSettings?.protected_media_consent_body || DEFAULT_CONSENT_BODY
+      }
+      mediaConsentVersion={
+        Number(siteSettings?.protected_media_consent_version) || 1
+      }
     />
   )
 }

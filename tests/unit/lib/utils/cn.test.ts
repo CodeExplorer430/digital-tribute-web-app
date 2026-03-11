@@ -6,6 +6,8 @@ describe('cn', () => {
   })
 
   it('ignores falsy values', () => {
-    expect(cn('rounded', false && 'hidden', undefined, null, 'px-2')).toBe('rounded px-2')
+    expect(cn('rounded', false && 'hidden', undefined, null, 'px-2')).toBe(
+      'rounded px-2'
+    )
   })
 })

@@ -20,10 +20,14 @@ if (endpoint) {
 }
 
 function runAwsJson(args) {
-  const output = execFileSync('aws', [...awsArgsBase, ...args, '--output', 'json'], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
+  const output = execFileSync(
+    'aws',
+    [...awsArgsBase, ...args, '--output', 'json'],
+    {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  )
   return JSON.parse(output)
 }
 
@@ -36,7 +40,8 @@ function runAws(args) {
 function cutoffMs(kind) {
   const now = Date.now()
   if (kind === 'daily') return now - dailyRetentionDays * 24 * 60 * 60 * 1000
-  if (kind === 'weekly') return now - weeklyRetentionWeeks * 7 * 24 * 60 * 60 * 1000
+  if (kind === 'weekly')
+    return now - weeklyRetentionWeeks * 7 * 24 * 60 * 60 * 1000
   return now
 }
 

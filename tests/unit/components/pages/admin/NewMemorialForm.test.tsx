@@ -38,7 +38,11 @@ describe('NewMemorialForm', () => {
   })
 
   it('submits and navigates to admin on success', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ memorial: { id: 'p1' } }), { status: 200 }))
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ memorial: { id: 'p1' } }), {
+        status: 200,
+      })
+    )
 
     const user = userEvent.setup()
     render(<NewMemorialForm />)
@@ -46,7 +50,10 @@ describe('NewMemorialForm', () => {
     await user.type(screen.getByLabelText('Memorial Title'), 'Jane Doe')
     await user.type(screen.getByLabelText('URL Slug'), 'jane-doe')
     await user.type(screen.getByLabelText('Full Name'), 'Jane Doe')
-    await user.type(screen.getByLabelText('Dedication Text'), 'Beloved by her family and church community.')
+    await user.type(
+      screen.getByLabelText('Dedication Text'),
+      'Beloved by her family and church community.'
+    )
     await user.click(screen.getByRole('button', { name: 'Create Memorial' }))
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -64,7 +71,11 @@ describe('NewMemorialForm', () => {
   })
 
   it('shows API error and supports cancel navigation', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Creation failed' }), { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Creation failed' }), {
+        status: 500,
+      })
+    )
 
     const user = userEvent.setup()
     render(<NewMemorialForm />)

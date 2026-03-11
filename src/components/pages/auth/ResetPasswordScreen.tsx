@@ -20,7 +20,10 @@ export function ResetPasswordScreen() {
   const useE2EFakeAuth = process.env.NEXT_PUBLIC_E2E_FAKE_AUTH === '1'
   const resetEmail = searchParams.get('email')
 
-  const passwordMismatch = useMemo(() => confirmPassword.length > 0 && password !== confirmPassword, [confirmPassword, password])
+  const passwordMismatch = useMemo(
+    () => confirmPassword.length > 0 && password !== confirmPassword,
+    [confirmPassword, password]
+  )
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -37,11 +40,17 @@ export function ResetPasswordScreen() {
       const response = await fetch('/api/auth/e2e-reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'complete', email: resetEmail, password }),
+        body: JSON.stringify({
+          action: 'complete',
+          email: resetEmail,
+          password,
+        }),
       })
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string
+        } | null
         setError(payload?.message || 'Unable to update password.')
         setLoading(false)
         return
@@ -113,19 +122,28 @@ export function ResetPasswordScreen() {
           </div>
 
           {passwordMismatch && (
-            <div role="alert" className="rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div
+              role="alert"
+              className="rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
               Passwords do not match.
             </div>
           )}
 
           {error && (
-            <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div
+              role="alert"
+              className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
               {error}
             </div>
           )}
 
           {useE2EFakeAuth && !resetEmail && (
-            <div role="alert" className="rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div
+              role="alert"
+              className="rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
               Reset link is incomplete. Start from the forgot-password screen.
             </div>
           )}
@@ -136,7 +154,17 @@ export function ResetPasswordScreen() {
             </div>
           )}
 
-          <Button type="submit" className="w-full" size="lg" disabled={loading || password.length < 8 || passwordMismatch || (useE2EFakeAuth && !resetEmail)}>
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            disabled={
+              loading ||
+              password.length < 8 ||
+              passwordMismatch ||
+              (useE2EFakeAuth && !resetEmail)
+            }
+          >
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -154,7 +182,10 @@ export function ResetPasswordScreen() {
       footer={
         <div className="inline-flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-primary" />
-          <span>Use at least 8 characters and keep the account private to the assigned admin.</span>
+          <span>
+            Use at least 8 characters and keep the account private to the
+            assigned admin.
+          </span>
         </div>
       }
     />

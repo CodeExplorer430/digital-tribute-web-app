@@ -1,21 +1,34 @@
-import { databaseError, forbidden, requireAdminUser } from '@/lib/server/admin-auth'
+import {
+  databaseError,
+  forbidden,
+  requireAdminUser,
+} from '@/lib/server/admin-auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
 const paramsSchema = z.object({ id: z.string().uuid() })
 
-export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const params = await context.params
   const parsed = paramsSchema.safeParse(params)
   if (!parsed.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid memorial id.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid memorial id.' },
+      { status: 400 }
+    )
   }
 
   const auth = await requireAdminUser({ minRole: 'viewer' })
   if (!auth.ok) return auth.response
   const { supabase, userId, role } = auth
 
-  let pageQuery = supabase.from('pages').select('id, slug').eq('id', parsed.data.id)
+  let pageQuery = supabase
+    .from('pages')
+    .select('id, slug')
+    .eq('id', parsed.data.id)
   if (role !== 'admin') {
     pageQuery = pageQuery.eq('owner_id', userId)
   }
@@ -25,7 +38,9 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
 
   let redirectsQuery = supabase
     .from('redirects')
-    .select('id, shortcode, target_url, print_status, last_verified_at, is_active, created_at')
+    .select(
+      'id, shortcode, target_url, print_status, last_verified_at, is_active, created_at'
+    )
   if (typeof redirectsQuery.ilike === 'function') {
     redirectsQuery = redirectsQuery.ilike('target_url', `%${page.slug}%`)
   }

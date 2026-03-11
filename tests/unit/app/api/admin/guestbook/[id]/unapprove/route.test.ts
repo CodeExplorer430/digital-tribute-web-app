@@ -8,9 +8,16 @@ const mockUpdate = vi.fn(() => ({ eq: mockUpdateEq }))
 
 vi.mock('@/lib/server/admin-auth', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdminUser(...args),
-  assertOwnedRowByPageId: (...args: unknown[]) => mockAssertOwnedRowByPageId(...args),
-  forbidden: (message: string) => new Response(JSON.stringify({ code: 'FORBIDDEN', message }), { status: 403 }),
-  databaseError: (message: string) => new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), { status: 500 }),
+  assertOwnedRowByPageId: (...args: unknown[]) =>
+    mockAssertOwnedRowByPageId(...args),
+  forbidden: (message: string) =>
+    new Response(JSON.stringify({ code: 'FORBIDDEN', message }), {
+      status: 403,
+    }),
+  databaseError: (message: string) =>
+    new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), {
+      status: 500,
+    }),
 }))
 
 vi.mock('@/lib/server/admin-audit', () => ({
@@ -26,8 +33,13 @@ describe('POST /api/admin/guestbook/[id]/unapprove', () => {
   })
 
   it('returns validation error for invalid id', async () => {
-    const req = new Request('http://localhost/api/admin/guestbook/not-a-uuid/unapprove', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ id: 'not-a-uuid' }) })
+    const req = new Request(
+      'http://localhost/api/admin/guestbook/not-a-uuid/unapprove',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ id: 'not-a-uuid' }),
+    })
 
     expect(res.status).toBe(400)
   })
@@ -46,8 +58,13 @@ describe('POST /api/admin/guestbook/[id]/unapprove', () => {
     mockAssertOwnedRowByPageId.mockResolvedValue(true)
     mockUpdateEq.mockResolvedValue({ error: null })
 
-    const req = new Request('http://localhost/api/admin/guestbook/550e8400-e29b-41d4-a716-446655440000/unapprove', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/guestbook/550e8400-e29b-41d4-a716-446655440000/unapprove',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
 
     expect(res.status).toBe(200)
     expect(mockUpdate).toHaveBeenCalledWith({ is_approved: false })

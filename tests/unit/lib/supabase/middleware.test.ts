@@ -1,7 +1,11 @@
 import { NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
-type CookieArg = { name: string; value: string; options?: Record<string, unknown> }
+type CookieArg = {
+  name: string
+  value: string
+  options?: Record<string, unknown>
+}
 
 const mockGetUser = vi.fn()
 const mockCreateServerClient = vi.fn()
@@ -21,14 +25,22 @@ describe('updateSession middleware', () => {
     delete process.env.E2E_FAKE_AUTH
     mockGetUser.mockReset()
     mockCreateServerClient.mockReset()
-    mockCreateServerClient.mockImplementation((_url: string, _key: string, options: { cookies: { setAll: (cookies: CookieArg[]) => void } }) => {
-      options.cookies.setAll([{ name: 'sb-session', value: 'abc', options: { path: '/' } }])
-      return {
-        auth: {
-          getUser: mockGetUser,
-        },
+    mockCreateServerClient.mockImplementation(
+      (
+        _url: string,
+        _key: string,
+        options: { cookies: { setAll: (cookies: CookieArg[]) => void } }
+      ) => {
+        options.cookies.setAll([
+          { name: 'sb-session', value: 'abc', options: { path: '/' } },
+        ])
+        return {
+          auth: {
+            getUser: mockGetUser,
+          },
+        }
       }
-    })
+    )
   })
 
   it('bypasses auth in e2e mode for admin routes', async () => {

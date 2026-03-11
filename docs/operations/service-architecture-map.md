@@ -3,6 +3,7 @@
 Use this as the single source of truth for external services used by Everlume.
 
 ## 1) Runtime Architecture (at a glance)
+
 - Browser -> Vercel (Next.js app + `/api/*`) -> Supabase (Auth + Postgres)
 - Browser -> Cloudinary Upload Widget -> Cloudinary -> app API stores metadata in Supabase
 - Browser -> app upload API -> Cloud Run transcode service -> Cloudinary video -> app callback -> Supabase
@@ -11,6 +12,7 @@ Use this as the single source of truth for external services used by Everlume.
 ## 2) Service Inventory
 
 ### Core required for launch
+
 - **Vercel**
   - Purpose: host Next.js frontend + API routes.
   - Critical env: `NEXT_PUBLIC_*`, Supabase keys, security envs.
@@ -29,12 +31,14 @@ Use this as the single source of truth for external services used by Everlume.
   - Purpose: CI quality gates + deployment automation.
 
 ### Required by current production security gate
+
 - **Upstash Redis**
   - Purpose: durable rate limiting (`RATE_LIMIT_BACKEND=upstash`).
 - **CAPTCHA provider**
   - Purpose: bot/spam prevention for public submission flows.
 
 ### Required for direct in-app video compression uploads
+
 - **Cloud Run video transcode service**
   - Purpose: receives upload, runs ffmpeg compression, uploads to Cloudinary, callbacks app.
   - Contract:
@@ -44,6 +48,7 @@ Use this as the single source of truth for external services used by Everlume.
   - Source location: `services/video-transcode`.
 
 ### Fallback/operational services
+
 - **YouTube Unlisted**
   - Purpose: fallback video path when compressed output cannot stay under Cloudinary free-tier cap.
 - **Cloudflare R2** (if backup workflows are enabled)
@@ -52,7 +57,9 @@ Use this as the single source of truth for external services used by Everlume.
   - Purpose: family-owned backup of original media masters.
 
 ## 3) Ownership & Access Checklist
+
 For each external service, track:
+
 - owner account email
 - backup owner email
 - MFA enabled (`yes/no`)
@@ -60,6 +67,7 @@ For each external service, track:
 - last credential rotation date
 
 Minimum owner accounts to keep active:
+
 - GitHub repo admin
 - Vercel project admin
 - Supabase project admin
@@ -70,6 +78,7 @@ Minimum owner accounts to keep active:
 ## 4) Environment Variable Mapping
 
 ### App (Vercel / local)
+
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or `NEXT_PUBLIC_SUPABASE_ANON_KEY`), `SUPABASE_SECRET_KEY`
 - Media:
   - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
@@ -83,11 +92,13 @@ Minimum owner accounts to keep active:
 - Private media signing: `PRIVATE_MEDIA_TOKEN_SECRET`
 
 ### Cloudflare Worker
+
 - `SUPABASE_URL`
 - `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`)
 - `FALLBACK_URL`
 
 ### Cloud Run transcode service
+
 - `VIDEO_TRANSCODE_API_TOKEN`
 - `VIDEO_TRANSCODE_CALLBACK_TOKEN`
 - `CLOUDINARY_CLOUD_NAME`
@@ -95,6 +106,7 @@ Minimum owner accounts to keep active:
 - `CLOUDINARY_API_SECRET`
 
 ## 5) Operational Verification Commands
+
 - Prereqs:
   - `npm run ops:check-prereqs`
   - `npm run ops:check-prereqs:production`

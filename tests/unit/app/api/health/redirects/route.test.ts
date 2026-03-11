@@ -28,7 +28,10 @@ describe('GET /api/health/redirects', () => {
   it('returns ok when redirect table is reachable', async () => {
     mockLimit.mockResolvedValue({ error: null })
     const res = await GET()
-    const payload = (await res.json()) as { ok: boolean; workerReachable: boolean }
+    const payload = (await res.json()) as {
+      ok: boolean
+      workerReachable: boolean
+    }
 
     expect(res.status).toBe(200)
     expect(payload.ok).toBe(true)
@@ -41,7 +44,10 @@ describe('GET /api/health/redirects', () => {
     fetchMock.mockResolvedValue({ status: 404 })
 
     const res = await GET()
-    const payload = (await res.json()) as { ok: boolean; workerReachable: boolean }
+    const payload = (await res.json()) as {
+      ok: boolean
+      workerReachable: boolean
+    }
 
     expect(res.status).toBe(200)
     expect(payload.ok).toBe(true)

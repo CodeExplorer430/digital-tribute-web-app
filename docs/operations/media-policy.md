@@ -1,6 +1,7 @@
 # Media Policy
 
 ## Image Storage and Delivery
+
 - Images are uploaded with Cloudinary Upload Widget from the admin panel.
 - DB records store Cloudinary metadata in `photos`:
   - `cloudinary_public_id`
@@ -14,6 +15,7 @@
   - Public ID should be auto-generated and unguessable.
 
 ## Video Policy
+
 - Admin supports two paths:
   - Direct upload with server-side compression (Cloud Run + ffmpeg).
   - YouTube Unlisted link entry.
@@ -24,15 +26,20 @@
   - `VIDEO_TRANSCODE_API_TOKEN`
   - `VIDEO_TRANSCODE_CALLBACK_TOKEN`
   - `VIDEO_TRANSCODE_APP_BASE`
+- Production constraints:
+  - `VIDEO_TRANSCODE_API_BASE` must reference a real reachable service, not a placeholder host.
+  - `VIDEO_TRANSCODE_APP_BASE` must match `NEXT_PUBLIC_APP_URL` so callback verification targets the live app origin.
 - Service implementation lives in `services/video-transcode` (Cloud Run container).
 - Contract validation commands:
   - `npm run ops:check-video-transcode`
   - `npm run ops:check-video-transcode:synthetic`
 
 ## Backup Policy
+
 - Keep original masters in shared Google Drive for family handover and disaster recovery.
 
 ## Optional Optimization Prewarm
+
 - Use `npm run ops:media:prewarm` (or the scheduled workflow) to warm common Cloudinary transforms.
 - Enable this only when needed with `MEDIA_PREWARM_ENABLED=1`.
 - Review `media_optimization_runs` status entries after each run.

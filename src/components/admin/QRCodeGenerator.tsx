@@ -30,9 +30,19 @@ export function QRCodeGenerator({
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'H', margin: 3, width: 1400, color: { dark: foregroundColor, light: backgroundColor } }, (err, string) => {
-      if (!err) setSvg(string)
-    })
+    QRCode.toString(
+      url,
+      {
+        type: 'svg',
+        errorCorrectionLevel: 'H',
+        margin: 3,
+        width: 1400,
+        color: { dark: foregroundColor, light: backgroundColor },
+      },
+      (err, string) => {
+        if (!err) setSvg(string)
+      }
+    )
 
     if (canvasRef.current) {
       QRCode.toCanvas(canvasRef.current, url, {
@@ -52,7 +62,10 @@ export function QRCodeGenerator({
         : template === 'warm'
           ? { bg: '#fffaf2', frame: '#7b5a36', text: '#503a23' }
           : { bg: '#ffffff', frame: '#101010', text: '#111111' }
-    const captionFontStyle = captionFont === 'sans' ? "normal 145px 'Helvetica Neue', Arial, sans-serif" : "italic 170px 'Times New Roman', Georgia, serif"
+    const captionFontStyle =
+      captionFont === 'sans'
+        ? "normal 145px 'Helvetica Neue', Arial, sans-serif"
+        : "italic 170px 'Times New Roman', Georgia, serif"
     const frameStrokeWidth = frameStyle === 'double' ? 8 : 4
     const frameRadius = frameStyle === 'rounded' ? 48 : 24
 
@@ -114,7 +127,10 @@ export function QRCodeGenerator({
     ctx.drawImage(canvasRef.current, 200, 220, 1400, 1400)
     ctx.fillStyle = palette.text
     ctx.textAlign = 'center'
-    ctx.font = captionFont === 'sans' ? "normal 145px 'Helvetica Neue', Arial, sans-serif" : "italic 170px 'Times New Roman', Georgia, serif"
+    ctx.font =
+      captionFont === 'sans'
+        ? "normal 145px 'Helvetica Neue', Arial, sans-serif"
+        : "italic 170px 'Times New Roman', Georgia, serif"
     if (showLogo) {
       ctx.fillStyle = '#ffffff'
       ctx.beginPath()
@@ -124,7 +140,7 @@ export function QRCodeGenerator({
       ctx.lineWidth = 3
       ctx.stroke()
       ctx.fillStyle = '#4b5563'
-      ctx.font = "700 54px Georgia, serif"
+      ctx.font = '700 54px Georgia, serif'
       ctx.fillText('E', 900, 1760)
       ctx.fillStyle = palette.text
     }
@@ -139,10 +155,17 @@ export function QRCodeGenerator({
   return (
     <div className="w-full space-y-3 text-center">
       <div className="mx-auto w-fit rounded-xl border border-border bg-white px-6 py-6 shadow-[var(--shadow-card)]">
-        <div className="mx-auto w-fit" dangerouslySetInnerHTML={{ __html: svg }} />
-        <p className="pt-5 text-5xl italic text-foreground [font-family:Georgia,'Times_New_Roman',serif]">{caption}</p>
+        <div
+          className="mx-auto w-fit"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+        <p className="pt-5 text-5xl italic text-foreground [font-family:Georgia,'Times_New_Roman',serif]">
+          {caption}
+        </p>
       </div>
-      <p className="rounded-md border border-border bg-secondary/60 px-2 py-1 text-xs font-mono text-muted-foreground">{url}</p>
+      <p className="rounded-md border border-border bg-secondary/60 px-2 py-1 text-xs font-mono text-muted-foreground">
+        {url}
+      </p>
       <div className="grid grid-cols-1 gap-2">
         <Button variant="outline" size="sm" onClick={downloadSVG}>
           <Download className="mr-2 h-4 w-4" />
@@ -154,7 +177,9 @@ export function QRCodeGenerator({
         </Button>
       </div>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      <p className="text-[11px] text-muted-foreground">Use SVG for engravers. Use 2048px PNG for print shops.</p>
+      <p className="text-[11px] text-muted-foreground">
+        Use SVG for engravers. Use 2048px PNG for print shops.
+      </p>
     </div>
   )
 }

@@ -11,7 +11,13 @@ export default async function AdminLayout({
   const e2eBypass = process.env.E2E_BYPASS_ADMIN_AUTH === '1'
 
   if (e2eBypass) {
-    return <AdminShell userEmail={process.env.E2E_ADMIN_EMAIL || 'e2e-admin@everlume.local'}>{children}</AdminShell>
+    return (
+      <AdminShell
+        userEmail={process.env.E2E_ADMIN_EMAIL || 'e2e-admin@everlume.local'}
+      >
+        {children}
+      </AdminShell>
+    )
   }
 
   if (isE2EFakeAuthEnabled()) {

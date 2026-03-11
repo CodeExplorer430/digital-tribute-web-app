@@ -31,7 +31,10 @@ describe('POST /api/admin/photos', () => {
     mockPageSingle.mockReset()
     mockPhotoSingle.mockReset()
     mockPhotoInsert.mockClear()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns validation error for invalid payload', async () => {
@@ -49,7 +52,10 @@ describe('POST /api/admin/photos', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1' } })
     mockPhotoSingle.mockResolvedValue({
-      data: { id: 'photo-1', image_url: 'https://res.cloudinary.com/demo/image/upload/abc.jpg' },
+      data: {
+        id: 'photo-1',
+        image_url: 'https://res.cloudinary.com/demo/image/upload/abc.jpg',
+      },
       error: null,
     })
 
@@ -61,7 +67,8 @@ describe('POST /api/admin/photos', () => {
         caption: 'Sunset',
         cloudinaryPublicId: 'everlume/abc',
         imageUrl: 'https://res.cloudinary.com/demo/image/upload/abc.jpg',
-        thumbUrl: 'https://res.cloudinary.com/demo/image/upload/c_fill,w_400/abc.jpg',
+        thumbUrl:
+          'https://res.cloudinary.com/demo/image/upload/c_fill,w_400/abc.jpg',
       }),
     })
 

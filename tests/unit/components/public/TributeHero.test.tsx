@@ -30,10 +30,16 @@ describe('TributeHero', () => {
     )
 
     expect(screen.getByTestId('hero-image')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'In Loving Memory' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'In Loving Memory' })
+    ).toBeInTheDocument()
     expect(screen.getByText('Jane Doe')).toBeInTheDocument()
-    expect(screen.getByText('January 1, 1950 - March 7, 2025')).toBeInTheDocument()
-    expect(mockNextImage).toHaveBeenCalledWith(expect.objectContaining({ alt: 'Jane Doe' }))
+    expect(
+      screen.getByText('January 1, 1950 - March 7, 2025')
+    ).toBeInTheDocument()
+    expect(mockNextImage).toHaveBeenCalledWith(
+      expect.objectContaining({ alt: 'Jane Doe' })
+    )
   })
 
   it('renders gradient fallback and no date range when dates are missing', () => {

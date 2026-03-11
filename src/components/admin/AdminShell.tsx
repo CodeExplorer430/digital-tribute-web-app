@@ -3,13 +3,27 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { Menu, LayoutGrid, BookOpenText, Link2, MessageCircle, Users, X, Sparkles, ChartColumn } from 'lucide-react'
+import {
+  Menu,
+  LayoutGrid,
+  BookOpenText,
+  Link2,
+  MessageCircle,
+  Users,
+  X,
+  Sparkles,
+  ChartColumn,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils/cn'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutGrid },
-  { href: '/admin/memorials/new', label: 'Create Memorial', icon: BookOpenText },
+  {
+    href: '/admin/memorials/new',
+    label: 'Create Memorial',
+    icon: BookOpenText,
+  },
   { href: '/admin/guestbook', label: 'Guestbook', icon: MessageCircle },
   { href: '/admin/settings', label: 'Short Links', icon: Link2 },
   { href: '/admin/reports', label: 'Reports', icon: ChartColumn },
@@ -26,20 +40,33 @@ export function AdminShell({ userEmail, children }: AdminShellProps) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-transparent text-foreground">
+    <div className="page-shell min-h-screen bg-transparent text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/80 bg-[var(--surface-2)]/92 backdrop-blur-xl">
         <div className="page-container flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen((v) => !v)} aria-label="Toggle navigation menu">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Toggle navigation menu"
+            >
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
-            <Link href="/admin" className="group inline-flex items-center gap-3 rounded-xl px-1 py-1">
+            <Link
+              href="/admin"
+              className="group inline-flex items-center gap-3 rounded-xl px-1 py-1"
+            >
               <span className="rounded-2xl border border-border/80 bg-[var(--surface-1)] p-2 shadow-[0_12px_24px_rgba(41,49,40,0.08)]">
                 <Sparkles className="h-4 w-4 text-primary" />
               </span>
               <div>
-                <p className="text-sm font-semibold tracking-wide">Everlume Admin</p>
-                <p className="text-xs text-muted-foreground">Manage memorials with confidence</p>
+                <p className="text-sm font-semibold tracking-wide">
+                  Everlume Admin
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Manage memorials with confidence
+                </p>
               </div>
             </Link>
           </div>
@@ -63,9 +90,21 @@ export function AdminShell({ userEmail, children }: AdminShellProps) {
             open ? 'block' : 'hidden md:block'
           )}
         >
+          <div className="mb-4 rounded-[1.35rem] border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.68),rgba(237,230,217,0.9))] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Admin Console
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-foreground">
+              Keep memorial content, guestbook messages, and launch links
+              aligned from one review space.
+            </p>
+          </div>
           <nav className="space-y-1.5">
             {navItems.map((item) => {
-              const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
+              const isActive =
+                item.href === '/admin'
+                  ? pathname === '/admin'
+                  : pathname.startsWith(item.href)
               const Icon = item.icon
               return (
                 <Link
@@ -79,8 +118,20 @@ export function AdminShell({ userEmail, children }: AdminShellProps) {
                       : 'border-transparent text-foreground hover:border-border/70 hover:bg-accent/65'
                   )}
                 >
-                  <span className={cn('rounded-xl p-2', isActive ? 'bg-white/75' : 'bg-transparent')}>
-                    <Icon className={cn('h-4 w-4', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
+                  <span
+                    className={cn(
+                      'rounded-xl p-2',
+                      isActive ? 'bg-white/75' : 'bg-transparent'
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        'h-4 w-4',
+                        isActive
+                          ? 'text-primary'
+                          : 'text-muted-foreground group-hover:text-foreground'
+                      )}
+                    />
                   </span>
                   <span className="font-medium">{item.label}</span>
                 </Link>
@@ -89,7 +140,9 @@ export function AdminShell({ userEmail, children }: AdminShellProps) {
           </nav>
         </aside>
 
-        <main id="main-content" className="space-y-6 pb-8">{children}</main>
+        <main id="main-content" className="space-y-6 pb-8">
+          {children}
+        </main>
       </div>
     </div>
   )

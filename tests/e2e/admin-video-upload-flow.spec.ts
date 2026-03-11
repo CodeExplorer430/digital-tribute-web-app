@@ -10,22 +10,36 @@ type UploadScenario = {
   uploadStatus?: number
   startStatus?: number
   startMessage?: string
-  pollStatuses?: Array<'processing' | 'completed' | 'fallback_required' | 'failed' | 'attached'>
+  pollStatuses?: Array<
+    'processing' | 'completed' | 'fallback_required' | 'failed' | 'attached'
+  >
   pollErrorMessage?: string
   attachStatus?: number
   attachMessage?: string
 }
 
-async function setupVideoUploadMocks(page: Page, scenario: UploadScenario = {}) {
-  const videos: Array<{ id: string; provider: 'youtube' | 'cloudinary'; provider_id: string; title: string }> = []
-  const pollStatuses = scenario.pollStatuses ? [...scenario.pollStatuses] : ['completed']
+async function setupVideoUploadMocks(
+  page: Page,
+  scenario: UploadScenario = {}
+) {
+  const videos: Array<{
+    id: string
+    provider: 'youtube' | 'cloudinary'
+    provider_id: string
+    title: string
+  }> = []
+  const pollStatuses = scenario.pollStatuses
+    ? [...scenario.pollStatuses]
+    : ['completed']
 
   await page.route('**/mock-upload/**', async (route) => {
     const status = scenario.uploadStatus ?? 200
     await route.fulfill({
       status,
       contentType: 'application/json',
-      body: JSON.stringify(status >= 400 ? { message: 'Upload failed.' } : { ok: true }),
+      body: JSON.stringify(
+        status >= 400 ? { message: 'Upload failed.' } : { ok: true }
+      ),
     })
   })
 
@@ -50,17 +64,35 @@ async function setupVideoUploadMocks(page: Page, scenario: UploadScenario = {}) 
       return
     }
 
-    if (req.method() === 'GET' && path === `/api/admin/memorials/${PAGE_ID}/redirects`) {
-      await fulfillJson(route, { redirects: [{ id: 'r-1', shortcode: 'jane', print_status: 'verified', is_active: true }] })
+    if (
+      req.method() === 'GET' &&
+      path === `/api/admin/memorials/${PAGE_ID}/redirects`
+    ) {
+      await fulfillJson(route, {
+        redirects: [
+          {
+            id: 'r-1',
+            shortcode: 'jane',
+            print_status: 'verified',
+            is_active: true,
+          },
+        ],
+      })
       return
     }
 
-    if (req.method() === 'GET' && path === `/api/admin/memorials/${PAGE_ID}/photos`) {
+    if (
+      req.method() === 'GET' &&
+      path === `/api/admin/memorials/${PAGE_ID}/photos`
+    ) {
       await fulfillJson(route, { photos: [] })
       return
     }
 
-    if (req.method() === 'GET' && path === `/api/admin/memorials/${PAGE_ID}/videos`) {
+    if (
+      req.method() === 'GET' &&
+      path === `/api/admin/memorials/${PAGE_ID}/videos`
+    ) {
       await fulfillJson(route, { videos })
       return
     }
@@ -68,25 +100,45 @@ async function setupVideoUploadMocks(page: Page, scenario: UploadScenario = {}) 
     if (req.method() === 'POST' && path === '/api/admin/videos/uploads/init') {
       const status = scenario.initStatus ?? 201
       if (status >= 400) {
-        await fulfillJson(route, { message: scenario.initMessage || 'Unable to initialize video upload.' }, status)
+        await fulfillJson(
+          route,
+          {
+            message:
+              scenario.initMessage || 'Unable to initialize video upload.',
+          },
+          status
+        )
         return
       }
 
-      await fulfillJson(route, {
-        job: {
-          id: 'job-1',
-          status: 'uploading',
-          uploadUrl: 'http://127.0.0.1:4173/mock-upload/job-1',
-          uploadMethod: 'PUT',
+      await fulfillJson(
+        route,
+        {
+          job: {
+            id: 'job-1',
+            status: 'uploading',
+            uploadUrl: 'http://127.0.0.1:4173/mock-upload/job-1',
+            uploadMethod: 'PUT',
+          },
         },
-      }, 201)
+        201
+      )
       return
     }
 
-    if (req.method() === 'POST' && path === '/api/admin/videos/uploads/job-1/start') {
+    if (
+      req.method() === 'POST' &&
+      path === '/api/admin/videos/uploads/job-1/start'
+    ) {
       const status = scenario.startStatus ?? 202
       if (status >= 400) {
-        await fulfillJson(route, { message: scenario.startMessage || 'Unable to start transcode job.' }, status)
+        await fulfillJson(
+          route,
+          {
+            message: scenario.startMessage || 'Unable to start transcode job.',
+          },
+          status
+        )
         return
       }
 
@@ -95,21 +147,35 @@ async function setupVideoUploadMocks(page: Page, scenario: UploadScenario = {}) 
     }
 
     if (req.method() === 'GET' && path === '/api/admin/videos/uploads/job-1') {
-      const status = pollStatuses.length > 0 ? pollStatuses.shift()! : 'completed'
+      const status =
+        pollStatuses.length > 0 ? pollStatuses.shift()! : 'completed'
       await fulfillJson(route, {
         job: {
           id: 'job-1',
           status,
-          error_message: status === 'failed' ? scenario.pollErrorMessage || 'Transcode failed.' : null,
+          error_message:
+            status === 'failed'
+              ? scenario.pollErrorMessage || 'Transcode failed.'
+              : null,
         },
       })
       return
     }
 
-    if (req.method() === 'POST' && path === '/api/admin/videos/uploads/job-1/attach') {
+    if (
+      req.method() === 'POST' &&
+      path === '/api/admin/videos/uploads/job-1/attach'
+    ) {
       const status = scenario.attachStatus ?? 201
       if (status >= 400) {
-        await fulfillJson(route, { message: scenario.attachMessage || 'Unable to attach processed video.' }, status)
+        await fulfillJson(
+          route,
+          {
+            message:
+              scenario.attachMessage || 'Unable to attach processed video.',
+          },
+          status
+        )
         return
       }
 
@@ -134,11 +200,15 @@ async function uploadSampleVideo(page: Page) {
     mimeType: 'video/mp4',
     buffer: Buffer.from('video-bytes'),
   })
-  await page.getByPlaceholder('Uploaded File Title (Optional)').fill('Uploaded File Title')
+  await page
+    .getByPlaceholder('Uploaded File Title (Optional)')
+    .fill('Uploaded File Title')
   await page.getByRole('button', { name: 'Upload and process video' }).click()
 }
 
-test('admin upload flow succeeds and attaches cloudinary video', async ({ page }) => {
+test('admin upload flow succeeds and attaches cloudinary video', async ({
+  page,
+}) => {
   await setupVideoUploadMocks(page, {
     pollStatuses: ['processing', 'completed'],
   })
@@ -147,11 +217,15 @@ test('admin upload flow succeeds and attaches cloudinary video', async ({ page }
 
   await uploadSampleVideo(page)
 
-  await expect(page.getByText('Cloudinary ID: everlume/page/video-1')).toBeVisible()
+  await expect(
+    page.getByText('Cloudinary ID: everlume/page/video-1')
+  ).toBeVisible()
   await expect(page.getByText(/Unable to/)).not.toBeVisible()
 })
 
-test('shows transcode fallback guidance when job status requires fallback', async ({ page }) => {
+test('shows transcode fallback guidance when job status requires fallback', async ({
+  page,
+}) => {
   await setupVideoUploadMocks(page, {
     pollStatuses: ['fallback_required'],
   })
@@ -159,7 +233,9 @@ test('shows transcode fallback guidance when job status requires fallback', asyn
   await page.goto(PAGE_PATH, { waitUntil: 'domcontentloaded' })
   await uploadSampleVideo(page)
 
-  await expect(page.getByText(/Video still exceeds the 100MB Cloudinary limit/i)).toBeVisible()
+  await expect(
+    page.getByText(/Video still exceeds the 100MB Cloudinary limit/i)
+  ).toBeVisible()
 })
 
 test('shows init failure message when upload init fails', async ({ page }) => {
@@ -171,10 +247,14 @@ test('shows init failure message when upload init fails', async ({ page }) => {
   await page.goto(PAGE_PATH, { waitUntil: 'domcontentloaded' })
   await uploadSampleVideo(page)
 
-  await expect(page.getByText('Transcode service is unreachable.')).toBeVisible()
+  await expect(
+    page.getByText('Transcode service is unreachable.')
+  ).toBeVisible()
 })
 
-test('shows start failure message when processing cannot start', async ({ page }) => {
+test('shows start failure message when processing cannot start', async ({
+  page,
+}) => {
   await setupVideoUploadMocks(page, {
     startStatus: 502,
     startMessage: 'Unable to start transcode job.',
@@ -186,7 +266,9 @@ test('shows start failure message when processing cannot start', async ({ page }
   await expect(page.getByText('Unable to start transcode job.')).toBeVisible()
 })
 
-test('shows attach failure message when completed job cannot be attached', async ({ page }) => {
+test('shows attach failure message when completed job cannot be attached', async ({
+  page,
+}) => {
   await setupVideoUploadMocks(page, {
     pollStatuses: ['completed'],
     attachStatus: 500,
@@ -196,5 +278,7 @@ test('shows attach failure message when completed job cannot be attached', async
   await page.goto(PAGE_PATH, { waitUntil: 'domcontentloaded' })
   await uploadSampleVideo(page)
 
-  await expect(page.getByText('Unable to attach processed video.')).toBeVisible()
+  await expect(
+    page.getByText('Unable to attach processed video.')
+  ).toBeVisible()
 })

@@ -42,15 +42,20 @@ async function main() {
   const email = normalizeEmail(rawEmail)
 
   if (!email) {
-    console.error('Missing admin email. Pass --email=you@example.com or set ADMIN_EMAIL.')
+    console.error(
+      'Missing admin email. Pass --email=you@example.com or set ADMIN_EMAIL.'
+    )
     process.exit(1)
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+  const serviceRoleKey =
+    process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY (fallback: SUPABASE_SERVICE_ROLE_KEY) in environment.')
+    console.error(
+      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY (fallback: SUPABASE_SERVICE_ROLE_KEY) in environment.'
+    )
     process.exit(1)
   }
 
@@ -60,7 +65,9 @@ async function main() {
 
   const userId = await resolveUserIdByEmail(client, email)
   if (!userId) {
-    console.error(`No auth user found for email "${email}". Sign in at least once first.`)
+    console.error(
+      `No auth user found for email "${email}". Sign in at least once first.`
+    )
     process.exit(1)
   }
 

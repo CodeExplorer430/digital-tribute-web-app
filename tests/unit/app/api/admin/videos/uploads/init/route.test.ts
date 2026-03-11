@@ -19,15 +19,23 @@ const mockGetVideoTranscodeApiTokenOrThrow = vi.fn()
 
 vi.mock('@/lib/server/admin-auth', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdminUser(...args),
-  assertMemorialOwnership: (...args: unknown[]) => mockAssertMemorialOwnership(...args),
-  forbidden: (message: string) => new Response(JSON.stringify({ code: 'FORBIDDEN', message }), { status: 403 }),
-  databaseError: (message: string) => new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), { status: 500 }),
+  assertMemorialOwnership: (...args: unknown[]) =>
+    mockAssertMemorialOwnership(...args),
+  forbidden: (message: string) =>
+    new Response(JSON.stringify({ code: 'FORBIDDEN', message }), {
+      status: 403,
+    }),
+  databaseError: (message: string) =>
+    new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), {
+      status: 500,
+    }),
 }))
 
 vi.mock('@/lib/server/video-upload', () => ({
   isVideoTranscodeConfigured: () => mockIsVideoTranscodeConfigured(),
   getVideoTranscodeApiBaseOrThrow: () => mockGetVideoTranscodeApiBaseOrThrow(),
-  getVideoTranscodeApiTokenOrThrow: () => mockGetVideoTranscodeApiTokenOrThrow(),
+  getVideoTranscodeApiTokenOrThrow: () =>
+    mockGetVideoTranscodeApiTokenOrThrow(),
   videoUploadStatusSchema: { _type: 'uploading' },
 }))
 
@@ -54,14 +62,17 @@ describe('POST /api/admin/videos/uploads/init', () => {
       role: 'editor',
       supabase: {
         from: (table: string) => {
-          if (table === 'video_upload_jobs') return { insert: mockJobInsert, update: mockJobUpdate }
+          if (table === 'video_upload_jobs')
+            return { insert: mockJobInsert, update: mockJobUpdate }
           return {}
         },
       },
     })
     mockAssertMemorialOwnership.mockResolvedValue(true)
     mockIsVideoTranscodeConfigured.mockReturnValue(true)
-    mockGetVideoTranscodeApiBaseOrThrow.mockReturnValue('https://transcode.example.com')
+    mockGetVideoTranscodeApiBaseOrThrow.mockReturnValue(
+      'https://transcode.example.com'
+    )
     mockGetVideoTranscodeApiTokenOrThrow.mockReturnValue('token')
     mockJobInsertSingle.mockResolvedValue({
       data: {
@@ -88,9 +99,16 @@ describe('POST /api/admin/videos/uploads/init', () => {
       error: null,
     })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ uploadUrl: 'https://upload.example.com/file.mp4', uploadMethod: 'PUT', cloudJobId: 'cloud-job-1' }), {
-        status: 200,
-      })
+      new Response(
+        JSON.stringify({
+          uploadUrl: 'https://upload.example.com/file.mp4',
+          uploadMethod: 'PUT',
+          cloudJobId: 'cloud-job-1',
+        }),
+        {
+          status: 200,
+        }
+      )
     )
   })
 
@@ -124,7 +142,10 @@ describe('POST /api/admin/videos/uploads/init', () => {
   })
 
   it('returns auth response when user is not authorized', async () => {
-    mockRequireAdminUser.mockResolvedValue({ ok: false, response: new Response(null, { status: 401 }) })
+    mockRequireAdminUser.mockResolvedValue({
+      ok: false,
+      response: new Response(null, { status: 401 }),
+    })
 
     const req = new Request('http://localhost/api/admin/videos/uploads/init', {
       method: 'POST',
@@ -160,7 +181,10 @@ describe('POST /api/admin/videos/uploads/init', () => {
   })
 
   it('returns 500 when upload job insert fails', async () => {
-    mockJobInsertSingle.mockResolvedValue({ data: null, error: { message: 'insert failed' } })
+    mockJobInsertSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'insert failed' },
+    })
 
     const req = new Request('http://localhost/api/admin/videos/uploads/init', {
       method: 'POST',
@@ -216,7 +240,9 @@ describe('POST /api/admin/videos/uploads/init', () => {
 
   it('returns 502 with upstream message when init call fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ message: 'upstream init failed' }), { status: 502 })
+      new Response(JSON.stringify({ message: 'upstream init failed' }), {
+        status: 502,
+      })
     )
 
     const req = new Request('http://localhost/api/admin/videos/uploads/init', {
@@ -237,7 +263,9 @@ describe('POST /api/admin/videos/uploads/init', () => {
   })
 
   it('returns 502 with fallback message when upstream body is invalid', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('oops', { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('oops', { status: 500 })
+    )
 
     const req = new Request('http://localhost/api/admin/videos/uploads/init', {
       method: 'POST',
@@ -257,7 +285,9 @@ describe('POST /api/admin/videos/uploads/init', () => {
   })
 
   it('returns 502 when transcode response shape is invalid', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ uploadMethod: 'PUT' }), { status: 200 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ uploadMethod: 'PUT' }), { status: 200 })
+    )
 
     const req = new Request('http://localhost/api/admin/videos/uploads/init', {
       method: 'POST',
@@ -275,7 +305,10 @@ describe('POST /api/admin/videos/uploads/init', () => {
   })
 
   it('returns 500 when upload job update fails after successful init', async () => {
-    mockJobUpdateSingle.mockResolvedValue({ data: null, error: { message: 'update failed' } })
+    mockJobUpdateSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'update failed' },
+    })
 
     const req = new Request('http://localhost/api/admin/videos/uploads/init', {
       method: 'POST',

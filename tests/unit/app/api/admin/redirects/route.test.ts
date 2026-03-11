@@ -27,7 +27,10 @@ describe('POST /api/admin/redirects', () => {
     mockInsert.mockClear()
     mockInsertSelect.mockClear()
     mockInsertSelectSingle.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns unauthorized without user', async () => {
@@ -35,7 +38,10 @@ describe('POST /api/admin/redirects', () => {
     const req = new Request('http://localhost/api/admin/redirects', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ shortcode: 'grandma', targetUrl: 'https://example.com/memorials/x' }),
+      body: JSON.stringify({
+        shortcode: 'grandma',
+        targetUrl: 'https://example.com/memorials/x',
+      }),
     })
 
     const res = await POST(req as never)
@@ -60,7 +66,10 @@ describe('POST /api/admin/redirects', () => {
     const req = new Request('http://localhost/api/admin/redirects', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ shortcode: 'Grandma', targetUrl: 'https://example.com/memorials/x' }),
+      body: JSON.stringify({
+        shortcode: 'Grandma',
+        targetUrl: 'https://example.com/memorials/x',
+      }),
     })
 
     const res = await POST(req as never)

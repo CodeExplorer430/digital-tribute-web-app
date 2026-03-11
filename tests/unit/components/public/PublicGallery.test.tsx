@@ -12,8 +12,18 @@ vi.mock('next/image', () => ({
 
 describe('PublicGallery', () => {
   const photos = [
-    { id: 'p1', thumb_url: 'https://example.com/thumb1.jpg', image_url: 'https://example.com/image1.jpg', caption: 'First memory' },
-    { id: 'p2', thumb_url: 'https://example.com/thumb2.jpg', image_url: 'https://example.com/image2.jpg', caption: 'Second memory' },
+    {
+      id: 'p1',
+      thumb_url: 'https://example.com/thumb1.jpg',
+      image_url: 'https://example.com/image1.jpg',
+      caption: 'First memory',
+    },
+    {
+      id: 'p2',
+      thumb_url: 'https://example.com/thumb2.jpg',
+      image_url: 'https://example.com/image2.jpg',
+      caption: 'Second memory',
+    },
   ]
 
   it('opens and closes lightbox with keyboard support', async () => {
@@ -21,10 +31,14 @@ describe('PublicGallery', () => {
     render(<PublicGallery photos={photos} />)
 
     await user.click(screen.getByRole('button', { name: /open photo 1/i }))
-    expect(screen.getByRole('dialog', { name: /photo lightbox/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('dialog', { name: /photo lightbox/i })
+    ).toBeInTheDocument()
 
     fireEvent.keyDown(window, { key: 'Escape' })
-    expect(screen.queryByRole('dialog', { name: /photo lightbox/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('dialog', { name: /photo lightbox/i })
+    ).not.toBeInTheDocument()
   })
 
   it('navigates photos with arrow keys while lightbox is open', async () => {
@@ -40,9 +54,17 @@ describe('PublicGallery', () => {
 
   it('shows slideshow controls when slideshow is enabled', async () => {
     const user = userEvent.setup()
-    render(<PublicGallery photos={photos} slideshowEnabled slideshowIntervalMs={3000} />)
+    render(
+      <PublicGallery
+        photos={photos}
+        slideshowEnabled
+        slideshowIntervalMs={3000}
+      />
+    )
 
     await user.click(screen.getByRole('button', { name: /open photo 1/i }))
-    expect(screen.getByRole('button', { name: /pause slideshow/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /pause slideshow/i })
+    ).toBeInTheDocument()
   })
 })

@@ -33,7 +33,16 @@ type AuditLogAction = AuditAction | LegacyAuditAction
 type LogAdminAuditInput = {
   actorId: string
   action: AuditAction
-  entity: 'memorial' | 'photo' | 'video' | 'video_upload' | 'timeline' | 'guestbook' | 'redirect' | 'user' | 'site_settings'
+  entity:
+    | 'memorial'
+    | 'photo'
+    | 'video'
+    | 'video_upload'
+    | 'timeline'
+    | 'guestbook'
+    | 'redirect'
+    | 'user'
+    | 'site_settings'
   entityId: string
   metadata?: Record<string, unknown>
 }
@@ -62,7 +71,10 @@ type RawAuditLog = {
   created_at: string
 }
 
-export async function logAdminAudit(supabase: AdminSupabase, input: LogAdminAuditInput) {
+export async function logAdminAudit(
+  supabase: AdminSupabase,
+  input: LogAdminAuditInput
+) {
   const { actorId, action, entity, entityId, metadata } = input
   try {
     await supabase.from('admin_audit_logs').insert({

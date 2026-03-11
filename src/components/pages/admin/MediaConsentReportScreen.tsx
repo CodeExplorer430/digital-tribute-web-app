@@ -39,18 +39,26 @@ export function MediaConsentReportScreen() {
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [eventFilter, setEventFilter] = useState<'all' | 'consent_granted' | 'media_accessed'>('all')
+  const [eventFilter, setEventFilter] = useState<
+    'all' | 'consent_granted' | 'media_accessed'
+  >('all')
 
   useEffect(() => {
     let active = true
 
     void (async () => {
-      const response = await fetch('/api/admin/media-consent', { cache: 'no-store' })
+      const response = await fetch('/api/admin/media-consent', {
+        cache: 'no-store',
+      })
       if (!active) return
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null
-        setErrorMessage(payload?.message || 'Unable to load protected media consent report.')
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string
+        } | null
+        setErrorMessage(
+          payload?.message || 'Unable to load protected media consent report.'
+        )
         setLogs([])
         setLoading(false)
         return
@@ -84,8 +92,12 @@ export function MediaConsentReportScreen() {
   const summary = useMemo(
     () => ({
       total: filteredLogs.length,
-      consentGranted: filteredLogs.filter((entry) => entry.eventType === 'consent_granted').length,
-      mediaAccessed: filteredLogs.filter((entry) => entry.eventType === 'media_accessed').length,
+      consentGranted: filteredLogs.filter(
+        (entry) => entry.eventType === 'consent_granted'
+      ).length,
+      mediaAccessed: filteredLogs.filter(
+        (entry) => entry.eventType === 'media_accessed'
+      ).length,
       memorials: new Set(filteredLogs.map((entry) => entry.memorialId)).size,
     }),
     [filteredLogs]
@@ -94,7 +106,18 @@ export function MediaConsentReportScreen() {
   const exportCsv = () => {
     if (filteredLogs.length === 0) return
 
-    const header = ['memorial_title', 'memorial_slug', 'event_type', 'access_mode', 'consent_version', 'media_kind', 'media_variant', 'ip_hash', 'user_agent_hash', 'created_at']
+    const header = [
+      'memorial_title',
+      'memorial_slug',
+      'event_type',
+      'access_mode',
+      'consent_version',
+      'media_kind',
+      'media_variant',
+      'ip_hash',
+      'user_agent_hash',
+      'created_at',
+    ]
     const rows = filteredLogs.map((entry) =>
       [
         entry.memorialTitle,
@@ -112,56 +135,109 @@ export function MediaConsentReportScreen() {
         .join(',')
     )
 
-    downloadCsv('everlume_media_consent_report.csv', [header.join(','), ...rows].join('\n'))
+    downloadCsv(
+      'everlume_media_consent_report.csv',
+      [header.join(','), ...rows].join('\n')
+    )
   }
 
-  if (loading) return <div className="surface-card p-8 text-sm text-muted-foreground">Loading consent report...</div>
+  if (loading)
+    return (
+      <div className="surface-card p-8 text-sm text-muted-foreground">
+        Loading consent report...
+      </div>
+    )
 
   return (
     <div className="space-y-6">
       <section className="dashboard-hero surface-card space-y-2 p-6">
         <p className="section-kicker">Protected Media Oversight</p>
-        <h2 className="text-3xl font-semibold tracking-[-0.03em]">Consent and Access Report</h2>
+        <h2 className="text-3xl font-semibold tracking-[-0.03em]">
+          Consent and Access Report
+        </h2>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Review protected-media consent events across memorials, confirm current notice adoption, and export a flat report for family records.
+          Review protected-media consent events across memorials, confirm
+          current notice adoption, and export a flat report for family records.
         </p>
+        <div className="status-pill w-fit">Audit-ready export</div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-4">
-        <div className="surface-card p-4"><p className="section-kicker">Events</p><p className="mt-2 text-3xl font-semibold">{summary.total}</p></div>
-        <div className="surface-card p-4"><p className="section-kicker">Consent Granted</p><p className="mt-2 text-3xl font-semibold">{summary.consentGranted}</p></div>
-        <div className="surface-card p-4"><p className="section-kicker">Media Accessed</p><p className="mt-2 text-3xl font-semibold">{summary.mediaAccessed}</p></div>
-        <div className="surface-card p-4"><p className="section-kicker">Memorials</p><p className="mt-2 text-3xl font-semibold">{summary.memorials}</p></div>
+        <div className="surface-card data-card p-4">
+          <p className="section-kicker">Events</p>
+          <p className="mt-2 text-3xl font-semibold">{summary.total}</p>
+        </div>
+        <div className="surface-card data-card p-4">
+          <p className="section-kicker">Consent Granted</p>
+          <p className="mt-2 text-3xl font-semibold">
+            {summary.consentGranted}
+          </p>
+        </div>
+        <div className="surface-card data-card p-4">
+          <p className="section-kicker">Media Accessed</p>
+          <p className="mt-2 text-3xl font-semibold">{summary.mediaAccessed}</p>
+        </div>
+        <div className="surface-card data-card p-4">
+          <p className="section-kicker">Memorials</p>
+          <p className="mt-2 text-3xl font-semibold">{summary.memorials}</p>
+        </div>
       </section>
 
       <section className="surface-card space-y-4 p-6">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
           <div>
-            <label htmlFor="consent-search" className="mb-1.5 block text-sm font-medium">Search memorials</label>
-            <Input id="consent-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by title, slug, or access mode" />
+            <label
+              htmlFor="consent-search"
+              className="mb-1.5 block text-sm font-medium"
+            >
+              Search memorials
+            </label>
+            <Input
+              id="consent-search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by title, slug, or access mode"
+            />
           </div>
           <div>
-            <label htmlFor="consent-event-filter" className="mb-1.5 block text-sm font-medium">Event type</label>
+            <label
+              htmlFor="consent-event-filter"
+              className="mb-1.5 block text-sm font-medium"
+            >
+              Event type
+            </label>
             <select
               id="consent-event-filter"
               className="form-select w-full"
               value={eventFilter}
-              onChange={(e) => setEventFilter(e.target.value as 'all' | 'consent_granted' | 'media_accessed')}
+              onChange={(e) =>
+                setEventFilter(
+                  e.target.value as 'all' | 'consent_granted' | 'media_accessed'
+                )
+              }
             >
               <option value="all">All events</option>
               <option value="consent_granted">Consent granted</option>
               <option value="media_accessed">Media accessed</option>
             </select>
           </div>
-          <Button variant="outline" onClick={exportCsv} disabled={filteredLogs.length === 0}>
+          <Button
+            variant="outline"
+            onClick={exportCsv}
+            disabled={filteredLogs.length === 0}
+          >
             Export CSV
           </Button>
         </div>
 
-        {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
+        {errorMessage ? (
+          <p className="text-sm text-destructive">{errorMessage}</p>
+        ) : null}
 
         {filteredLogs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No protected-media consent events match the current filters.</p>
+          <p className="text-sm text-muted-foreground">
+            No protected-media consent events match the current filters.
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
@@ -178,23 +254,37 @@ export function MediaConsentReportScreen() {
                 {filteredLogs.map((entry) => (
                   <tr key={entry.id} className="align-top">
                     <td className="py-3 pr-4">
-                      <div className="font-medium text-foreground">{entry.memorialTitle}</div>
-                      <div className="text-xs text-muted-foreground">/{entry.memorialSlug}</div>
+                      <div className="font-medium text-foreground">
+                        {entry.memorialTitle}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        /{entry.memorialSlug}
+                      </div>
                     </td>
                     <td className="py-3 pr-4 text-foreground">
-                      {entry.eventType === 'consent_granted' ? 'Consent granted' : 'Media accessed'}
-                      <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground">v{entry.consentVersion}</span>
+                      {entry.eventType === 'consent_granted'
+                        ? 'Consent granted'
+                        : 'Media accessed'}
+                      <span className="block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                        v{entry.consentVersion}
+                      </span>
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">
                       <span className="capitalize">{entry.accessMode}</span>
-                      <span className="block text-xs">{entry.mediaKind ? `${entry.mediaKind}${entry.mediaVariant ? ` (${entry.mediaVariant})` : ''}` : 'Memorial media'}</span>
+                      <span className="block text-xs">
+                        {entry.mediaKind
+                          ? `${entry.mediaKind}${entry.mediaVariant ? ` (${entry.mediaVariant})` : ''}`
+                          : 'Memorial media'}
+                      </span>
                     </td>
                     <td className="py-3 pr-4 text-xs text-muted-foreground">
                       IP {shortenHash(entry.ipHash)}
                       <br />
                       UA {shortenHash(entry.userAgentHash)}
                     </td>
-                    <td className="py-3 text-muted-foreground">{new Date(entry.createdAt).toLocaleString()}</td>
+                    <td className="py-3 text-muted-foreground">
+                      {new Date(entry.createdAt).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -1,30 +1,43 @@
-import { assertMemorialOwnership, databaseError, forbidden, requireAdminUser } from '@/lib/server/admin-auth'
+import {
+  assertMemorialOwnership,
+  databaseError,
+  forbidden,
+  requireAdminUser,
+} from '@/lib/server/admin-auth'
 import { logAdminAudit } from '@/lib/server/admin-audit'
 import { resolveMemorialId } from '@/lib/server/memorials'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
-const timelineSchema = z.object({
-  memorialId: z.string().uuid().optional(),
-  pageId: z.string().uuid().optional(),
-  year: z.number().int().min(1000).max(2100),
-  text: z.string().trim().min(1).max(500),
-}).refine((value) => Boolean(resolveMemorialId(value)), {
-  message: 'Memorial id is required.',
-})
+const timelineSchema = z
+  .object({
+    memorialId: z.string().uuid().optional(),
+    pageId: z.string().uuid().optional(),
+    year: z.number().int().min(1000).max(2100),
+    text: z.string().trim().min(1).max(500),
+  })
+  .refine((value) => Boolean(resolveMemorialId(value)), {
+    message: 'Memorial id is required.',
+  })
 
 export async function POST(request: NextRequest) {
   let payload: unknown
   try {
     payload = await request.json()
   } catch {
-    return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid request payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'INVALID_JSON', message: 'Invalid request payload.' },
+      { status: 400 }
+    )
   }
 
   const parsed = timelineSchema.safeParse(payload)
   if (!parsed.success) {
     return NextResponse.json(
-      { code: 'VALIDATION_ERROR', message: 'Enter a valid year and timeline description.' },
+      {
+        code: 'VALIDATION_ERROR',
+        message: 'Enter a valid year and timeline description.',
+      },
       { status: 400 }
     )
   }
@@ -36,10 +49,19 @@ export async function POST(request: NextRequest) {
   const { year, text } = parsed.data
   const memorialId = resolveMemorialId(parsed.data)
   if (!memorialId) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Memorial id is required.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Memorial id is required.' },
+      { status: 400 }
+    )
   }
-  const ownsMemorial = await assertMemorialOwnership(supabase, memorialId, userId, role)
-  if (!ownsMemorial) return forbidden('You do not have access to this memorial.')
+  const ownsMemorial = await assertMemorialOwnership(
+    supabase,
+    memorialId,
+    userId,
+    role
+  )
+  if (!ownsMemorial)
+    return forbidden('You do not have access to this memorial.')
 
   const { data, error } = await supabase
     .from('timeline_events')

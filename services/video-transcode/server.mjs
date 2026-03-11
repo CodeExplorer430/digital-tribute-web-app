@@ -10,14 +10,24 @@ import os from 'node:os'
 const PORT = Number(process.env.PORT || 8080)
 const API_TOKEN = process.env.VIDEO_TRANSCODE_API_TOKEN || ''
 const CALLBACK_TOKEN = process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN || ''
-const MAX_OUTPUT_BYTES = Number(process.env.VIDEO_TRANSCODE_MAX_BYTES || 100 * 1024 * 1024)
-const TARGET_OUTPUT_BYTES = Number(process.env.VIDEO_TRANSCODE_TARGET_BYTES || 95 * 1024 * 1024)
-const TMP_ROOT = process.env.VIDEO_TRANSCODE_TMP_DIR || path.join(os.tmpdir(), 'everlume-transcode')
+const MAX_OUTPUT_BYTES = Number(
+  process.env.VIDEO_TRANSCODE_MAX_BYTES || 100 * 1024 * 1024
+)
+const TARGET_OUTPUT_BYTES = Number(
+  process.env.VIDEO_TRANSCODE_TARGET_BYTES || 95 * 1024 * 1024
+)
+const TMP_ROOT =
+  process.env.VIDEO_TRANSCODE_TMP_DIR ||
+  path.join(os.tmpdir(), 'everlume-transcode')
 
-const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || ''
+const CLOUDINARY_CLOUD_NAME =
+  process.env.CLOUDINARY_CLOUD_NAME ||
+  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+  ''
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || ''
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || ''
-const CLOUDINARY_VIDEO_FOLDER = process.env.CLOUDINARY_VIDEO_FOLDER || 'everlume/videos'
+const CLOUDINARY_VIDEO_FOLDER =
+  process.env.CLOUDINARY_VIDEO_FOLDER || 'everlume/videos'
 
 const jobs = new Map()
 
@@ -29,7 +39,10 @@ function json(res, status, payload) {
 }
 
 function unauthorized(res) {
-  json(res, 401, { code: 'UNAUTHORIZED', message: 'Missing or invalid API token.' })
+  json(res, 401, {
+    code: 'UNAUTHORIZED',
+    message: 'Missing or invalid API token.',
+  })
 }
 
 function parseAuthToken(req) {
@@ -128,7 +141,11 @@ async function uploadVideoToCloudinary(outputPath, jobId) {
   const signature = cloudinarySignature(signParams, CLOUDINARY_API_SECRET)
 
   const form = new FormData()
-  form.set('file', new Blob([await readFile(outputPath)]), path.basename(outputPath))
+  form.set(
+    'file',
+    new Blob([await readFile(outputPath)]),
+    path.basename(outputPath)
+  )
   form.set('api_key', CLOUDINARY_API_KEY)
   form.set('timestamp', String(timestamp))
   form.set('signature', signature)
@@ -136,10 +153,13 @@ async function uploadVideoToCloudinary(outputPath, jobId) {
   form.set('folder', CLOUDINARY_VIDEO_FOLDER)
   form.set('public_id', publicId)
 
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, {
-    method: 'POST',
-    body: form,
-  })
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`,
+    {
+      method: 'POST',
+      body: form,
+    }
+  )
 
   const payload = await response.json().catch(() => null)
   if (!response.ok || !payload?.public_id) {
@@ -203,7 +223,8 @@ async function processJob(jobId) {
     await sendCallback(job.callbackUrl, {
       jobId: job.id,
       status: 'failed',
-      errorMessage: error instanceof Error ? error.message : 'Unknown transcode error.',
+      errorMessage:
+        error instanceof Error ? error.message : 'Unknown transcode error.',
     })
   } finally {
     await rm(inputPath, { force: true }).catch(() => null)
@@ -213,7 +234,10 @@ async function processJob(jobId) {
 
 const server = createServer(async (req, res) => {
   try {
-    const requestUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
+    const requestUrl = new URL(
+      req.url || '/',
+      `http://${req.headers.host || 'localhost'}`
+    )
 
     if (req.method === 'GET' && requestUrl.pathname === '/healthz') {
       return json(res, 200, { ok: true })
@@ -224,7 +248,10 @@ const server = createServer(async (req, res) => {
       const payload = await readJsonBody(req)
       const { jobId, callbackUrl, fileName } = payload
       if (!jobId || !callbackUrl || !fileName) {
-        return json(res, 400, { code: 'VALIDATION_ERROR', message: 'jobId, callbackUrl, and fileName are required.' })
+        return json(res, 400, {
+          code: 'VALIDATION_ERROR',
+          message: 'jobId, callbackUrl, and fileName are required.',
+        })
       }
 
       const cloudJobId = randomUUID()
@@ -246,7 +273,11 @@ const server = createServer(async (req, res) => {
     if (req.method === 'PUT' && requestUrl.pathname.startsWith('/uploads/')) {
       const jobId = requestUrl.pathname.split('/').pop()
       const job = jobs.get(jobId)
-      if (!job) return json(res, 404, { code: 'NOT_FOUND', message: 'Unknown upload job.' })
+      if (!job)
+        return json(res, 404, {
+          code: 'NOT_FOUND',
+          message: 'Unknown upload job.',
+        })
 
       const chunks = []
       for await (const chunk of req) {
@@ -259,12 +290,17 @@ const server = createServer(async (req, res) => {
       return json(res, 200, { ok: true })
     }
 
-    if (req.method === 'POST' && requestUrl.pathname.startsWith('/jobs/') && requestUrl.pathname.endsWith('/start')) {
+    if (
+      req.method === 'POST' &&
+      requestUrl.pathname.startsWith('/jobs/') &&
+      requestUrl.pathname.endsWith('/start')
+    ) {
       if (!ensureApiAuth(req, res)) return
       const parts = requestUrl.pathname.split('/')
       const jobId = parts[2]
       const job = jobs.get(jobId)
-      if (!job) return json(res, 404, { code: 'NOT_FOUND', message: 'Unknown job.' })
+      if (!job)
+        return json(res, 404, { code: 'NOT_FOUND', message: 'Unknown job.' })
 
       void processJob(jobId)
       return json(res, 202, { ok: true })

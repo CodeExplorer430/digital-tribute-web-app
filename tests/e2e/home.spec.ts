@@ -2,13 +2,21 @@ import { test, expect } from '@playwright/test'
 
 test('home page renders primary CTA', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: /memorial platform that feels respectful/i })).toBeVisible()
-  await expect(page.getByRole('link', { name: /^open admin$/i }).first()).toBeVisible()
+  await expect(
+    page.getByRole('heading', {
+      name: /ceremonial in public and unmistakably dependable behind the scenes/i,
+    })
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: /^open admin$/i }).first()
+  ).toBeVisible()
 })
 
 test('navigates to login page', async ({ page }) => {
   await page.goto('/')
-  await page.getByRole('link', { name: /^open admin$/i }).first().click()
+  await page.getByRole('link', { name: /^admin login$/i }).click()
   await expect(page).toHaveURL(/\/login/, { timeout: 15000 })
-  await expect(page.getByRole('heading', { name: /welcome back to everlume admin/i })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: /welcome back to everlume admin/i })
+  ).toBeVisible()
 })

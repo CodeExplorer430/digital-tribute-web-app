@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 import { fulfillJson, mockAdminRoute } from './helpers/admin-api-mocks'
 
-test('admin can approve, unapprove, and delete guestbook entries', async ({ page }) => {
+test('admin can approve, unapprove, and delete guestbook entries', async ({
+  page,
+}) => {
   const entries = [
     {
       id: 'g-1',
@@ -46,13 +48,25 @@ test('admin can approve, unapprove, and delete guestbook entries', async ({ page
   await page.goto('/admin/guestbook')
 
   await expect(page.getByText('Maria')).toBeVisible()
-  await page.getByRole('button', { name: /approve guestbook entry from maria/i }).click()
-  await expect(page.getByRole('table').getByText('Approved', { exact: true })).toBeVisible()
+  await page
+    .getByRole('button', { name: /approve guestbook entry from maria/i })
+    .click()
+  await expect(
+    page.getByRole('table').getByText('Approved', { exact: true })
+  ).toBeVisible()
 
-  await page.getByRole('button', { name: /unapprove guestbook entry from maria/i }).click()
-  await expect(page.getByRole('table').getByText('Pending', { exact: true })).toBeVisible()
+  await page
+    .getByRole('button', { name: /unapprove guestbook entry from maria/i })
+    .click()
+  await expect(
+    page.getByRole('table').getByText('Pending', { exact: true })
+  ).toBeVisible()
 
   page.on('dialog', (dialog) => dialog.accept())
-  await page.getByRole('button', { name: /delete guestbook entry from maria/i }).click()
-  await expect(page.getByText(/No guestbook entries need review right now/i)).toBeVisible()
+  await page
+    .getByRole('button', { name: /delete guestbook entry from maria/i })
+    .click()
+  await expect(
+    page.getByText(/No guestbook entries need review right now/i)
+  ).toBeVisible()
 })

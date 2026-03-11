@@ -30,14 +30,21 @@ describe('GET /api/admin/memorials/[id]/videos', () => {
     mockProfileSingle.mockReset()
     mockPageSingle.mockReset()
     mockVideosOrder.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns unauthorized without user', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } })
 
-    const req = new Request('http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/videos')
-    const res = await GET(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/videos'
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(401)
   })
 
@@ -46,8 +53,12 @@ describe('GET /api/admin/memorials/[id]/videos', () => {
     mockPageSingle.mockResolvedValue({ data: { id: 'p1' } })
     mockVideosOrder.mockResolvedValue({ data: [{ id: 'v1' }], error: null })
 
-    const req = new Request('http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/videos')
-    const res = await GET(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/videos'
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
   })
 })

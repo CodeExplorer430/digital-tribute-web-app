@@ -3,7 +3,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CheckCircle2, Loader2, PauseCircle, PlayCircle, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import {
+  CheckCircle2,
+  Loader2,
+  PauseCircle,
+  PlayCircle,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+} from 'lucide-react'
 
 type RedirectItem = {
   id: string
@@ -36,20 +44,28 @@ export function AdminSettingsScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [homeDirectoryEnabled, setHomeDirectoryEnabled] = useState(false)
   const [memorialSlideshowEnabled, setMemorialSlideshowEnabled] = useState(true)
-  const [memorialSlideshowIntervalMs, setMemorialSlideshowIntervalMs] = useState(4500)
-  const [memorialVideoLayout, setMemorialVideoLayout] = useState<'grid' | 'featured'>('grid')
-  const [protectedMediaConsentTitle, setProtectedMediaConsentTitle] = useState('Media Viewing Notice')
+  const [memorialSlideshowIntervalMs, setMemorialSlideshowIntervalMs] =
+    useState(4500)
+  const [memorialVideoLayout, setMemorialVideoLayout] = useState<
+    'grid' | 'featured'
+  >('grid')
+  const [protectedMediaConsentTitle, setProtectedMediaConsentTitle] = useState(
+    'Media Viewing Notice'
+  )
   const [protectedMediaConsentBody, setProtectedMediaConsentBody] = useState(
     "The family has protected this memorial's photos and videos for respectful viewing. Continuing confirms that access to protected media is recorded for family oversight."
   )
-  const [protectedMediaConsentVersion, setProtectedMediaConsentVersion] = useState(1)
+  const [protectedMediaConsentVersion, setProtectedMediaConsentVersion] =
+    useState(1)
   const [updatingSiteSettings, setUpdatingSiteSettings] = useState(false)
 
   const fetchRedirects = useCallback(async () => {
     setLoading(true)
     const response = await fetch('/api/admin/redirects', { cache: 'no-store' })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to load redirects.')
       setRedirects([])
       setLoading(false)
@@ -63,19 +79,33 @@ export function AdminSettingsScreen() {
   }, [])
 
   const fetchSiteSettings = useCallback(async () => {
-    const response = await fetch('/api/admin/site-settings', { cache: 'no-store' })
+    const response = await fetch('/api/admin/site-settings', {
+      cache: 'no-store',
+    })
     if (!response.ok) return
-    const payload = (await response.json()) as { settings?: Partial<SiteSettings> }
+    const payload = (await response.json()) as {
+      settings?: Partial<SiteSettings>
+    }
     setHomeDirectoryEnabled(payload.settings?.homeDirectoryEnabled === true)
-    setMemorialSlideshowEnabled(payload.settings?.memorialSlideshowEnabled !== false)
-    setMemorialSlideshowIntervalMs(payload.settings?.memorialSlideshowIntervalMs || 4500)
-    setMemorialVideoLayout(payload.settings?.memorialVideoLayout === 'featured' ? 'featured' : 'grid')
-    setProtectedMediaConsentTitle(payload.settings?.protectedMediaConsentTitle || 'Media Viewing Notice')
+    setMemorialSlideshowEnabled(
+      payload.settings?.memorialSlideshowEnabled !== false
+    )
+    setMemorialSlideshowIntervalMs(
+      payload.settings?.memorialSlideshowIntervalMs || 4500
+    )
+    setMemorialVideoLayout(
+      payload.settings?.memorialVideoLayout === 'featured' ? 'featured' : 'grid'
+    )
+    setProtectedMediaConsentTitle(
+      payload.settings?.protectedMediaConsentTitle || 'Media Viewing Notice'
+    )
     setProtectedMediaConsentBody(
       payload.settings?.protectedMediaConsentBody ||
         "The family has protected this memorial's photos and videos for respectful viewing. Continuing confirms that access to protected media is recorded for family oversight."
     )
-    setProtectedMediaConsentVersion(Number(payload.settings?.protectedMediaConsentVersion) || 1)
+    setProtectedMediaConsentVersion(
+      Number(payload.settings?.protectedMediaConsentVersion) || 1
+    )
   }, [])
 
   useEffect(() => {
@@ -102,7 +132,9 @@ export function AdminSettingsScreen() {
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to create redirect.')
       setCreating(false)
       return
@@ -119,7 +151,12 @@ export function AdminSettingsScreen() {
     setCreating(false)
   }
 
-  const updateSiteSettings = async (updates: Partial<SiteSettings> & { bumpProtectedMediaConsentVersion?: boolean }, rollback: () => void) => {
+  const updateSiteSettings = async (
+    updates: Partial<SiteSettings> & {
+      bumpProtectedMediaConsentVersion?: boolean
+    },
+    rollback: () => void
+  ) => {
     if (updatingSiteSettings) return
     setUpdatingSiteSettings(true)
 
@@ -131,7 +168,9 @@ export function AdminSettingsScreen() {
 
     if (!response.ok) {
       rollback()
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to update site settings.')
       setUpdatingSiteSettings(false)
       return false
@@ -145,22 +184,26 @@ export function AdminSettingsScreen() {
     if (updatingSiteSettings) return
     const nextValue = !homeDirectoryEnabled
     setHomeDirectoryEnabled(nextValue)
-    await updateSiteSettings({ homeDirectoryEnabled: nextValue }, () => setHomeDirectoryEnabled(!nextValue))
+    await updateSiteSettings({ homeDirectoryEnabled: nextValue }, () =>
+      setHomeDirectoryEnabled(!nextValue)
+    )
   }
 
   const toggleMemorialSlideshow = async () => {
     if (updatingSiteSettings) return
     const nextValue = !memorialSlideshowEnabled
     setMemorialSlideshowEnabled(nextValue)
-    await updateSiteSettings(
-      { memorialSlideshowEnabled: nextValue },
-      () => setMemorialSlideshowEnabled(!nextValue)
+    await updateSiteSettings({ memorialSlideshowEnabled: nextValue }, () =>
+      setMemorialSlideshowEnabled(!nextValue)
     )
   }
 
   const saveMemorialPresentation = async () => {
     if (updatingSiteSettings) return
-    const clampedInterval = Math.min(12000, Math.max(2000, memorialSlideshowIntervalMs || 4500))
+    const clampedInterval = Math.min(
+      12000,
+      Math.max(2000, memorialSlideshowIntervalMs || 4500)
+    )
     const previous = {
       memorialSlideshowIntervalMs,
       memorialVideoLayout,
@@ -244,7 +287,9 @@ export function AdminSettingsScreen() {
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to update redirect.')
       setRedirects(previous)
       setUpdatingId(null)
@@ -253,7 +298,9 @@ export function AdminSettingsScreen() {
 
     const payload = (await response.json()) as { redirect?: RedirectItem }
     if (payload.redirect) {
-      setRedirects((current) => current.map((item) => (item.id === id ? payload.redirect! : item)))
+      setRedirects((current) =>
+        current.map((item) => (item.id === id ? payload.redirect! : item))
+      )
     }
     setUpdatingId(null)
   }
@@ -264,9 +311,13 @@ export function AdminSettingsScreen() {
     setDeletingId(id)
     setRedirects((current) => current.filter((item) => item.id !== id))
 
-    const response = await fetch(`/api/admin/redirects/${id}`, { method: 'DELETE' })
+    const response = await fetch(`/api/admin/redirects/${id}`, {
+      method: 'DELETE',
+    })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to delete redirect.')
       setRedirects(previous)
       setDeletingId(null)
@@ -277,46 +328,89 @@ export function AdminSettingsScreen() {
     setDeletingId(null)
   }
 
-  if (loading) return <div className="surface-card p-8 text-sm text-muted-foreground">Loading short links...</div>
+  if (loading)
+    return (
+      <div className="surface-card p-8 text-sm text-muted-foreground">
+        Loading short links...
+      </div>
+    )
 
   return (
     <div className="space-y-6">
       <section className="dashboard-hero surface-card space-y-2 p-6">
         <p className="section-kicker">Links and Launch Controls</p>
-        <h2 className="text-3xl font-semibold tracking-[-0.03em]">Short URL Management</h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">Create and maintain redirect codes used in printed QR plaques.</p>
-        <p className="text-xs text-muted-foreground">
-          Codes must be 3-32 characters and use only lowercase letters, numbers, and dashes.
+        <h2 className="text-3xl font-semibold tracking-[-0.03em]">
+          Short URL Management
+        </h2>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Create and maintain redirect codes used in printed QR plaques.
         </p>
+        <p className="text-xs text-muted-foreground">
+          Codes must be 3-32 characters and use only lowercase letters, numbers,
+          and dashes.
+        </p>
+        <div className="flex flex-wrap gap-3 pt-2">
+          <span className="status-pill">
+            Directory {homeDirectoryEnabled ? 'enabled' : 'hidden'}
+          </span>
+          <span className="status-pill">
+            Protected media v{protectedMediaConsentVersion}
+          </span>
+        </div>
       </section>
 
-      <section className="surface-card flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <section className="surface-card data-card flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h3 className="text-base font-semibold">Homepage Directory</h3>
           <p className="text-sm text-muted-foreground">
-            Show a public list of memorials on the landing page. Only memorials set to public appear here. Private and password-protected
-            pages stay hidden.
+            Show a public list of memorials on the landing page. Only memorials
+            set to public appear here. Private and password-protected pages stay
+            hidden.
           </p>
         </div>
-        <Button variant={homeDirectoryEnabled ? 'secondary' : 'outline'} onClick={toggleHomeDirectory} disabled={updatingSiteSettings}>
-          {updatingSiteSettings ? 'Saving...' : homeDirectoryEnabled ? 'Enabled' : 'Disabled'}
+        <Button
+          variant={homeDirectoryEnabled ? 'secondary' : 'outline'}
+          onClick={toggleHomeDirectory}
+          disabled={updatingSiteSettings}
+        >
+          {updatingSiteSettings
+            ? 'Saving...'
+            : homeDirectoryEnabled
+              ? 'Enabled'
+              : 'Disabled'}
         </Button>
       </section>
 
-      <section className="surface-card space-y-4 p-6">
+      <section className="surface-card data-card space-y-4 p-6">
         <div className="space-y-1">
-          <h3 className="text-base font-semibold">Memorial Presentation Defaults</h3>
-          <p className="text-sm text-muted-foreground">Used when creating new memorials. Per-memorial settings can override these defaults.</p>
+          <h3 className="text-base font-semibold">
+            Memorial Presentation Defaults
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Used when creating new memorials. Per-memorial settings can override
+            these defaults.
+          </p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <p className="text-sm font-medium">Photo Slideshow</p>
-            <Button variant={memorialSlideshowEnabled ? 'secondary' : 'outline'} onClick={toggleMemorialSlideshow} disabled={updatingSiteSettings}>
-              {updatingSiteSettings ? 'Saving...' : memorialSlideshowEnabled ? 'Enabled' : 'Disabled'}
+            <Button
+              variant={memorialSlideshowEnabled ? 'secondary' : 'outline'}
+              onClick={toggleMemorialSlideshow}
+              disabled={updatingSiteSettings}
+            >
+              {updatingSiteSettings
+                ? 'Saving...'
+                : memorialSlideshowEnabled
+                  ? 'Enabled'
+                  : 'Disabled'}
             </Button>
           </div>
           <div>
-            <label htmlFor="slideshow-interval" className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor="slideshow-interval"
+              className="mb-1.5 block text-sm font-medium"
+            >
               Slideshow Interval (milliseconds)
             </label>
             <Input
@@ -326,18 +420,27 @@ export function AdminSettingsScreen() {
               max={12000}
               step={500}
               value={memorialSlideshowIntervalMs}
-              onChange={(e) => setMemorialSlideshowIntervalMs(Number(e.target.value))}
+              onChange={(e) =>
+                setMemorialSlideshowIntervalMs(Number(e.target.value))
+              }
             />
           </div>
           <div>
-            <label htmlFor="video-layout" className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor="video-layout"
+              className="mb-1.5 block text-sm font-medium"
+            >
               Video Layout
             </label>
             <select
               id="video-layout"
               className="form-select w-full"
               value={memorialVideoLayout}
-              onChange={(e) => setMemorialVideoLayout(e.target.value === 'featured' ? 'featured' : 'grid')}
+              onChange={(e) =>
+                setMemorialVideoLayout(
+                  e.target.value === 'featured' ? 'featured' : 'grid'
+                )
+              }
             >
               <option value="grid">Grid</option>
               <option value="featured">Featured + List</option>
@@ -345,24 +448,36 @@ export function AdminSettingsScreen() {
           </div>
         </div>
         <div>
-          <Button variant="outline" onClick={saveMemorialPresentation} disabled={updatingSiteSettings}>
+          <Button
+            variant="outline"
+            onClick={saveMemorialPresentation}
+            disabled={updatingSiteSettings}
+          >
             {updatingSiteSettings ? 'Saving...' : 'Save Memorial Presentation'}
           </Button>
         </div>
       </section>
 
-      <section className="surface-card space-y-4 p-6">
+      <section className="surface-card data-card space-y-4 p-6">
         <div className="space-y-1">
-          <h3 className="text-base font-semibold">Protected Media Consent Notice</h3>
+          <h3 className="text-base font-semibold">
+            Protected Media Consent Notice
+          </h3>
           <p className="text-sm text-muted-foreground">
-            Visitors must accept this notice before protected memorial media is shown. Saving new copy republishes the notice and invalidates
+            Visitors must accept this notice before protected memorial media is
+            shown. Saving new copy republishes the notice and invalidates
             existing protected-media consent cookies.
           </p>
-          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current version {protectedMediaConsentVersion}</p>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            Current version {protectedMediaConsentVersion}
+          </p>
         </div>
         <div className="grid gap-4">
           <div>
-            <label htmlFor="protected-media-consent-title" className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor="protected-media-consent-title"
+              className="mb-1.5 block text-sm font-medium"
+            >
               Notice Title
             </label>
             <Input
@@ -373,7 +488,10 @@ export function AdminSettingsScreen() {
             />
           </div>
           <div>
-            <label htmlFor="protected-media-consent-body" className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor="protected-media-consent-body"
+              className="mb-1.5 block text-sm font-medium"
+            >
               Notice Body
             </label>
             <textarea
@@ -389,32 +507,67 @@ export function AdminSettingsScreen() {
           <Button
             variant="outline"
             onClick={() => void saveProtectedMediaConsent(false)}
-            disabled={updatingSiteSettings || protectedMediaConsentTitle.trim().length < 8 || protectedMediaConsentBody.trim().length < 20}
+            disabled={
+              updatingSiteSettings ||
+              protectedMediaConsentTitle.trim().length < 8 ||
+              protectedMediaConsentBody.trim().length < 20
+            }
           >
-            {updatingSiteSettings ? 'Saving...' : 'Save and Publish New Version'}
+            {updatingSiteSettings
+              ? 'Saving...'
+              : 'Save and Publish New Version'}
           </Button>
-          <Button variant="ghost" onClick={() => void saveProtectedMediaConsent(true)} disabled={updatingSiteSettings}>
+          <Button
+            variant="ghost"
+            onClick={() => void saveProtectedMediaConsent(true)}
+            disabled={updatingSiteSettings}
+          >
             {updatingSiteSettings ? 'Saving...' : 'Republish Current Notice'}
           </Button>
         </div>
       </section>
 
-      <form onSubmit={createRedirect} className="surface-card space-y-4 p-6">
-        <h3 className="border-b border-border pb-2 text-base font-semibold">Create New Redirect</h3>
+      <form
+        onSubmit={createRedirect}
+        className="surface-card data-card space-y-4 p-6"
+      >
+        <h3 className="border-b border-border pb-2 text-base font-semibold">
+          Create New Redirect
+        </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Short Code</label>
-            <Input required value={shortcode} onChange={(e) => setShortcode(e.target.value)} placeholder="grandma" pattern="^[a-z0-9-]{3,32}$" />
+            <label className="mb-1.5 block text-sm font-medium">
+              Short Code
+            </label>
+            <Input
+              required
+              value={shortcode}
+              onChange={(e) => setShortcode(e.target.value)}
+              placeholder="grandma"
+              pattern="^[a-z0-9-]{3,32}$"
+            />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Target URL</label>
-            <Input required value={targetUrl} onChange={(e) => setTargetUrl(e.target.value)} placeholder="https://yourdomain.com/memorials/sample" />
+            <label className="mb-1.5 block text-sm font-medium">
+              Target URL
+            </label>
+            <Input
+              required
+              value={targetUrl}
+              onChange={(e) => setTargetUrl(e.target.value)}
+              placeholder="https://yourdomain.com/memorials/sample"
+            />
           </div>
         </div>
         {errorMessage && (
           <div className="flex flex-col gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive sm:flex-row sm:items-center sm:justify-between">
             <p>{errorMessage}</p>
-            <Button variant="outline" size="sm" type="button" onClick={fetchRedirects}>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={fetchRedirects}
+            >
               <RefreshCw className="h-4 w-4" />
               Retry
             </Button>
@@ -452,26 +605,50 @@ export function AdminSettingsScreen() {
                 redirects.map((r) => (
                   <tr key={r.id}>
                     <td className="px-4 py-3 font-medium">/{r.shortcode}</td>
-                    <td className="max-w-sm px-4 py-3 truncate text-muted-foreground">{r.target_url}</td>
+                    <td className="max-w-sm px-4 py-3 truncate text-muted-foreground">
+                      {r.target_url}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className={r.is_active ? 'text-emerald-700' : 'text-amber-700'}>
+                      <span
+                        className={
+                          r.is_active ? 'text-emerald-700' : 'text-amber-700'
+                        }
+                      >
                         {r.is_active ? 'Active' : 'Disabled'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      <span className={r.print_status === 'verified' ? 'text-emerald-700' : 'text-muted-foreground'}>
-                        {r.print_status === 'verified' ? 'Verified' : 'Unverified'}
+                      <span
+                        className={
+                          r.print_status === 'verified'
+                            ? 'text-emerald-700'
+                            : 'text-muted-foreground'
+                        }
+                      >
+                        {r.print_status === 'verified'
+                          ? 'Verified'
+                          : 'Unverified'}
                       </span>
-                      <div>{r.last_verified_at ? `Last: ${new Date(r.last_verified_at).toLocaleDateString()}` : 'Not yet verified'}</div>
+                      <div>
+                        {r.last_verified_at
+                          ? `Last: ${new Date(r.last_verified_at).toLocaleDateString()}`
+                          : 'Not yet verified'}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => updateRedirect(r.id, { isActive: !r.is_active })}
+                          onClick={() =>
+                            updateRedirect(r.id, { isActive: !r.is_active })
+                          }
                           disabled={updatingId === r.id}
-                          aria-label={r.is_active ? `Disable redirect ${r.shortcode}` : `Enable redirect ${r.shortcode}`}
+                          aria-label={
+                            r.is_active
+                              ? `Disable redirect ${r.shortcode}`
+                              : `Enable redirect ${r.shortcode}`
+                          }
                         >
                           {updatingId === r.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -484,7 +661,14 @@ export function AdminSettingsScreen() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => updateRedirect(r.id, { printStatus: r.print_status === 'verified' ? 'unverified' : 'verified' })}
+                          onClick={() =>
+                            updateRedirect(r.id, {
+                              printStatus:
+                                r.print_status === 'verified'
+                                  ? 'unverified'
+                                  : 'verified',
+                            })
+                          }
                           disabled={updatingId === r.id}
                           aria-label={
                             r.print_status === 'verified'
@@ -507,7 +691,11 @@ export function AdminSettingsScreen() {
                           disabled={deletingId === r.id}
                           aria-label={`Delete redirect ${r.shortcode}`}
                         >
-                          {deletingId === r.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
+                          {deletingId === r.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          )}
                         </Button>
                       </div>
                     </td>
@@ -515,7 +703,10 @@ export function AdminSettingsScreen() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm italic text-muted-foreground">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-sm italic text-muted-foreground"
+                  >
                     No redirects created.
                   </td>
                 </tr>

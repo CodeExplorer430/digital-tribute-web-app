@@ -8,7 +8,11 @@ vi.mock('next/navigation', () => ({
 
 describe('AdminShell', () => {
   it('renders children and user email', () => {
-    render(<AdminShell userEmail="admin@example.com"><div>Child Content</div></AdminShell>)
+    render(
+      <AdminShell userEmail="admin@example.com">
+        <div>Child Content</div>
+      </AdminShell>
+    )
 
     expect(screen.getByText('Child Content')).toBeInTheDocument()
     expect(screen.getByText('admin@example.com')).toBeInTheDocument()
@@ -16,9 +20,15 @@ describe('AdminShell', () => {
 
   it('toggles mobile menu button', async () => {
     const user = userEvent.setup()
-    render(<AdminShell userEmail="admin@example.com"><div>Child Content</div></AdminShell>)
+    render(
+      <AdminShell userEmail="admin@example.com">
+        <div>Child Content</div>
+      </AdminShell>
+    )
 
-    const toggle = screen.getByRole('button', { name: /toggle navigation menu/i })
+    const toggle = screen.getByRole('button', {
+      name: /toggle navigation menu/i,
+    })
     await user.click(toggle)
     expect(screen.getByText('Create Memorial')).toBeInTheDocument()
     expect(screen.getByText('Reports')).toBeInTheDocument()
