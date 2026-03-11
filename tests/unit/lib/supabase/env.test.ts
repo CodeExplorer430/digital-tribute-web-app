@@ -41,7 +41,9 @@ describe('supabase env helpers', () => {
   })
 
   it('throws when publishable and anon keys are both missing', () => {
-    expect(() => getSupabasePublishableKeyOrThrow()).toThrow('[supabase:publishable-key]')
+    expect(() => getSupabasePublishableKeyOrThrow()).toThrow(
+      '[supabase:publishable-key]'
+    )
   })
 
   it('prefers SUPABASE_SECRET_KEY over SUPABASE_SERVICE_ROLE_KEY', () => {

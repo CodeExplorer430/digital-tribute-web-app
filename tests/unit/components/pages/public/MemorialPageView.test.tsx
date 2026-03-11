@@ -96,12 +96,24 @@ describe('MemorialPageView', () => {
     expect(screen.getByTestId('tribute-hero')).toBeInTheDocument()
     expect(screen.getByTestId('memorial-action-bar')).toBeInTheDocument()
     expect(screen.getByText('Photos will be added here')).toBeInTheDocument()
-    expect(screen.getByText('She loved deeply and served quietly.')).toBeInTheDocument()
-    expect(mockMemorialActionBar).toHaveBeenCalledWith({ memorialTitle: 'In Loving Memory', guestbookHref: '#guestbook' })
+    expect(
+      screen.getByText('She loved deeply and served quietly.')
+    ).toBeInTheDocument()
+    expect(mockMemorialActionBar).toHaveBeenCalledWith({
+      memorialTitle: 'In Loving Memory',
+      guestbookHref: '#guestbook',
+    })
     expect(mockPublicGallery).not.toHaveBeenCalled()
-    expect(mockTributeVideos).toHaveBeenCalledWith({ videos: [], layout: 'grid' })
+    expect(mockTributeVideos).toHaveBeenCalledWith({
+      videos: [],
+      layout: 'grid',
+    })
     expect(mockTributeTimeline).toHaveBeenCalledWith({ timeline: [] })
-    expect(mockTributeGuestbook).toHaveBeenCalledWith({ memorialId: 'page-1', fullName: 'Jane Doe', entries: [] })
+    expect(mockTributeGuestbook).toHaveBeenCalledWith({
+      memorialId: 'page-1',
+      fullName: 'Jane Doe',
+      entries: [],
+    })
   })
 
   it('passes normalized photo captions to PublicGallery', () => {
@@ -120,25 +132,58 @@ describe('MemorialPageView', () => {
           memorial_slideshow_interval_ms: 4500,
           memorial_video_layout: 'grid',
         }}
-        photos={[{ id: 'photo-1', image_url: '/image.jpg', thumb_url: '/thumb.jpg', caption: null }]}
-        videos={[{ id: 'v1', provider: 'youtube', provider_id: 'abcdefghijk', title: null }]}
+        photos={[
+          {
+            id: 'photo-1',
+            image_url: '/image.jpg',
+            thumb_url: '/thumb.jpg',
+            caption: null,
+          },
+        ]}
+        videos={[
+          {
+            id: 'v1',
+            provider: 'youtube',
+            provider_id: 'abcdefghijk',
+            title: null,
+          },
+        ]}
         timeline={[{ id: 't1', year: 2001, text: 'Milestone' }]}
-        guestbook={[{ id: 'g1', name: 'Ana', message: 'Forever', created_at: '2026-01-01T00:00:00.000Z' }]}
+        guestbook={[
+          {
+            id: 'g1',
+            name: 'Ana',
+            message: 'Forever',
+            created_at: '2026-01-01T00:00:00.000Z',
+          },
+        ]}
         accessMode="public"
       />
     )
 
     expect(screen.getByTestId('public-gallery')).toBeInTheDocument()
     expect(screen.getByTestId('memorial-action-bar')).toBeInTheDocument()
-    expect(container.firstChild).toHaveAttribute('data-memorial-access', 'public')
+    expect(container.firstChild).toHaveAttribute(
+      'data-memorial-access',
+      'public'
+    )
     expect(mockPublicGallery).toHaveBeenCalledWith({
-      photos: [{ id: 'photo-1', image_url: '/image.jpg', thumb_url: '/thumb.jpg', caption: undefined }],
+      photos: [
+        {
+          id: 'photo-1',
+          image_url: '/image.jpg',
+          thumb_url: '/thumb.jpg',
+          caption: undefined,
+        },
+      ],
       slideshowEnabled: true,
       slideshowIntervalMs: 4500,
       fit: 'cover',
       captionStyle: 'classic',
     })
-    expect(screen.getByText(/Welcome to the memorial for our loved one\./)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Welcome to the memorial for our loved one\./)
+    ).toBeInTheDocument()
   })
 
   it('shows the consent gate instead of protected media until consent is granted', () => {
@@ -167,8 +212,12 @@ describe('MemorialPageView', () => {
       />
     )
 
-    expect(screen.getByTestId('protected-media-consent-gate')).toBeInTheDocument()
-    expect(mockProtectedMediaConsentGate).toHaveBeenCalledWith({ slug: 'jane-doe' })
+    expect(
+      screen.getByTestId('protected-media-consent-gate')
+    ).toBeInTheDocument()
+    expect(mockProtectedMediaConsentGate).toHaveBeenCalledWith({
+      slug: 'jane-doe',
+    })
     expect(mockPublicGallery).not.toHaveBeenCalled()
     expect(mockTributeVideos).not.toHaveBeenCalled()
   })

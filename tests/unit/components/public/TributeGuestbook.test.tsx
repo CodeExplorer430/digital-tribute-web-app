@@ -2,7 +2,9 @@ import { render, screen } from '@testing-library/react'
 import { TributeGuestbook } from '@/components/public/TributeGuestbook'
 
 vi.mock('@/components/public/GuestbookForm', () => ({
-  GuestbookForm: ({ memorialId }: { memorialId: string }) => <div data-testid="guestbook-form">{memorialId}</div>,
+  GuestbookForm: ({ memorialId }: { memorialId: string }) => (
+    <div data-testid="guestbook-form">{memorialId}</div>
+  ),
 }))
 
 describe('TributeGuestbook', () => {
@@ -10,7 +12,9 @@ describe('TributeGuestbook', () => {
     render(<TributeGuestbook memorialId="p1" fullName="Jane" entries={[]} />)
 
     expect(screen.getByTestId('guestbook-form')).toHaveTextContent('p1')
-    expect(screen.getByText('No messages have been published yet.')).toBeInTheDocument()
+    expect(
+      screen.getByText('No messages have been published yet.')
+    ).toBeInTheDocument()
   })
 
   it('renders guestbook entries', () => {
@@ -18,7 +22,14 @@ describe('TributeGuestbook', () => {
       <TributeGuestbook
         memorialId="p1"
         fullName="Jane"
-        entries={[{ id: 'g1', name: 'Ana', message: 'We miss you', created_at: '2026-01-01T00:00:00Z' }]}
+        entries={[
+          {
+            id: 'g1',
+            name: 'Ana',
+            message: 'We miss you',
+            created_at: '2026-01-01T00:00:00Z',
+          },
+        ]}
       />
     )
 

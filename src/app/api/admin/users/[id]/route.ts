@@ -20,7 +20,11 @@ async function assertAdminPrivileges() {
     return { ok: false as const, response: auth.response }
   }
 
-  return { ok: true as const, actorSupabase: auth.supabase, userId: auth.userId }
+  return {
+    ok: true as const,
+    actorSupabase: auth.supabase,
+    userId: auth.userId,
+  }
 }
 
 function deriveAccountState(
@@ -48,8 +52,19 @@ async function resolveAccountState(
 
 async function countActiveAdmins(supabase: {
   from: (table: 'profiles') => {
-    select: (columns: string, options?: { head?: boolean; count?: 'exact' }) => {
-      eq: (column: string, value: string | boolean) => { eq: (column: string, value: string | boolean) => Promise<{ count?: number | null }> }
+    select: (
+      columns: string,
+      options?: { head?: boolean; count?: 'exact' }
+    ) => {
+      eq: (
+        column: string,
+        value: string | boolean
+      ) => {
+        eq: (
+          column: string,
+          value: string | boolean
+        ) => Promise<{ count?: number | null }>
+      }
     }
   }
 }) {
@@ -62,23 +77,35 @@ async function countActiveAdmins(supabase: {
   return count ?? 0
 }
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const params = await context.params
   const parsedParams = paramsSchema.safeParse(params)
   if (!parsedParams.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid user id.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid user id.' },
+      { status: 400 }
+    )
   }
 
   let payload: unknown
   try {
     payload = await request.json()
   } catch {
-    return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid request payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'INVALID_JSON', message: 'Invalid request payload.' },
+      { status: 400 }
+    )
   }
 
   const parsedBody = patchSchema.safeParse(payload)
   if (!parsedBody.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid user update payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid user update payload.' },
+      { status: 400 }
+    )
   }
 
   const authz = await assertAdminPrivileges()
@@ -90,7 +117,11 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     serviceRole = createServiceRoleClient()
   } catch {
     return NextResponse.json(
-      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.' },
+      {
+        code: 'CONFIG_ERROR',
+        message:
+          'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.',
+      },
       { status: 500 }
     )
   }
@@ -102,12 +133,16 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     .single()
 
   if (existingError || !existing) {
-    return NextResponse.json({ code: 'NOT_FOUND', message: 'User not found.' }, { status: 404 })
+    return NextResponse.json(
+      { code: 'NOT_FOUND', message: 'User not found.' },
+      { status: 404 }
+    )
   }
 
   const changes = parsedBody.data
   const willDeactivate = changes.isActive === false
-  const willDowngradeAdmin = existing.role === 'admin' && changes.role && changes.role !== 'admin'
+  const willDowngradeAdmin =
+    existing.role === 'admin' && changes.role && changes.role !== 'admin'
 
   if ((willDeactivate || willDowngradeAdmin) && existing.is_active) {
     const activeAdmins = await countActiveAdmins(serviceRole as never)
@@ -115,7 +150,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
     if (affectsActiveAdmin && activeAdmins <= 1) {
       return NextResponse.json(
-        { code: 'LAST_ADMIN', message: 'At least one active admin must remain.' },
+        {
+          code: 'LAST_ADMIN',
+          message: 'At least one active admin must remain.',
+        },
         { status: 409 }
       )
     }
@@ -125,25 +163,31 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     updated_at: new Date().toISOString(),
   }
 
-  if (typeof changes.fullName === 'string') updatePayload.full_name = changes.fullName
+  if (typeof changes.fullName === 'string')
+    updatePayload.full_name = changes.fullName
   if (typeof changes.role === 'string') updatePayload.role = changes.role
   if (typeof changes.isActive === 'boolean') {
     updatePayload.is_active = changes.isActive
-    updatePayload.deactivated_at = changes.isActive ? null : new Date().toISOString()
+    updatePayload.deactivated_at = changes.isActive
+      ? null
+      : new Date().toISOString()
   }
 
   const { data, error } = await serviceRole
     .from('profiles')
     .update(updatePayload)
     .eq('id', parsedParams.data.id)
-    .select('id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
+    .select(
+      'id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at'
+    )
     .single()
 
   if (error) {
     return databaseError('Unable to update user.')
   }
 
-  const shouldSignOutSelf = parsedParams.data.id === userId && changes.isActive === false
+  const shouldSignOutSelf =
+    parsedParams.data.id === userId && changes.isActive === false
 
   await logAdminAudit(actorSupabase, {
     actorId: userId,
@@ -158,14 +202,23 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
   const accountState = await resolveAccountState(serviceRole, data)
 
-  return NextResponse.json({ user: { ...data, account_state: accountState }, shouldSignOutSelf }, { status: 200 })
+  return NextResponse.json(
+    { user: { ...data, account_state: accountState }, shouldSignOutSelf },
+    { status: 200 }
+  )
 }
 
-export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const params = await context.params
   const parsedParams = paramsSchema.safeParse(params)
   if (!parsedParams.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid user id.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid user id.' },
+      { status: 400 }
+    )
   }
 
   const authz = await assertAdminPrivileges()
@@ -177,7 +230,11 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
     serviceRole = createServiceRoleClient()
   } catch {
     return NextResponse.json(
-      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.' },
+      {
+        code: 'CONFIG_ERROR',
+        message:
+          'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for user management.',
+      },
       { status: 500 }
     )
   }
@@ -189,14 +246,20 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
     .single()
 
   if (existingError || !existing) {
-    return NextResponse.json({ code: 'NOT_FOUND', message: 'User not found.' }, { status: 404 })
+    return NextResponse.json(
+      { code: 'NOT_FOUND', message: 'User not found.' },
+      { status: 404 }
+    )
   }
 
   if (existing.role === 'admin' && existing.is_active) {
     const activeAdmins = await countActiveAdmins(serviceRole as never)
     if (activeAdmins <= 1) {
       return NextResponse.json(
-        { code: 'LAST_ADMIN', message: 'At least one active admin must remain.' },
+        {
+          code: 'LAST_ADMIN',
+          message: 'At least one active admin must remain.',
+        },
         { status: 409 }
       )
     }
@@ -204,9 +267,15 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
 
   const { data, error } = await serviceRole
     .from('profiles')
-    .update({ is_active: false, deactivated_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({
+      is_active: false,
+      deactivated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', parsedParams.data.id)
-    .select('id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at')
+    .select(
+      'id, email, full_name, role, is_active, created_at, updated_at, invited_at, deactivated_at'
+    )
     .single()
 
   if (error) {

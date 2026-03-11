@@ -8,9 +8,16 @@ const mockDelete = vi.fn(() => ({ eq: mockDeleteEq }))
 
 vi.mock('@/lib/server/admin-auth', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdminUser(...args),
-  assertOwnedRowByPageId: (...args: unknown[]) => mockAssertOwnedRowByPageId(...args),
-  forbidden: (message: string) => new Response(JSON.stringify({ code: 'FORBIDDEN', message }), { status: 403 }),
-  databaseError: (message: string) => new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), { status: 500 }),
+  assertOwnedRowByPageId: (...args: unknown[]) =>
+    mockAssertOwnedRowByPageId(...args),
+  forbidden: (message: string) =>
+    new Response(JSON.stringify({ code: 'FORBIDDEN', message }), {
+      status: 403,
+    }),
+  databaseError: (message: string) =>
+    new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), {
+      status: 500,
+    }),
 }))
 
 vi.mock('@/lib/server/admin-audit', () => ({
@@ -26,8 +33,12 @@ describe('DELETE /api/admin/timeline/[id]', () => {
   })
 
   it('returns validation error for invalid id', async () => {
-    const req = new Request('http://localhost/api/admin/timeline/not-a-uuid', { method: 'DELETE' })
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: 'not-a-uuid' }) })
+    const req = new Request('http://localhost/api/admin/timeline/not-a-uuid', {
+      method: 'DELETE',
+    })
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: 'not-a-uuid' }),
+    })
 
     expect(res.status).toBe(400)
   })
@@ -46,8 +57,13 @@ describe('DELETE /api/admin/timeline/[id]', () => {
     mockAssertOwnedRowByPageId.mockResolvedValue(true)
     mockDeleteEq.mockResolvedValue({ error: null })
 
-    const req = new Request('http://localhost/api/admin/timeline/550e8400-e29b-41d4-a716-446655440000', { method: 'DELETE' })
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/timeline/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'DELETE' }
+    )
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
 
     expect(res.status).toBe(200)
     expect(mockDelete).toHaveBeenCalled()

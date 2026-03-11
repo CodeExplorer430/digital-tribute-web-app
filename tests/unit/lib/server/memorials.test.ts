@@ -7,7 +7,9 @@ import {
 
 describe('memorial helpers', () => {
   it('prefers canonical access mode and falls back to legacy privacy', () => {
-    expect(resolveMemorialAccessMode({ access_mode: 'password', privacy: 'public' })).toBe('password')
+    expect(
+      resolveMemorialAccessMode({ access_mode: 'password', privacy: 'public' })
+    ).toBe('password')
     expect(resolveMemorialAccessMode({ privacy: 'private' })).toBe('private')
     expect(resolveMemorialAccessMode({ privacy: 'public' })).toBe('public')
   })
@@ -37,7 +39,9 @@ describe('memorial helpers', () => {
   })
 
   it('accepts either memorialId or legacy pageId when resolving scoped ids', () => {
-    expect(resolveMemorialId({ memorialId: 'memorial-1', pageId: 'page-1' })).toBe('memorial-1')
+    expect(
+      resolveMemorialId({ memorialId: 'memorial-1', pageId: 'page-1' })
+    ).toBe('memorial-1')
     expect(resolveMemorialId({ pageId: 'page-1' })).toBe('page-1')
     expect(resolveMemorialId({})).toBeNull()
   })

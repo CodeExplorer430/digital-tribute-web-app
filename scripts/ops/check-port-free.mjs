@@ -14,17 +14,28 @@ const host = '127.0.0.1'
 const server = createServer()
 
 server.once('error', (err) => {
-  if (err && typeof err === 'object' && 'code' in err && err.code === 'EADDRINUSE') {
-    console.error(`Port ${port} is already in use on ${host}. Stop the existing process and rerun test:e2e.`)
+  if (
+    err &&
+    typeof err === 'object' &&
+    'code' in err &&
+    err.code === 'EADDRINUSE'
+  ) {
+    console.error(
+      `Port ${port} is already in use on ${host}. Stop the existing process and rerun test:e2e.`
+    )
     process.exit(1)
   }
 
   if (err && typeof err === 'object' && 'code' in err && err.code === 'EPERM') {
-    console.warn(`Port preflight skipped due to permission limits (${err.code}) in this environment.`)
+    console.warn(
+      `Port preflight skipped due to permission limits (${err.code}) in this environment.`
+    )
     process.exit(0)
   }
 
-  console.error(`Unable to verify port ${port}: ${(err && err.message) || String(err)}`)
+  console.error(
+    `Unable to verify port ${port}: ${(err && err.message) || String(err)}`
+  )
   process.exit(1)
 })
 

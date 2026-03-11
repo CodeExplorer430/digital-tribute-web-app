@@ -8,13 +8,17 @@ export async function GET() {
 
   let query = supabase
     .from('media_access_consents')
-    .select('id, page_id, event_type, access_mode, consent_source, consent_version, media_kind, media_variant, ip_hash, user_agent_hash, created_at, pages!inner(title, slug, owner_id)')
+    .select(
+      'id, page_id, event_type, access_mode, consent_source, consent_version, media_kind, media_variant, ip_hash, user_agent_hash, created_at, pages!inner(title, slug, owner_id)'
+    )
 
   if (role !== 'admin') {
     query = query.eq('pages.owner_id', userId)
   }
 
-  const { data, error } = await query.order('created_at', { ascending: false }).limit(250)
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .limit(250)
   if (error) {
     return databaseError('Unable to load protected media consent report.')
   }
@@ -43,8 +47,12 @@ export async function GET() {
       logs,
       summary: {
         total: logs.length,
-        consentGranted: logs.filter((entry) => entry.eventType === 'consent_granted').length,
-        mediaAccessed: logs.filter((entry) => entry.eventType === 'media_accessed').length,
+        consentGranted: logs.filter(
+          (entry) => entry.eventType === 'consent_granted'
+        ).length,
+        mediaAccessed: logs.filter(
+          (entry) => entry.eventType === 'media_accessed'
+        ).length,
         memorials: new Set(logs.map((entry) => entry.memorialId)).size,
       },
     },

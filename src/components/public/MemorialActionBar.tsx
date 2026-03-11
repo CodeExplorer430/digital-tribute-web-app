@@ -10,7 +10,10 @@ interface MemorialActionBarProps {
   guestbookHref?: string
 }
 
-export function MemorialActionBar({ memorialTitle, guestbookHref }: MemorialActionBarProps) {
+export function MemorialActionBar({
+  memorialTitle,
+  guestbookHref,
+}: MemorialActionBarProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
   const handleShare = async () => {
@@ -40,7 +43,9 @@ export function MemorialActionBar({ memorialTitle, guestbookHref }: MemorialActi
         return
       }
     } catch {
-      setStatusMessage('Sharing is unavailable right now. Please copy the address from your browser.')
+      setStatusMessage(
+        'Sharing is unavailable right now. Please copy the address from your browser.'
+      )
       return
     }
 
@@ -58,13 +63,17 @@ export function MemorialActionBar({ memorialTitle, guestbookHref }: MemorialActi
       await navigator.clipboard.writeText(shareUrl)
       setStatusMessage('Memorial link copied. You can paste it anywhere.')
     } catch {
-      setStatusMessage('Copy link failed. Please copy the address from your browser instead.')
+      setStatusMessage(
+        'Copy link failed. Please copy the address from your browser instead.'
+      )
     }
   }
 
   const handlePrint = () => {
     window.print()
-    setStatusMessage('Print dialog opened. Choose Save as PDF for a keepsake copy.')
+    setStatusMessage(
+      'Print dialog opened. Choose Save as PDF for a keepsake copy.'
+    )
   }
 
   return (
@@ -77,16 +86,25 @@ export function MemorialActionBar({ memorialTitle, guestbookHref }: MemorialActi
         <div className="space-y-1">
           <p className="section-kicker">Visitor Actions</p>
           <p className="text-sm text-muted-foreground">
-            Share this memorial, save a printable keepsake, or move directly to the guestbook.
+            Share this memorial, save a printable keepsake, or move directly to
+            the guestbook.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" onClick={() => void handleShare()}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => void handleShare()}
+          >
             <Share2 className="h-4 w-4" />
             Share
           </Button>
-          <Button type="button" variant="outline" onClick={() => void handleCopyLink()}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void handleCopyLink()}
+          >
             <Copy className="h-4 w-4" />
             Copy link
           </Button>
@@ -106,7 +124,11 @@ export function MemorialActionBar({ memorialTitle, guestbookHref }: MemorialActi
       </div>
 
       {statusMessage ? (
-        <p className="mt-3 text-sm text-muted-foreground" aria-live="polite" role="status">
+        <p
+          className="mt-3 text-sm text-muted-foreground"
+          aria-live="polite"
+          role="status"
+        >
           {statusMessage}
         </p>
       ) : null}

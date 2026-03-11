@@ -7,12 +7,16 @@ const mockProfileEq = vi.fn(() => ({ single: mockProfileSingle }))
 const mockTargetSingle = vi.fn()
 const mockTargetEq = vi.fn(() => ({ single: mockTargetSingle }))
 
-const mockCountEqRole = vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ count: 1 })) }))
+const mockCountEqRole = vi.fn(() => ({
+  eq: vi.fn(() => Promise.resolve({ count: 1 })),
+}))
 const mockListUsers = vi.fn()
 
 const mockUpdateSingle = vi.fn()
 const mockUpdateEq = vi.fn<
-  () => { select: () => { single: typeof mockUpdateSingle } } | Promise<{ data: unknown; error: null }>
+  () =>
+    | { select: () => { single: typeof mockUpdateSingle } }
+    | Promise<{ data: unknown; error: null }>
 >(() => ({ select: () => ({ single: mockUpdateSingle }) }))
 const mockUpdate = vi.fn(() => ({ eq: mockUpdateEq }))
 
@@ -23,7 +27,10 @@ vi.mock('@/lib/supabase/server', () => ({
       if (table !== 'profiles') return { select: vi.fn(), update: vi.fn() }
 
       return {
-        select: (columns: string, options?: { head?: boolean; count?: string }) => {
+        select: (
+          columns: string,
+          options?: { head?: boolean; count?: string }
+        ) => {
           if (columns === 'role, is_active') return { eq: mockProfileEq }
           if (options?.head) return { eq: mockCountEqRole }
           return { eq: mockTargetEq }
@@ -44,7 +51,10 @@ vi.mock('@/lib/supabase/service', () => ({
     from: (table: string) => {
       if (table !== 'profiles') return { select: vi.fn(), update: vi.fn() }
       return {
-        select: (columns: string, options?: { head?: boolean; count?: string }) => {
+        select: (
+          columns: string,
+          options?: { head?: boolean; count?: string }
+        ) => {
           if (options?.head) return { eq: mockCountEqRole }
           return { eq: mockTargetEq }
         },
@@ -66,53 +76,93 @@ describe('admin users [id] route', () => {
 
   it('returns 409 when trying to deactivate last active admin', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockTargetSingle.mockResolvedValue({ data: { id: 'admin-1', role: 'admin', is_active: true }, error: null })
-
-    const req = new Request('http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ isActive: false }),
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'admin-1', role: 'admin', is_active: true },
+      error: null,
     })
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ isActive: false }),
+      }
+    )
+
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(409)
   })
 
   it('returns 400 for invalid patch params and invalid json payloads', async () => {
-    const invalidIdRequest = new Request('http://localhost/api/admin/users/not-a-uuid', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ role: 'viewer' }),
-    })
+    const invalidIdRequest = new Request(
+      'http://localhost/api/admin/users/not-a-uuid',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ role: 'viewer' }),
+      }
+    )
 
-    const invalidIdResponse = await PATCH(invalidIdRequest as never, { params: Promise.resolve({ id: 'not-a-uuid' }) })
+    const invalidIdResponse = await PATCH(invalidIdRequest as never, {
+      params: Promise.resolve({ id: 'not-a-uuid' }),
+    })
     expect(invalidIdResponse.status).toBe(400)
 
-    const invalidJsonRequest = new Request('http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: '{',
-    })
+    const invalidJsonRequest = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: '{',
+      }
+    )
 
-    const invalidJsonResponse = await PATCH(invalidJsonRequest as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const invalidJsonResponse = await PATCH(invalidJsonRequest as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(invalidJsonResponse.status).toBe(400)
   })
 
   it('updates user role successfully', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockTargetSingle.mockResolvedValue({ data: { id: 'user-2', role: 'editor', is_active: true }, error: null })
-    mockUpdateSingle.mockResolvedValue({ data: { id: 'user-2', role: 'viewer', is_active: true }, error: null })
-    mockListUsers.mockResolvedValue({ data: { users: [{ id: 'user-2', last_sign_in_at: '2026-03-08T00:00:00.000Z' }] }, error: null })
-
-    const req = new Request('http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ role: 'viewer' }),
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'editor', is_active: true },
+      error: null,
+    })
+    mockUpdateSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'viewer', is_active: true },
+      error: null,
+    })
+    mockListUsers.mockResolvedValue({
+      data: {
+        users: [{ id: 'user-2', last_sign_in_at: '2026-03-08T00:00:00.000Z' }],
+      },
+      error: null,
     })
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ role: 'viewer' }),
+      }
+    )
+
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({
       user: { id: 'user-2', role: 'viewer', account_state: 'active' },
@@ -122,21 +172,41 @@ describe('admin users [id] route', () => {
 
   it('preserves invited account state when an invited active user is updated', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockTargetSingle.mockResolvedValue({ data: { id: 'user-2', role: 'viewer', is_active: true }, error: null })
-    mockUpdateSingle.mockResolvedValue({
-      data: { id: 'user-2', role: 'editor', is_active: true, email: 'invitee@example.com', full_name: 'Invitee' },
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
       error: null,
     })
-    mockListUsers.mockResolvedValue({ data: { users: [{ id: 'user-2', last_sign_in_at: null }] }, error: null })
-
-    const req = new Request('http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ role: 'editor' }),
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'viewer', is_active: true },
+      error: null,
+    })
+    mockUpdateSingle.mockResolvedValue({
+      data: {
+        id: 'user-2',
+        role: 'editor',
+        is_active: true,
+        email: 'invitee@example.com',
+        full_name: 'Invitee',
+      },
+      error: null,
+    })
+    mockListUsers.mockResolvedValue({
+      data: { users: [{ id: 'user-2', last_sign_in_at: null }] },
+      error: null,
     })
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ role: 'editor' }),
+      }
+    )
+
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({
       user: { id: 'user-2', role: 'editor', account_state: 'invited' },
@@ -145,21 +215,41 @@ describe('admin users [id] route', () => {
 
   it('falls back to active account state when auth lookup is unavailable during patch', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockTargetSingle.mockResolvedValue({ data: { id: 'user-2', role: 'viewer', is_active: true }, error: null })
-    mockUpdateSingle.mockResolvedValue({
-      data: { id: 'user-2', role: 'viewer', is_active: true, email: 'viewer@example.com', full_name: 'Viewer User' },
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
       error: null,
     })
-    mockListUsers.mockResolvedValue({ data: { users: [] }, error: new Error('lookup failed') })
-
-    const req = new Request('http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ fullName: 'Viewer User' }),
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'viewer', is_active: true },
+      error: null,
+    })
+    mockUpdateSingle.mockResolvedValue({
+      data: {
+        id: 'user-2',
+        role: 'viewer',
+        is_active: true,
+        email: 'viewer@example.com',
+        full_name: 'Viewer User',
+      },
+      error: null,
+    })
+    mockListUsers.mockResolvedValue({
+      data: { users: [] },
+      error: new Error('lookup failed'),
     })
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ fullName: 'Viewer User' }),
+      }
+    )
+
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({
       user: { id: 'user-2', account_state: 'active' },
@@ -167,43 +257,88 @@ describe('admin users [id] route', () => {
   })
 
   it('returns self sign-out metadata when the current admin deactivates their own account', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: '550e8400-e29b-41d4-a716-446655440001' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockTargetSingle.mockResolvedValue({ data: { id: '550e8400-e29b-41d4-a716-446655440001', role: 'admin', is_active: true }, error: null })
-    mockUpdateSingle.mockResolvedValue({
-      data: { id: '550e8400-e29b-41d4-a716-446655440001', role: 'admin', is_active: false, email: 'admin@example.com', full_name: 'Admin User' },
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: '550e8400-e29b-41d4-a716-446655440001' } },
+    })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
       error: null,
     })
-    mockCountEqRole.mockReturnValueOnce({ eq: vi.fn(() => Promise.resolve({ count: 2 })) })
-
-    const req = new Request('http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440001', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ isActive: false }),
+    mockTargetSingle.mockResolvedValue({
+      data: {
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        role: 'admin',
+        is_active: true,
+      },
+      error: null,
+    })
+    mockUpdateSingle.mockResolvedValue({
+      data: {
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        role: 'admin',
+        is_active: false,
+        email: 'admin@example.com',
+        full_name: 'Admin User',
+      },
+      error: null,
+    })
+    mockCountEqRole.mockReturnValueOnce({
+      eq: vi.fn(() => Promise.resolve({ count: 2 })),
     })
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440001' }) })
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440001',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ isActive: false }),
+      }
+    )
+
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440001' }),
+    })
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({
       shouldSignOutSelf: true,
-      user: { id: '550e8400-e29b-41d4-a716-446655440001', account_state: 'deactivated' },
+      user: {
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        account_state: 'deactivated',
+      },
     })
   })
 
   it('deletes/deactivates user', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockTargetSingle.mockResolvedValue({ data: { id: 'user-2', role: 'viewer', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'viewer', is_active: true },
+      error: null,
+    })
     mockUpdateSingle.mockResolvedValue({
-      data: { id: 'user-2', role: 'viewer', is_active: false, email: 'user@example.com', full_name: 'User Two' },
+      data: {
+        id: 'user-2',
+        role: 'viewer',
+        is_active: false,
+        email: 'user@example.com',
+        full_name: 'User Two',
+      },
       error: null,
     })
 
-    const req = new Request('http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'DELETE',
-    })
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'DELETE',
+      }
+    )
 
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({
       ok: true,
@@ -214,14 +349,25 @@ describe('admin users [id] route', () => {
 
   it('returns 404 when deleting a missing user', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockTargetSingle.mockResolvedValue({ data: null, error: { message: 'missing' } })
-
-    const req = new Request('http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'DELETE',
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'missing' },
     })
 
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'DELETE',
+      }
+    )
+
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(404)
   })
 
@@ -230,7 +376,9 @@ describe('admin users [id] route', () => {
       method: 'DELETE',
     })
 
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: 'not-a-uuid' }) })
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: 'not-a-uuid' }),
+    })
     expect(res.status).toBe(400)
   })
 })

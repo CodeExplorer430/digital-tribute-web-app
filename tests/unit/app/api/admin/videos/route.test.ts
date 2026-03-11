@@ -31,7 +31,10 @@ describe('POST /api/admin/videos', () => {
     mockPageSingle.mockReset()
     mockVideoSingle.mockReset()
     mockVideoInsert.mockClear()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns validation error for non-youtube url', async () => {

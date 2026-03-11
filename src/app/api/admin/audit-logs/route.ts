@@ -17,5 +17,8 @@ export async function GET() {
     return databaseError('Unable to load audit logs.')
   }
 
-  return NextResponse.json({ logs: (data ?? []).map(normalizeAdminAuditLog) }, { status: 200 })
+  return NextResponse.json(
+    { logs: (data ?? []).map(normalizeAdminAuditLog) },
+    { status: 200 }
+  )
 }

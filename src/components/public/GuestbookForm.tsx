@@ -60,7 +60,9 @@ declare global {
 }
 
 export function GuestbookForm({ memorialId }: GuestbookFormProps) {
-  const turnstileSiteKey = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '').trim()
+  const turnstileSiteKey = (
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
+  ).trim()
   const shouldUseCaptcha = turnstileSiteKey.length > 0
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null)
   const turnstileWidgetIdRef = useRef<TurnstileWidgetId | null>(null)
@@ -88,12 +90,16 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
       },
       'expired-callback': () => {
         setCaptchaToken(null)
-        setError('The spam-protection check expired. Please complete it again before posting.')
+        setError(
+          'The spam-protection check expired. Please complete it again before posting.'
+        )
       },
       'error-callback': () => {
         setCaptchaToken(null)
         setTurnstileLoadFailed(true)
-        setError('Spam protection failed to load. Refresh the page and try again.')
+        setError(
+          'Spam protection failed to load. Refresh the page and try again.'
+        )
       },
     })
 
@@ -114,12 +120,16 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
     }
 
     if (shouldUseCaptcha && turnstileLoadFailed) {
-      setError('Spam protection failed to load. Refresh the page and try again.')
+      setError(
+        'Spam protection failed to load. Refresh the page and try again.'
+      )
       return
     }
 
     if (shouldUseCaptcha && !turnstileReady) {
-      setError('Spam protection is still loading. Please wait a moment and try again.')
+      setError(
+        'Spam protection is still loading. Please wait a moment and try again.'
+      )
       return
     }
 
@@ -146,9 +156,16 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
       })
 
       if (!response.ok && response.status !== 202) {
-        const payload = (await response.json().catch(() => null)) as { message?: string; code?: GuestbookResponseCode } | null
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string
+          code?: GuestbookResponseCode
+        } | null
         setError(mapGuestbookError(payload?.code, payload?.message))
-        if (shouldUseCaptcha && turnstileWidgetIdRef.current && window.turnstile) {
+        if (
+          shouldUseCaptcha &&
+          turnstileWidgetIdRef.current &&
+          window.turnstile
+        ) {
           window.turnstile.reset(turnstileWidgetIdRef.current)
         }
         setCaptchaToken(null)
@@ -157,8 +174,14 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
 
       setSubmitted(true)
     } catch {
-      setError('The guestbook could not be reached. Please check your connection and try again.')
-      if (shouldUseCaptcha && turnstileWidgetIdRef.current && window.turnstile) {
+      setError(
+        'The guestbook could not be reached. Please check your connection and try again.'
+      )
+      if (
+        shouldUseCaptcha &&
+        turnstileWidgetIdRef.current &&
+        window.turnstile
+      ) {
         window.turnstile.reset(turnstileWidgetIdRef.current)
       }
       setCaptchaToken(null)
@@ -173,8 +196,12 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
         className="surface-card space-y-2 border-[color:var(--success)]/35 bg-[color:var(--success)]/10 p-6 text-center"
         aria-live="polite"
       >
-        <h4 className="text-lg font-semibold text-[color:var(--success)]">Thank you for sharing</h4>
-        <p className="text-sm text-[color:var(--stone-ink)]">Your message has been submitted and will appear after moderation.</p>
+        <h4 className="text-lg font-semibold text-[color:var(--success)]">
+          Thank you for sharing
+        </h4>
+        <p className="text-sm text-[color:var(--stone-ink)]">
+          Your message has been submitted and will appear after moderation.
+        </p>
         <Button
           variant="outline"
           className="mt-2 border-[color:var(--success)]/30"
@@ -183,7 +210,11 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
             setName('')
             setMessage('')
             setCaptchaToken(null)
-            if (shouldUseCaptcha && turnstileWidgetIdRef.current && window.turnstile) {
+            if (
+              shouldUseCaptcha &&
+              turnstileWidgetIdRef.current &&
+              window.turnstile
+            ) {
               window.turnstile.reset(turnstileWidgetIdRef.current)
             }
           }}
@@ -198,7 +229,9 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
     <form onSubmit={handleSubmit} className="surface-card space-y-4 p-5 md:p-6">
       <div className="rounded-2xl border border-border/70 bg-secondary/45 px-4 py-3 text-sm text-muted-foreground">
         Messages are reviewed by the family before they appear publicly.
-        {shouldUseCaptcha ? ' Spam protection is enabled before your note is sent.' : ' Your note will be held for moderation after submission.'}
+        {shouldUseCaptcha
+          ? ' Spam protection is enabled before your note is sent.'
+          : ' Your note will be held for moderation after submission.'}
       </div>
 
       <div className="hidden" aria-hidden="true">
@@ -213,7 +246,10 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
       </div>
 
       <div>
-        <label htmlFor="guestbook-name" className="mb-1.5 block text-sm font-medium">
+        <label
+          htmlFor="guestbook-name"
+          className="mb-1.5 block text-sm font-medium"
+        >
           Your Name
         </label>
         <Input
@@ -225,7 +261,10 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
         />
       </div>
       <div>
-        <label htmlFor="guestbook-message" className="mb-1.5 block text-sm font-medium">
+        <label
+          htmlFor="guestbook-message"
+          className="mb-1.5 block text-sm font-medium"
+        >
           Your Message
         </label>
         <textarea
@@ -240,7 +279,10 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {error}
         </p>
       )}
@@ -255,11 +297,14 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
             }}
             onError={() => {
               setTurnstileLoadFailed(true)
-              setError('Spam protection failed to load. Refresh the page and try again.')
+              setError(
+                'Spam protection failed to load. Refresh the page and try again.'
+              )
             }}
           />
           <p className="text-xs text-muted-foreground">
-            Complete the spam-protection check so the family guestbook stays safe from automated posts.
+            Complete the spam-protection check so the family guestbook stays
+            safe from automated posts.
           </p>
           <div ref={turnstileContainerRef} data-testid="turnstile-widget" />
         </>

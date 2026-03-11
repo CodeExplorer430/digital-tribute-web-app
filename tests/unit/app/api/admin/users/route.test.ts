@@ -65,7 +65,10 @@ describe('admin users route', () => {
 
   it('GET returns forbidden for non-admin', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
 
     const res = await GET()
     expect(res.status).toBe(403)
@@ -73,35 +76,76 @@ describe('admin users route', () => {
 
   it('GET returns users for active admin', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockServiceProfilesOrder.mockResolvedValue({ data: [{ id: 'u1', email: 'u1@test.dev', is_active: true }], error: null })
-    mockListUsers.mockResolvedValue({ data: { users: [{ id: 'u1', last_sign_in_at: null }] }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockServiceProfilesOrder.mockResolvedValue({
+      data: [{ id: 'u1', email: 'u1@test.dev', is_active: true }],
+      error: null,
+    })
+    mockListUsers.mockResolvedValue({
+      data: { users: [{ id: 'u1', last_sign_in_at: null }] },
+      error: null,
+    })
 
     const res = await GET()
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({
-      users: [{ id: 'u1', email: 'u1@test.dev', is_active: true, account_state: 'invited' }],
+      users: [
+        {
+          id: 'u1',
+          email: 'u1@test.dev',
+          is_active: true,
+          account_state: 'invited',
+        },
+      ],
     })
   })
 
   it('GET falls back to active state when auth user lookup is unavailable', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockServiceProfilesOrder.mockResolvedValue({ data: [{ id: 'u1', email: 'u1@test.dev', is_active: true }], error: null })
-    mockListUsers.mockResolvedValue({ data: { users: [] }, error: new Error('lookup failed') })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockServiceProfilesOrder.mockResolvedValue({
+      data: [{ id: 'u1', email: 'u1@test.dev', is_active: true }],
+      error: null,
+    })
+    mockListUsers.mockResolvedValue({
+      data: { users: [] },
+      error: new Error('lookup failed'),
+    })
 
     const res = await GET()
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({
-      users: [{ id: 'u1', email: 'u1@test.dev', is_active: true, account_state: 'active' }],
+      users: [
+        {
+          id: 'u1',
+          email: 'u1@test.dev',
+          is_active: true,
+          account_state: 'active',
+        },
+      ],
     })
   })
 
   it('POST invites and upserts user with a password setup redirect', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockInvite.mockResolvedValue({ data: { user: { id: 'new-user-id' } }, error: null })
-    mockUpsertSingle.mockResolvedValue({ data: { id: 'new-user-id', email: 'new@everlume.test' }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockInvite.mockResolvedValue({
+      data: { user: { id: 'new-user-id' } },
+      error: null,
+    })
+    mockUpsertSingle.mockResolvedValue({
+      data: { id: 'new-user-id', email: 'new@everlume.test' },
+      error: null,
+    })
 
     const req = new Request('https://everlume.test/api/admin/users', {
       method: 'POST',
@@ -118,18 +162,29 @@ describe('admin users route', () => {
     expect(mockInvite).toHaveBeenCalledWith(
       'new@everlume.test',
       expect.objectContaining({
-        redirectTo: 'https://everlume.test/auth/callback?next=/login/reset-password',
+        redirectTo:
+          'https://everlume.test/auth/callback?next=/login/reset-password',
       })
     )
     await expect(res.json()).resolves.toEqual({
-      user: { id: 'new-user-id', email: 'new@everlume.test', account_state: 'invited' },
+      user: {
+        id: 'new-user-id',
+        email: 'new@everlume.test',
+        account_state: 'invited',
+      },
     })
   })
 
   it('POST returns a conflict when the email already exists', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'admin', is_active: true }, error: null })
-    mockInvite.mockResolvedValue({ data: { user: null }, error: { message: 'User already registered' } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockInvite.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'User already registered' },
+    })
 
     const req = new Request('https://everlume.test/api/admin/users', {
       method: 'POST',

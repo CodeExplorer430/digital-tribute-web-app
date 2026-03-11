@@ -22,22 +22,31 @@ export function buildCloudinaryUrl(
   if (options.quality !== undefined) transforms.push(`q_${options.quality}`)
   if (options.format) transforms.push(`f_${options.format}`)
 
-  const transformSegment = transforms.length > 0 ? `${transforms.join(',')}/` : ''
+  const transformSegment =
+    transforms.length > 0 ? `${transforms.join(',')}/` : ''
   return `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/${transformSegment}${publicId}`
 }
 
-export function buildCloudinaryVideoUrl(publicId: string, options: CloudinaryTransformOptions = {}): string {
+export function buildCloudinaryVideoUrl(
+  publicId: string,
+  options: CloudinaryTransformOptions = {}
+): string {
   return buildCloudinaryUrl(publicId, options, 'video')
 }
 
 export function normalizeCloudinaryPublicId(publicIdOrUrl: string): string {
   if (!publicIdOrUrl) return ''
 
-  if (!publicIdOrUrl.includes('/image/upload/') && !publicIdOrUrl.includes('/video/upload/')) {
+  if (
+    !publicIdOrUrl.includes('/image/upload/') &&
+    !publicIdOrUrl.includes('/video/upload/')
+  ) {
     return publicIdOrUrl
   }
 
-  const marker = publicIdOrUrl.includes('/video/upload/') ? '/video/upload/' : '/image/upload/'
+  const marker = publicIdOrUrl.includes('/video/upload/')
+    ? '/video/upload/'
+    : '/image/upload/'
   const [, tail] = publicIdOrUrl.split(marker)
   const cleanTail = tail.replace(/^v\d+\//, '')
   return cleanTail

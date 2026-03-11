@@ -8,7 +8,11 @@ describe('ProtectedMediaConsentGate', () => {
   })
 
   it('posts consent and reloads on success', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 200 })
+      )
     const reloadMock = vi.fn()
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -17,7 +21,9 @@ describe('ProtectedMediaConsentGate', () => {
     const user = userEvent.setup()
 
     render(<ProtectedMediaConsentGate slug="jane-doe" />)
-    await user.click(screen.getByRole('button', { name: /continue to protected media/i }))
+    await user.click(
+      screen.getByRole('button', { name: /continue to protected media/i })
+    )
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
@@ -29,12 +35,21 @@ describe('ProtectedMediaConsentGate', () => {
   })
 
   it('shows a server error when consent cannot be recorded', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Unable to record media consent.' }), { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: 'Unable to record media consent.' }),
+        { status: 500 }
+      )
+    )
     const user = userEvent.setup()
 
     render(<ProtectedMediaConsentGate slug="jane-doe" />)
-    await user.click(screen.getByRole('button', { name: /continue to protected media/i }))
+    await user.click(
+      screen.getByRole('button', { name: /continue to protected media/i })
+    )
 
-    expect(await screen.findByText('Unable to record media consent.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Unable to record media consent.')
+    ).toBeInTheDocument()
   })
 })

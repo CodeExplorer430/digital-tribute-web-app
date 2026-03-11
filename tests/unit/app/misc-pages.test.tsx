@@ -23,7 +23,10 @@ describe('misc app pages', () => {
   beforeEach(() => {
     mockRedirect.mockReset()
     mockSiteSettingsSingle.mockReset()
-    mockSiteSettingsSingle.mockResolvedValue({ data: { home_directory_enabled: false }, error: null })
+    mockSiteSettingsSingle.mockResolvedValue({
+      data: { home_directory_enabled: false },
+      error: null,
+    })
   })
 
   it('renders offline page', async () => {
@@ -41,25 +44,38 @@ describe('misc app pages', () => {
 
   it('renders short-link fallback page', async () => {
     const mod = await import('@/app/r/not-found/page')
-    const node = await mod.default({ searchParams: Promise.resolve({ code: 'hello', reason: 'missing' }) })
+    const node = await mod.default({
+      searchParams: Promise.resolve({ code: 'hello', reason: 'missing' }),
+    })
     render(node)
     expect(screen.getByText(/hello/)).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /browse public memorials/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: /browse public memorials/i })
+    ).not.toBeInTheDocument()
   })
 
   it('shows the memorial directory CTA on redirect fallback when directory is enabled', async () => {
-    mockSiteSettingsSingle.mockResolvedValue({ data: { home_directory_enabled: true }, error: null })
+    mockSiteSettingsSingle.mockResolvedValue({
+      data: { home_directory_enabled: true },
+      error: null,
+    })
 
     const mod = await import('@/app/r/not-found/page')
-    const node = await mod.default({ searchParams: Promise.resolve({ code: 'hello', reason: 'disabled' }) })
+    const node = await mod.default({
+      searchParams: Promise.resolve({ code: 'hello', reason: 'disabled' }),
+    })
     render(node)
 
-    expect(screen.getByRole('link', { name: /browse public memorials/i })).toHaveAttribute('href', '/#memorial-directory')
+    expect(
+      screen.getByRole('link', { name: /browse public memorials/i })
+    ).toHaveAttribute('href', '/#memorial-directory')
   })
 
   it('redirects legacy pages routes to memorials', async () => {
     const legacyPage = await import('@/app/pages/[slug]/page')
-    await expect(legacyPage.default({ params: Promise.resolve({ slug: 'maria' }) })).rejects.toThrow('NEXT_REDIRECT')
+    await expect(
+      legacyPage.default({ params: Promise.resolve({ slug: 'maria' }) })
+    ).rejects.toThrow('NEXT_REDIRECT')
     expect(mockRedirect).toHaveBeenCalledWith('/memorials/maria')
   })
 

@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { KeyRound, Loader2, Mail, RefreshCcw, Shield, UserPlus, UserX, Users } from 'lucide-react'
+import {
+  KeyRound,
+  Loader2,
+  Mail,
+  RefreshCcw,
+  Shield,
+  UserPlus,
+  UserX,
+  Users,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -37,7 +46,10 @@ export function UserManagementScreen() {
   const [users, setUsers] = useState<ManagedUser[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [pending, setPending] = useState<{ userId: string; action: UserAction } | null>(null)
+  const [pending, setPending] = useState<{
+    userId: string
+    action: UserAction
+  } | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -49,7 +61,9 @@ export function UserManagementScreen() {
   const fetchUsers = useCallback(async () => {
     const response = await fetch('/api/admin/users', { cache: 'no-store' })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to load users.')
       setUsers([])
       setLoading(false)
@@ -77,13 +91,25 @@ export function UserManagementScreen() {
     return users.filter((user) => {
       const name = user.full_name?.toLowerCase() ?? ''
       const email = user.email?.toLowerCase() ?? ''
-      return name.includes(query) || email.includes(query) || user.role.includes(query)
+      return (
+        name.includes(query) ||
+        email.includes(query) ||
+        user.role.includes(query)
+      )
     })
   }, [searchQuery, users])
 
-  const activeUsersCount = useMemo(() => users.filter((user) => user.is_active).length, [users])
+  const activeUsersCount = useMemo(
+    () => users.filter((user) => user.is_active).length,
+    [users]
+  )
   const inactiveUsersCount = users.length - activeUsersCount
-  const pendingUsersCount = useMemo(() => users.filter((user) => user.account_state === 'invited' && user.is_active).length, [users])
+  const pendingUsersCount = useMemo(
+    () =>
+      users.filter((user) => user.account_state === 'invited' && user.is_active)
+        .length,
+    [users]
+  )
 
   const startAction = (userId: string, action: UserAction) => {
     if (pending) return false
@@ -116,7 +142,9 @@ export function UserManagementScreen() {
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to invite user.')
       setSubmitting(false)
       return
@@ -137,7 +165,10 @@ export function UserManagementScreen() {
     setSubmitting(false)
   }
 
-  const updateUser = async (userId: string, updates: Partial<{ role: UserRole; isActive: boolean }>) => {
+  const updateUser = async (
+    userId: string,
+    updates: Partial<{ role: UserRole; isActive: boolean }>
+  ) => {
     if (!startAction(userId, 'update')) return
 
     const response = await fetch(`/api/admin/users/${userId}`, {
@@ -147,16 +178,23 @@ export function UserManagementScreen() {
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to update user.')
       endAction()
       return
     }
 
-    const payload = (await response.json()) as { user?: ManagedUser; shouldSignOutSelf?: boolean }
+    const payload = (await response.json()) as {
+      user?: ManagedUser
+      shouldSignOutSelf?: boolean
+    }
     if (payload.user) {
       setUsers((current) =>
-        current.map((user) => (user.id === userId ? { ...user, ...payload.user! } : user))
+        current.map((user) =>
+          user.id === userId ? { ...user, ...payload.user! } : user
+        )
       )
     } else {
       await fetchUsers()
@@ -167,26 +205,46 @@ export function UserManagementScreen() {
       return
     }
 
-    setSuccessMessage(typeof updates.isActive === 'boolean' ? 'Account status updated.' : 'Role updated.')
+    setSuccessMessage(
+      typeof updates.isActive === 'boolean'
+        ? 'Account status updated.'
+        : 'Role updated.'
+    )
     endAction()
   }
 
   const deactivateUser = async (userId: string) => {
-    if (!confirm('Deactivate this user? They will lose dashboard access until reactivated.')) return
+    if (
+      !confirm(
+        'Deactivate this user? They will lose dashboard access until reactivated.'
+      )
+    )
+      return
     if (!startAction(userId, 'deactivate')) return
 
-    const response = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
+    const response = await fetch(`/api/admin/users/${userId}`, {
+      method: 'DELETE',
+    })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to deactivate user.')
       endAction()
       return
     }
 
-    const payload = (await response.json().catch(() => null)) as { user?: ManagedUser; shouldSignOutSelf?: boolean } | null
+    const payload = (await response.json().catch(() => null)) as {
+      user?: ManagedUser
+      shouldSignOutSelf?: boolean
+    } | null
     if (payload?.user) {
-      setUsers((current) => current.map((user) => (user.id === userId ? { ...user, ...payload.user! } : user)))
+      setUsers((current) =>
+        current.map((user) =>
+          user.id === userId ? { ...user, ...payload.user! } : user
+        )
+      )
     } else {
       setUsers((current) =>
         current.map((user) =>
@@ -214,17 +272,28 @@ export function UserManagementScreen() {
   const resendInvite = async (userId: string) => {
     if (!startAction(userId, 'invite')) return
 
-    const response = await fetch(`/api/admin/users/${userId}/invite`, { method: 'POST' })
+    const response = await fetch(`/api/admin/users/${userId}/invite`, {
+      method: 'POST',
+    })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to resend invite.')
       endAction()
       return
     }
 
-    const payload = (await response.json()) as { user?: ManagedUser; message?: string }
+    const payload = (await response.json()) as {
+      user?: ManagedUser
+      message?: string
+    }
     if (payload.user) {
-      setUsers((current) => current.map((user) => (user.id === userId ? payload.user ?? user : user)))
+      setUsers((current) =>
+        current.map((user) =>
+          user.id === userId ? (payload.user ?? user) : user
+        )
+      )
     }
     setSuccessMessage(payload.message || 'Invite email sent.')
     endAction()
@@ -233,9 +302,13 @@ export function UserManagementScreen() {
   const sendPasswordReset = async (userId: string) => {
     if (!startAction(userId, 'reset')) return
 
-    const response = await fetch(`/api/admin/users/${userId}/reset-password`, { method: 'POST' })
+    const response = await fetch(`/api/admin/users/${userId}/reset-password`, {
+      method: 'POST',
+    })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to send password reset.')
       endAction()
       return
@@ -246,16 +319,26 @@ export function UserManagementScreen() {
     endAction()
   }
 
-  if (loading) return <div className="surface-card p-8 text-sm text-muted-foreground">Loading users...</div>
+  if (loading)
+    return (
+      <div className="surface-card p-8 text-sm text-muted-foreground">
+        Loading users...
+      </div>
+    )
 
   return (
     <div className="space-y-6">
       <section className="dashboard-hero surface-card grid gap-5 p-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Access Control</p>
-          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-foreground md:text-4xl">User Management</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Access Control
+          </p>
+          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-foreground md:text-4xl">
+            User Management
+          </h2>
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Give every collaborator a named account, role-based permissions, and their own password workflow without sharing one family login.
+            Give every collaborator a named account, role-based permissions, and
+            their own password workflow without sharing one family login.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -272,7 +355,10 @@ export function UserManagementScreen() {
           <h3 className="text-base font-semibold">Invite New User</h3>
         </div>
 
-        <form onSubmit={inviteUser} className="grid gap-3 xl:grid-cols-[1.2fr_1fr_180px_auto] xl:items-end">
+        <form
+          onSubmit={inviteUser}
+          className="grid gap-3 xl:grid-cols-[1.2fr_1fr_180px_auto] xl:items-end"
+        >
           <div>
             <label className="mb-1.5 block text-sm font-medium">Email</label>
             <Input
@@ -284,15 +370,24 @@ export function UserManagementScreen() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Full Name</label>
-            <Input required value={inviteName} onChange={(event) => setInviteName(event.target.value)} placeholder="Alex Santos" />
+            <label className="mb-1.5 block text-sm font-medium">
+              Full Name
+            </label>
+            <Input
+              required
+              value={inviteName}
+              onChange={(event) => setInviteName(event.target.value)}
+              placeholder="Alex Santos"
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium">Role</label>
             <select
               className="form-select h-11 w-full"
               value={inviteRole}
-              onChange={(event) => setInviteRole(event.target.value as UserRole)}
+              onChange={(event) =>
+                setInviteRole(event.target.value as UserRole)
+              }
               aria-label="Invite role"
             >
               <option value="admin">Admin</option>
@@ -316,12 +411,15 @@ export function UserManagementScreen() {
         </form>
 
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Invitations send the user to a secure password setup flow. Use reset emails later if they need to rotate credentials.
+          Invitations send the user to a secure password setup flow. Use reset
+          emails later if they need to rotate credentials.
         </p>
       </section>
 
       {(errorMessage || successMessage) && (
-        <div className={`surface-card flex flex-col gap-3 p-4 text-sm sm:flex-row sm:items-center sm:justify-between ${errorMessage ? 'border-destructive/30 text-destructive' : 'border-emerald-300/70 text-emerald-900'}`}>
+        <div
+          className={`surface-card flex flex-col gap-3 p-4 text-sm sm:flex-row sm:items-center sm:justify-between ${errorMessage ? 'border-destructive/30 text-destructive' : 'border-emerald-300/70 text-emerald-900'}`}
+        >
           <p>{errorMessage || successMessage}</p>
           <Button variant="outline" size="sm" onClick={fetchUsers}>
             <RefreshCcw className="h-4 w-4" />
@@ -364,10 +462,17 @@ export function UserManagementScreen() {
                     <tr key={user.id} className="align-top">
                       <td className="px-4 py-4">
                         <div className="space-y-1">
-                          <p className="font-semibold text-foreground">{user.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <p className="font-semibold text-foreground">
+                            {user.full_name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {user.email}
+                          </p>
                           {user.invited_at && (
-                            <p className="text-xs text-muted-foreground">Last invite sent {format(new Date(user.invited_at), 'MMM d, yyyy')}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Last invite sent{' '}
+                              {format(new Date(user.invited_at), 'MMM d, yyyy')}
+                            </p>
                           )}
                         </div>
                       </td>
@@ -375,7 +480,11 @@ export function UserManagementScreen() {
                         <select
                           className="form-select h-10 min-w-[124px]"
                           value={user.role}
-                          onChange={(event) => updateUser(user.id, { role: event.target.value as UserRole })}
+                          onChange={(event) =>
+                            updateUser(user.id, {
+                              role: event.target.value as UserRole,
+                            })
+                          }
                           disabled={isPending}
                           aria-label={`Role for ${user.full_name}`}
                         >
@@ -401,7 +510,9 @@ export function UserManagementScreen() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-xs text-muted-foreground">{format(new Date(user.created_at), 'MMM d, yyyy')}</td>
+                      <td className="px-4 py-4 text-xs text-muted-foreground">
+                        {format(new Date(user.created_at), 'MMM d, yyyy')}
+                      </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap justify-end gap-2">
                           <Button
@@ -411,7 +522,11 @@ export function UserManagementScreen() {
                             disabled={isPending}
                             aria-label={`Resend invite to ${user.full_name}`}
                           >
-                            {isPending && pending?.action === 'invite' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                            {isPending && pending?.action === 'invite' ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Mail className="h-4 w-4" />
+                            )}
                             Invite
                           </Button>
                           <Button
@@ -421,7 +536,11 @@ export function UserManagementScreen() {
                             disabled={isPending}
                             aria-label={`Send password reset to ${user.full_name}`}
                           >
-                            {isPending && pending?.action === 'reset' ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                            {isPending && pending?.action === 'reset' ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <KeyRound className="h-4 w-4" />
+                            )}
                             Reset
                           </Button>
                           {user.is_active ? (
@@ -433,18 +552,28 @@ export function UserManagementScreen() {
                               className="text-destructive"
                               aria-label={`Deactivate ${user.full_name}`}
                             >
-                              {isPending && pending?.action === 'deactivate' ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserX className="h-4 w-4" />}
+                              {isPending && pending?.action === 'deactivate' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <UserX className="h-4 w-4" />
+                              )}
                               Deactivate
                             </Button>
                           ) : (
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => updateUser(user.id, { isActive: true })}
+                              onClick={() =>
+                                updateUser(user.id, { isActive: true })
+                              }
                               disabled={isPending}
                               aria-label={`Reactivate ${user.full_name}`}
                             >
-                              {isPending && pending?.action === 'update' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reactivate'}
+                              {isPending && pending?.action === 'update' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Reactivate'
+                              )}
                             </Button>
                           )}
                         </div>
@@ -454,7 +583,10 @@ export function UserManagementScreen() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-sm italic text-muted-foreground">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-12 text-center text-sm italic text-muted-foreground"
+                  >
                     No users match your search.
                   </td>
                 </tr>
@@ -477,8 +609,12 @@ function MetricCard({
   accent?: 'active'
 }) {
   return (
-    <div className={`rounded-2xl border px-4 py-3 ${accent === 'active' ? 'border-emerald-300/70 bg-emerald-50' : 'border-border/70 bg-[var(--surface-1)]'}`}>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+    <div
+      className={`rounded-2xl border px-4 py-3 ${accent === 'active' ? 'border-emerald-300/70 bg-emerald-50' : 'border-border/70 bg-[var(--surface-1)]'}`}
+    >
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
     </div>
   )

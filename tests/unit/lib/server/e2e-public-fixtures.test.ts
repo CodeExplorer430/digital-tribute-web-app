@@ -17,7 +17,9 @@ describe('e2e public fixtures', () => {
     expect(isE2EPublicFixturesEnabled()).toBe(false)
     expect(getE2EMemorialFixtureBySlug('e2e-public-memorial')).toBeNull()
     expect(getE2ERedirectFixtureByCode('tribute-demo')).toBeNull()
-    expect(getE2EPhotoFixtureById('22222222-2222-2222-2222-222222222221')).toBeNull()
+    expect(
+      getE2EPhotoFixtureById('22222222-2222-2222-2222-222222222221')
+    ).toBeNull()
   })
 
   it('returns public memorial, photo, and redirect fixtures when enabled', () => {
@@ -29,28 +31,43 @@ describe('e2e public fixtures', () => {
     const photo = getE2EPhotoFixtureById('22222222-2222-2222-2222-222222222221')
 
     expect(memorial?.memorial.access_mode).toBe('public')
-    expect(memorial?.memorial.dedication_text).toContain('Amelia taught our family to sing')
+    expect(memorial?.memorial.dedication_text).toContain(
+      'Amelia taught our family to sing'
+    )
     expect(memorial?.photos).toHaveLength(2)
     expect(privateMemorial?.memorial.access_mode).toBe('private')
-    expect(redirect).toMatchObject({ shortcode: 'tribute-demo', is_active: true })
+    expect(redirect).toMatchObject({
+      shortcode: 'tribute-demo',
+      is_active: true,
+    })
     expect(photo).toMatchObject({
       memorial: expect.objectContaining({ slug: 'e2e-password-memorial' }),
-      photo: expect.objectContaining({ caption: 'Mateo with the family workshop in 1975' }),
+      photo: expect.objectContaining({
+        caption: 'Mateo with the family workshop in 1975',
+      }),
     })
   })
 
   it('verifies the password memorial unlock secret only for password fixtures', () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
 
-    expect(verifyE2EMemorialPassword('e2e-password-memorial', 'EverlumeMemory!')).toMatchObject({
+    expect(
+      verifyE2EMemorialPassword('e2e-password-memorial', 'EverlumeMemory!')
+    ).toMatchObject({
       ok: true,
       memorial: expect.objectContaining({ slug: 'e2e-password-memorial' }),
     })
-    expect(verifyE2EMemorialPassword('e2e-password-memorial', 'wrong-password')).toMatchObject({
+    expect(
+      verifyE2EMemorialPassword('e2e-password-memorial', 'wrong-password')
+    ).toMatchObject({
       ok: false,
       memorial: expect.objectContaining({ slug: 'e2e-password-memorial' }),
     })
-    expect(verifyE2EMemorialPassword('e2e-public-memorial', 'EverlumeMemory!')).toBeNull()
-    expect(verifyE2EMemorialPassword('missing-slug', 'EverlumeMemory!')).toBeNull()
+    expect(
+      verifyE2EMemorialPassword('e2e-public-memorial', 'EverlumeMemory!')
+    ).toBeNull()
+    expect(
+      verifyE2EMemorialPassword('missing-slug', 'EverlumeMemory!')
+    ).toBeNull()
   })
 })

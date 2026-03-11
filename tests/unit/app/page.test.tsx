@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 
-const mockLandingContent = vi.fn<(props: { directoryEnabled: boolean; memorials: unknown[] }) => void>()
+const mockLandingContent =
+  vi.fn<(props: { directoryEnabled: boolean; memorials: unknown[] }) => void>()
 const mockSingle = vi.fn()
 const mockLimit = vi.fn()
 const mockOrder = vi.fn(() => ({ limit: mockLimit }))
@@ -23,7 +24,10 @@ vi.mock('@/lib/supabase/public', () => ({
 }))
 
 vi.mock('@/components/pages/public/HomeLanding', () => ({
-  LandingContent: (props: { directoryEnabled: boolean; memorials: unknown[] }) => {
+  LandingContent: (props: {
+    directoryEnabled: boolean
+    memorials: unknown[]
+  }) => {
     mockLandingContent(props)
     return <div data-testid="landing" />
   },
@@ -40,8 +44,14 @@ describe('Home page data loading', () => {
   })
 
   it('loads directory entries when home directory is enabled', async () => {
-    mockSingle.mockResolvedValue({ data: { home_directory_enabled: true }, error: null })
-    mockLimit.mockResolvedValue({ data: [{ id: 'p1', title: 'A', slug: 'a', full_name: 'A Person' }], error: null })
+    mockSingle.mockResolvedValue({
+      data: { home_directory_enabled: true },
+      error: null,
+    })
+    mockLimit.mockResolvedValue({
+      data: [{ id: 'p1', title: 'A', slug: 'a', full_name: 'A Person' }],
+      error: null,
+    })
 
     const mod = await import('@/app/page')
     const node = await mod.default()
@@ -58,14 +68,19 @@ describe('Home page data loading', () => {
   })
 
   it('skips memorial query when directory is disabled', async () => {
-    mockSingle.mockResolvedValue({ data: { home_directory_enabled: false }, error: null })
+    mockSingle.mockResolvedValue({
+      data: { home_directory_enabled: false },
+      error: null,
+    })
 
     const mod = await import('@/app/page')
     const node = await mod.default()
     render(node)
 
     expect(mockPagesSelect).not.toHaveBeenCalled()
-    expect(mockLandingContent).toHaveBeenCalledWith(expect.objectContaining({ directoryEnabled: false, memorials: [] }))
+    expect(mockLandingContent).toHaveBeenCalledWith(
+      expect.objectContaining({ directoryEnabled: false, memorials: [] })
+    )
   })
 
   it('falls back to disabled directory when settings query errors', async () => {
@@ -76,16 +91,42 @@ describe('Home page data loading', () => {
     render(node)
 
     expect(mockPagesSelect).not.toHaveBeenCalled()
-    expect(mockLandingContent).toHaveBeenCalledWith(expect.objectContaining({ directoryEnabled: false, memorials: [] }))
+    expect(mockLandingContent).toHaveBeenCalledWith(
+      expect.objectContaining({ directoryEnabled: false, memorials: [] })
+    )
   })
 
   it('filters memorial directory entries with canonical access_mode first', async () => {
-    mockSingle.mockResolvedValue({ data: { home_directory_enabled: true }, error: null })
+    mockSingle.mockResolvedValue({
+      data: { home_directory_enabled: true },
+      error: null,
+    })
     mockLimit.mockResolvedValue({
       data: [
-        { id: 'p1', title: 'Public', slug: 'public', full_name: 'Public Person', privacy: 'private', access_mode: 'public' },
-        { id: 'p2', title: 'Hidden', slug: 'hidden', full_name: 'Hidden Person', privacy: 'public', access_mode: 'password' },
-        { id: 'p3', title: 'Legacy Public', slug: 'legacy-public', full_name: 'Legacy Public', privacy: 'public', access_mode: null },
+        {
+          id: 'p1',
+          title: 'Public',
+          slug: 'public',
+          full_name: 'Public Person',
+          privacy: 'private',
+          access_mode: 'public',
+        },
+        {
+          id: 'p2',
+          title: 'Hidden',
+          slug: 'hidden',
+          full_name: 'Hidden Person',
+          privacy: 'public',
+          access_mode: 'password',
+        },
+        {
+          id: 'p3',
+          title: 'Legacy Public',
+          slug: 'legacy-public',
+          full_name: 'Legacy Public',
+          privacy: 'public',
+          access_mode: null,
+        },
       ],
       error: null,
     })
@@ -98,8 +139,22 @@ describe('Home page data loading', () => {
       expect.objectContaining({
         directoryEnabled: true,
         memorials: [
-          { id: 'p1', title: 'Public', slug: 'public', full_name: 'Public Person', privacy: 'private', access_mode: 'public' },
-          { id: 'p3', title: 'Legacy Public', slug: 'legacy-public', full_name: 'Legacy Public', privacy: 'public', access_mode: null },
+          {
+            id: 'p1',
+            title: 'Public',
+            slug: 'public',
+            full_name: 'Public Person',
+            privacy: 'private',
+            access_mode: 'public',
+          },
+          {
+            id: 'p3',
+            title: 'Legacy Public',
+            slug: 'legacy-public',
+            full_name: 'Legacy Public',
+            privacy: 'public',
+            access_mode: null,
+          },
         ],
       })
     )

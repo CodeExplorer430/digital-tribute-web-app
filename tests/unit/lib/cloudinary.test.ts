@@ -1,4 +1,7 @@
-import { buildCloudinaryUrl, normalizeCloudinaryPublicId } from '@/lib/cloudinary'
+import {
+  buildCloudinaryUrl,
+  normalizeCloudinaryPublicId,
+} from '@/lib/cloudinary'
 
 describe('cloudinary helpers', () => {
   const previous = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
@@ -19,8 +22,15 @@ describe('cloudinary helpers', () => {
 
   it('builds URL with transforms', () => {
     expect(
-      buildCloudinaryUrl('photo', { crop: 'fill', width: 400, quality: 'auto', format: 'auto' })
-    ).toBe('https://res.cloudinary.com/demo-cloud/image/upload/c_fill,w_400,q_auto,f_auto/photo')
+      buildCloudinaryUrl('photo', {
+        crop: 'fill',
+        width: 400,
+        quality: 'auto',
+        format: 'auto',
+      })
+    ).toBe(
+      'https://res.cloudinary.com/demo-cloud/image/upload/c_fill,w_400,q_auto,f_auto/photo'
+    )
   })
 
   it('returns empty when cloud name is missing', () => {
@@ -29,13 +39,17 @@ describe('cloudinary helpers', () => {
   })
 
   it('normalizes public id from cloudinary URL', () => {
-    expect(normalizeCloudinaryPublicId('https://res.cloudinary.com/demo/image/upload/v1740/everlume/a.jpg')).toBe(
-      'everlume/a.jpg'
-    )
+    expect(
+      normalizeCloudinaryPublicId(
+        'https://res.cloudinary.com/demo/image/upload/v1740/everlume/a.jpg'
+      )
+    ).toBe('everlume/a.jpg')
   })
 
   it('returns raw value when value is already a public id', () => {
-    expect(normalizeCloudinaryPublicId('everlume/raw.jpg')).toBe('everlume/raw.jpg')
+    expect(normalizeCloudinaryPublicId('everlume/raw.jpg')).toBe(
+      'everlume/raw.jpg'
+    )
   })
 
   it('returns empty string when the value is empty', () => {

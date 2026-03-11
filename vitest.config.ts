@@ -16,11 +16,7 @@ export default defineConfig({
       reporter: ['text', 'html', 'json-summary'],
       reportsDirectory: './coverage/unit',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: [
-        'src/**/*.d.ts',
-        'src/test/**',
-        'src/app/**/favicon.ico',
-      ],
+      exclude: ['src/**/*.d.ts', 'src/test/**', 'src/app/**/favicon.ico'],
       thresholds: {
         lines: 85,
         functions: 85,

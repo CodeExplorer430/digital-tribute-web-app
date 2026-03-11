@@ -13,7 +13,8 @@ vi.stubGlobal('fetch', fetchMock)
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
-      signInWithPassword: (...args: unknown[]) => mockSignInWithPassword(...args),
+      signInWithPassword: (...args: unknown[]) =>
+        mockSignInWithPassword(...args),
     },
   }),
 }))
@@ -47,13 +48,18 @@ describe('LoginScreen', () => {
     await user.type(screen.getByLabelText('Password'), 'password123')
     await user.click(screen.getByRole('button', { name: /sign in to admin/i }))
 
-    expect(mockSignInWithPassword).toHaveBeenCalledWith({ email: 'admin@example.com', password: 'password123' })
+    expect(mockSignInWithPassword).toHaveBeenCalledWith({
+      email: 'admin@example.com',
+      password: 'password123',
+    })
     expect(mockPush).toHaveBeenCalledWith('/admin')
     expect(mockRefresh).toHaveBeenCalled()
   })
 
   it('shows auth error on failed sign in', async () => {
-    mockSignInWithPassword.mockResolvedValue({ error: { message: 'Invalid login credentials' } })
+    mockSignInWithPassword.mockResolvedValue({
+      error: { message: 'Invalid login credentials' },
+    })
 
     const user = userEvent.setup()
     render(<LoginScreen />)
@@ -62,7 +68,9 @@ describe('LoginScreen', () => {
     await user.type(screen.getByLabelText('Password'), 'wrong-password')
     await user.click(screen.getByRole('button', { name: /sign in to admin/i }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid login credentials')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Invalid login credentials'
+    )
     expect(mockPush).not.toHaveBeenCalled()
   })
 
@@ -71,12 +79,16 @@ describe('LoginScreen', () => {
 
     render(<LoginScreen />)
 
-    expect(screen.getByText('Password updated. Sign in with your new password.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Password updated. Sign in with your new password.')
+    ).toBeInTheDocument()
   })
 
   it('uses the fake auth route when e2e fake auth is enabled', async () => {
     process.env.NEXT_PUBLIC_E2E_FAKE_AUTH = '1'
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    )
 
     const user = userEvent.setup()
     render(<LoginScreen />)

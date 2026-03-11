@@ -44,37 +44,54 @@ describe('PATCH /api/admin/photos/[id]', () => {
     mockPhotoSingle.mockReset()
     mockPageSingle.mockReset()
     mockUpdateEq.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns unauthorized without user', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } })
 
-    const req = new Request('http://localhost/api/admin/photos/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ caption: 'Updated caption' }),
-    })
+    const req = new Request(
+      'http://localhost/api/admin/photos/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ caption: 'Updated caption' }),
+      }
+    )
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(401)
   })
 
   it('updates caption for authorized owner', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockPhotoSingle.mockResolvedValue({ data: { id: 'photo-1', page_id: 'page-1' } })
+    mockPhotoSingle.mockResolvedValue({
+      data: { id: 'photo-1', page_id: 'page-1' },
+    })
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1' } })
     mockUpdateEq.mockResolvedValue({ error: null })
 
-    const req = new Request('http://localhost/api/admin/photos/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ caption: 'Updated caption' }),
-    })
+    const req = new Request(
+      'http://localhost/api/admin/photos/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ caption: 'Updated caption' }),
+      }
+    )
 
-    const res = await PATCH(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ caption: 'Updated caption' }))
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ caption: 'Updated caption' })
+    )
   })
 })
 
@@ -85,20 +102,30 @@ describe('DELETE /api/admin/photos/[id]', () => {
     mockPhotoSingle.mockReset()
     mockPageSingle.mockReset()
     mockDeleteEq.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('deletes photo for authorized owner', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockPhotoSingle.mockResolvedValue({ data: { id: 'photo-1', page_id: 'page-1' } })
+    mockPhotoSingle.mockResolvedValue({
+      data: { id: 'photo-1', page_id: 'page-1' },
+    })
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1' } })
     mockDeleteEq.mockResolvedValue({ error: null })
 
-    const req = new Request('http://localhost/api/admin/photos/550e8400-e29b-41d4-a716-446655440000', {
-      method: 'DELETE',
-    })
+    const req = new Request(
+      'http://localhost/api/admin/photos/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'DELETE',
+      }
+    )
 
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
     expect(mockDelete).toHaveBeenCalled()
   })

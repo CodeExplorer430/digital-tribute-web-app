@@ -9,14 +9,23 @@ const paramsSchema = z.object({
 })
 
 function getAuthRedirectTo(request: NextRequest) {
-  return new URL('/auth/callback?next=/login/reset-password', request.url).toString()
+  return new URL(
+    '/auth/callback?next=/login/reset-password',
+    request.url
+  ).toString()
 }
 
-export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const params = await context.params
   const parsedParams = paramsSchema.safeParse(params)
   if (!parsedParams.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid user id.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid user id.' },
+      { status: 400 }
+    )
   }
 
   const auth = await requireAdminUser({ minRole: 'admin' })
@@ -27,7 +36,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     serviceRole = createServiceRoleClient()
   } catch {
     return NextResponse.json(
-      { code: 'CONFIG_ERROR', message: 'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for password resets.' },
+      {
+        code: 'CONFIG_ERROR',
+        message:
+          'SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) is required for password resets.',
+      },
       { status: 500 }
     )
   }
@@ -39,12 +52,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     .single()
 
   if (existingError || !existing?.email) {
-    return NextResponse.json({ code: 'NOT_FOUND', message: 'User not found.' }, { status: 404 })
+    return NextResponse.json(
+      { code: 'NOT_FOUND', message: 'User not found.' },
+      { status: 404 }
+    )
   }
 
-  const { error: resetError } = await serviceRole.auth.resetPasswordForEmail(existing.email, {
-    redirectTo: getAuthRedirectTo(request),
-  })
+  const { error: resetError } = await serviceRole.auth.resetPasswordForEmail(
+    existing.email,
+    {
+      redirectTo: getAuthRedirectTo(request),
+    }
+  )
 
   if (resetError) {
     return databaseError('Unable to send password reset email.')
@@ -58,5 +77,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     metadata: { role: existing.role, isActive: existing.is_active },
   })
 
-  return NextResponse.json({ ok: true, message: 'Password reset email sent.' }, { status: 200 })
+  return NextResponse.json(
+    { ok: true, message: 'Password reset email sent.' },
+    { status: 200 }
+  )
 }

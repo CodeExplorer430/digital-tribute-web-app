@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
-import { getSupabaseSecretKeyOrThrow, getSupabaseUrlOrThrow } from '@/lib/supabase/env'
+import {
+  getSupabaseSecretKeyOrThrow,
+  getSupabaseUrlOrThrow,
+} from '@/lib/supabase/env'
 
 export function createServiceRoleClient() {
   const supabaseUrl = getSupabaseUrlOrThrow()

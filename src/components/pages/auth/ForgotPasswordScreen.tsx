@@ -32,21 +32,32 @@ export function ForgotPasswordScreen() {
       })
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string
+        } | null
         setError(payload?.message || 'Unable to send reset email.')
         setLoading(false)
         return
       }
 
-      const payload = (await response.json()) as { message?: string; resetPath?: string | null }
-      setMessage(payload.message || 'Password reset instructions have been sent if the account exists.')
+      const payload = (await response.json()) as {
+        message?: string
+        resetPath?: string | null
+      }
+      setMessage(
+        payload.message ||
+          'Password reset instructions have been sent if the account exists.'
+      )
       setResetPath(payload.resetPath || null)
       setLoading(false)
       return
     }
 
     const redirectTo = `${window.location.origin}/auth/callback?next=/login/reset-password`
-    const { error: authError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    const { error: authError } = await supabase.auth.resetPasswordForEmail(
+      email,
+      { redirectTo }
+    )
 
     if (authError) {
       setError(authError.message)
@@ -54,7 +65,9 @@ export function ForgotPasswordScreen() {
       return
     }
 
-    setMessage('Password reset instructions have been sent if the account exists.')
+    setMessage(
+      'Password reset instructions have been sent if the account exists.'
+    )
     setLoading(false)
   }
 
@@ -82,7 +95,10 @@ export function ForgotPasswordScreen() {
           </div>
 
           {error && (
-            <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div
+              role="alert"
+              className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
               {error}
             </div>
           )}
@@ -91,7 +107,10 @@ export function ForgotPasswordScreen() {
             <div className="space-y-2 rounded-2xl border border-emerald-300/70 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
               <p>{message}</p>
               {resetPath && (
-                <Link href={resetPath} className="inline-flex font-medium text-foreground underline underline-offset-4">
+                <Link
+                  href={resetPath}
+                  className="inline-flex font-medium text-foreground underline underline-offset-4"
+                >
                   Continue to password reset
                 </Link>
               )}
@@ -116,7 +135,10 @@ export function ForgotPasswordScreen() {
       footer={
         <p>
           Remembered your password?{' '}
-          <Link href="/login" className="font-medium text-foreground underline underline-offset-4">
+          <Link
+            href="/login"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
             Return to sign in
           </Link>
         </p>

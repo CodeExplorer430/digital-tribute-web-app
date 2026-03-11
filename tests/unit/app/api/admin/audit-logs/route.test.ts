@@ -8,7 +8,8 @@ const mockRequireAdminUser = vi.fn()
 
 vi.mock('@/lib/server/admin-auth', () => ({
   requireAdminUser: () => mockRequireAdminUser(),
-  databaseError: (message: string) => Response.json({ code: 'DATABASE_ERROR', message }, { status: 500 }),
+  databaseError: (message: string) =>
+    Response.json({ code: 'DATABASE_ERROR', message }, { status: 500 }),
 }))
 
 describe('GET /api/admin/audit-logs', () => {
@@ -44,6 +45,9 @@ describe('GET /api/admin/audit-logs', () => {
 
     expect(response.status).toBe(200)
     expect(payload.logs).toHaveLength(1)
-    expect(payload.logs[0]).toMatchObject({ action: 'memorial.create', entity: 'memorial' })
+    expect(payload.logs[0]).toMatchObject({
+      action: 'memorial.create',
+      entity: 'memorial',
+    })
   })
 })

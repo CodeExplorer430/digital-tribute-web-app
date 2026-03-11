@@ -23,11 +23,18 @@ export function TributeList({ pages }: TributeListProps) {
       <ul className="divide-y divide-border">
         {pages && pages.length > 0 ? (
           pages.map((page) => (
-            <li key={page.id} className="px-5 py-4 transition-colors hover:bg-secondary/45">
+            <li
+              key={page.id}
+              className="px-5 py-4 transition-colors hover:bg-secondary/45"
+            >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                  <h4 className="text-sm font-semibold text-foreground">{page.title}</h4>
-                  <p className="text-sm text-muted-foreground">/memorials/{page.slug}</p>
+                  <h4 className="text-sm font-semibold text-foreground">
+                    {page.title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    /memorials/{page.slug}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" asChild>
@@ -47,7 +54,9 @@ export function TributeList({ pages }: TributeListProps) {
             </li>
           ))
         ) : (
-          <li className="px-5 py-12 text-center text-sm text-muted-foreground">No memorials created yet.</li>
+          <li className="px-5 py-12 text-center text-sm text-muted-foreground">
+            No memorials created yet.
+          </li>
         )}
       </ul>
     </div>

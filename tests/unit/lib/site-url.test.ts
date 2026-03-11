@@ -30,7 +30,9 @@ describe('site url helper', () => {
   it('falls back to the preview Vercel hostname before localhost', () => {
     process.env.VERCEL_URL = 'preview-everlume.vercel.app'
 
-    expect(getAppBaseUrl().toString()).toBe('https://preview-everlume.vercel.app/')
+    expect(getAppBaseUrl().toString()).toBe(
+      'https://preview-everlume.vercel.app/'
+    )
   })
 
   it('uses localhost as the final fallback', () => {

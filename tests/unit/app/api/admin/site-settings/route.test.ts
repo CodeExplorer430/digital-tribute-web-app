@@ -12,7 +12,10 @@ const mockRequireAdminUser = vi.fn()
 
 vi.mock('@/lib/server/admin-auth', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdminUser(...args),
-  databaseError: (message: string) => new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), { status: 500 }),
+  databaseError: (message: string) =>
+    new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), {
+      status: 500,
+    }),
 }))
 
 vi.mock('@/lib/server/admin-audit', () => ({
@@ -33,7 +36,8 @@ describe('/api/admin/site-settings', () => {
       data: {
         home_directory_enabled: true,
         protected_media_consent_title: 'Media Viewing Notice',
-        protected_media_consent_body: 'Protected media consent copy for the family memorial.',
+        protected_media_consent_body:
+          'Protected media consent copy for the family memorial.',
         protected_media_consent_version: 2,
       },
       error: null,
@@ -62,7 +66,8 @@ describe('/api/admin/site-settings', () => {
       data: {
         home_directory_enabled: false,
         protected_media_consent_title: 'Media Viewing Notice',
-        protected_media_consent_body: 'Original protected media consent copy for the memorial.',
+        protected_media_consent_body:
+          'Original protected media consent copy for the memorial.',
         protected_media_consent_version: 1,
       },
       error: null,
@@ -85,7 +90,8 @@ describe('/api/admin/site-settings', () => {
       body: JSON.stringify({
         homeDirectoryEnabled: true,
         protectedMediaConsentTitle: 'Updated Notice',
-        protectedMediaConsentBody: 'Updated protected media consent copy for the memorial family viewers.',
+        protectedMediaConsentBody:
+          'Updated protected media consent copy for the memorial family viewers.',
       }),
     })
 
@@ -136,7 +142,10 @@ describe('/api/admin/site-settings', () => {
   })
 
   it('returns auth response when admin check fails', async () => {
-    mockRequireAdminUser.mockResolvedValue({ ok: false, response: new Response(null, { status: 403 }) })
+    mockRequireAdminUser.mockResolvedValue({
+      ok: false,
+      response: new Response(null, { status: 403 }),
+    })
 
     const req = new Request('http://localhost/api/admin/site-settings', {
       method: 'PATCH',
@@ -150,7 +159,10 @@ describe('/api/admin/site-settings', () => {
   })
 
   it('returns 500 when current settings lookup fails', async () => {
-    mockSingle.mockResolvedValueOnce({ data: null, error: { message: 'read failed' } })
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'read failed' },
+    })
     mockRequireAdminUser.mockResolvedValue({
       ok: true,
       userId: 'admin-1',
@@ -175,7 +187,10 @@ describe('/api/admin/site-settings', () => {
   })
 
   it('returns 500 when update fails and does not audit', async () => {
-    mockSingle.mockResolvedValue({ data: { home_directory_enabled: false }, error: null })
+    mockSingle.mockResolvedValue({
+      data: { home_directory_enabled: false },
+      error: null,
+    })
     mockUpdateEq.mockResolvedValue({ error: { message: 'write failed' } })
     mockRequireAdminUser.mockResolvedValue({
       ok: true,

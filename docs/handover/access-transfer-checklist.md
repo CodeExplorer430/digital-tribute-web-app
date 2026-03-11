@@ -3,6 +3,7 @@
 Use this when moving ownership from developer to family operators.
 
 ## 1) Accounts to Transfer
+
 - GitHub repository admin
 - Vercel project admin
 - Supabase project owner/admin
@@ -10,13 +11,16 @@ Use this when moving ownership from developer to family operators.
 - Cloudflare account (DNS + Workers)
 
 ## 2) Required Security Baseline
+
 - Enable MFA for every owner account.
 - Add at least 2 owners for continuity.
 - Store recovery codes in family password manager.
 - Remove inactive users immediately.
 
 ## 3) Secret Rotation Checklist
+
 Rotate after transfer and after any suspected leak:
+
 - `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`)
 - `PRIVATE_MEDIA_TOKEN_SECRET`
 - `UPSTASH_REDIS_REST_TOKEN` (if used)
@@ -24,6 +28,7 @@ Rotate after transfer and after any suspected leak:
 - Cloudinary API credentials (if server-side usage added)
 
 ## 4) Transfer Procedure
+
 1. Add family owner account with full rights.
 2. Confirm family owner can:
    - deploy frontend,
@@ -35,6 +40,7 @@ Rotate after transfer and after any suspected leak:
 5. Remove old owner access if no longer needed.
 
 ## 5) Verification
+
 - Family owner signs in and edits a memorial.
 - Family owner creates and verifies one short link.
 - Family owner runs required checks:
@@ -46,6 +52,7 @@ Rotate after transfer and after any suspected leak:
   - `npm run test:perf`
 
 ## 6) Completion Record
+
 - Date completed:
 - Old owners removed:
 - Secrets rotated:

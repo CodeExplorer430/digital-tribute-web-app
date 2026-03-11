@@ -37,7 +37,10 @@ describe('POST /api/admin/memorials', () => {
       },
       error: null,
     })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns unauthorized without user', async () => {
@@ -55,12 +58,20 @@ describe('POST /api/admin/memorials', () => {
 
   it('creates memorial', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockInsertSingle.mockResolvedValue({ data: { id: 'p1', slug: 'in-memory', dedication_text: 'Beloved by all.' }, error: null })
+    mockInsertSingle.mockResolvedValue({
+      data: { id: 'p1', slug: 'in-memory', dedication_text: 'Beloved by all.' },
+      error: null,
+    })
 
     const req = new Request('http://localhost/api/admin/memorials', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: 'In Memory', slug: 'in-memory', fullName: 'Jane Doe', dedicationText: 'Beloved by all.' }),
+      body: JSON.stringify({
+        title: 'In Memory',
+        slug: 'in-memory',
+        fullName: 'Jane Doe',
+        dedicationText: 'Beloved by all.',
+      }),
     })
 
     const res = await POST(req as never)
@@ -84,12 +95,19 @@ describe('POST /api/admin/memorials', () => {
 
   it('returns forbidden when role is viewer', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockProfileSingle.mockResolvedValue({ data: { role: 'viewer', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'viewer', is_active: true },
+      error: null,
+    })
 
     const req = new Request('http://localhost/api/admin/memorials', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: 'In Memory', slug: 'in-memory', fullName: 'Jane Doe' }),
+      body: JSON.stringify({
+        title: 'In Memory',
+        slug: 'in-memory',
+        fullName: 'Jane Doe',
+      }),
     })
 
     const res = await POST(req as never)

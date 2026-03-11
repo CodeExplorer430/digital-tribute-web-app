@@ -1,4 +1,8 @@
-import { databaseError, forbidden, requireAdminUser } from '@/lib/server/admin-auth'
+import {
+  databaseError,
+  forbidden,
+  requireAdminUser,
+} from '@/lib/server/admin-auth'
 import { logAdminAudit } from '@/lib/server/admin-audit'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -12,22 +16,34 @@ const updateSchema = z
     printStatus: z.enum(['unverified', 'verified']).optional(),
     isActive: z.boolean().optional(),
   })
-  .refine((value) => value.printStatus !== undefined || value.isActive !== undefined, {
-    message: 'No redirect updates were provided.',
-  })
+  .refine(
+    (value) => value.printStatus !== undefined || value.isActive !== undefined,
+    {
+      message: 'No redirect updates were provided.',
+    }
+  )
 
-export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const params = await context.params
   const parsed = paramsSchema.safeParse(params)
   if (!parsed.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid redirect id.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid redirect id.' },
+      { status: 400 }
+    )
   }
 
   const auth = await requireAdminUser({ minRole: 'editor' })
   if (!auth.ok) return auth.response
   const { supabase, userId, role } = auth
 
-  let redirectQuery = supabase.from('redirects').select('id, created_by').eq('id', parsed.data.id)
+  let redirectQuery = supabase
+    .from('redirects')
+    .select('id, created_by')
+    .eq('id', parsed.data.id)
   if (role !== 'admin') {
     redirectQuery = redirectQuery.eq('created_by', userId)
   }
@@ -35,7 +51,10 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
 
   if (!redirect) return forbidden('You do not have access to this redirect.')
 
-  const { error } = await supabase.from('redirects').delete().eq('id', parsed.data.id)
+  const { error } = await supabase
+    .from('redirects')
+    .delete()
+    .eq('id', parsed.data.id)
   if (error) {
     return databaseError('Unable to delete redirect.')
   }
@@ -50,30 +69,45 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
   return NextResponse.json({ ok: true }, { status: 200 })
 }
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const params = await context.params
   const parsedParams = paramsSchema.safeParse(params)
   if (!parsedParams.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Invalid redirect id.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Invalid redirect id.' },
+      { status: 400 }
+    )
   }
 
   let payload: unknown
   try {
     payload = await request.json()
   } catch {
-    return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid request payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'INVALID_JSON', message: 'Invalid request payload.' },
+      { status: 400 }
+    )
   }
 
   const parsedBody = updateSchema.safeParse(payload)
   if (!parsedBody.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Provide a valid redirect update.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'VALIDATION_ERROR', message: 'Provide a valid redirect update.' },
+      { status: 400 }
+    )
   }
 
   const auth = await requireAdminUser({ minRole: 'editor' })
   if (!auth.ok) return auth.response
   const { supabase, userId, role } = auth
 
-  let ownershipQuery = supabase.from('redirects').select('id, created_by').eq('id', parsedParams.data.id)
+  let ownershipQuery = supabase
+    .from('redirects')
+    .select('id, created_by')
+    .eq('id', parsedParams.data.id)
   if (role !== 'admin') {
     ownershipQuery = ownershipQuery.eq('created_by', userId)
   }
@@ -84,7 +118,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const updates: Record<string, unknown> = {}
   if (parsedBody.data.printStatus !== undefined) {
     updates.print_status = parsedBody.data.printStatus
-    updates.last_verified_at = parsedBody.data.printStatus === 'verified' ? new Date().toISOString() : null
+    updates.last_verified_at =
+      parsedBody.data.printStatus === 'verified'
+        ? new Date().toISOString()
+        : null
   }
   if (parsedBody.data.isActive !== undefined) {
     updates.is_active = parsedBody.data.isActive
@@ -94,7 +131,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     .from('redirects')
     .update(updates)
     .eq('id', parsedParams.data.id)
-    .select('id, shortcode, target_url, print_status, last_verified_at, is_active, created_at')
+    .select(
+      'id, shortcode, target_url, print_status, last_verified_at, is_active, created_at'
+    )
     .single()
 
   if (error) {

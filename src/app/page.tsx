@@ -15,7 +15,11 @@ type HomeMemorial = {
 const getHomeDirectoryEnabled = unstable_cache(
   async () => {
     const supabase = createPublicClient()
-    const { data, error } = await supabase.from('site_settings').select('home_directory_enabled').eq('id', 1).single()
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('home_directory_enabled')
+      .eq('id', 1)
+      .single()
     if (error) return false
     return data?.home_directory_enabled === true
   },
@@ -32,7 +36,9 @@ const getPublicMemorialDirectory = unstable_cache(
       .order('created_at', { ascending: false })
       .limit(24)
     if (error) return [] as HomeMemorial[]
-    return ((data || []) as HomeMemorial[]).filter((memorial) => resolveMemorialAccessMode(memorial) === 'public')
+    return ((data || []) as HomeMemorial[]).filter(
+      (memorial) => resolveMemorialAccessMode(memorial) === 'public'
+    )
   },
   ['home:public-memorial-directory'],
   { revalidate: 120 }
@@ -42,5 +48,7 @@ export default async function Home() {
   const directoryEnabled = await getHomeDirectoryEnabled()
   const memorials = directoryEnabled ? await getPublicMemorialDirectory() : []
 
-  return <LandingContent directoryEnabled={directoryEnabled} memorials={memorials} />
+  return (
+    <LandingContent directoryEnabled={directoryEnabled} memorials={memorials} />
+  )
 }

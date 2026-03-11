@@ -4,7 +4,10 @@ import { useCallback, useState } from 'react'
 import Script from 'next/script'
 import { Button } from '@/components/ui/button'
 import { Loader2, Upload } from 'lucide-react'
-import { buildCloudinaryUrl, normalizeCloudinaryPublicId } from '@/lib/cloudinary'
+import {
+  buildCloudinaryUrl,
+  normalizeCloudinaryPublicId,
+} from '@/lib/cloudinary'
 
 interface MediaUploadProps {
   memorialId: string
@@ -35,7 +38,10 @@ declare global {
   }
 }
 
-export function MediaUpload({ memorialId, onUploadComplete }: MediaUploadProps) {
+export function MediaUpload({
+  memorialId,
+  onUploadComplete,
+}: MediaUploadProps) {
   const [widgetReady, setWidgetReady] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadedCount, setUploadedCount] = useState(0)
@@ -46,7 +52,9 @@ export function MediaUpload({ memorialId, onUploadComplete }: MediaUploadProps) 
 
   const registerPhoto = useCallback(
     async (info: NonNullable<CloudinaryUploadResult['info']>) => {
-      const publicId = normalizeCloudinaryPublicId(info.public_id || info.secure_url || '')
+      const publicId = normalizeCloudinaryPublicId(
+        info.public_id || info.secure_url || ''
+      )
       const imageUrl = info.secure_url || buildCloudinaryUrl(publicId)
       const thumbUrl = buildCloudinaryUrl(publicId, {
         crop: 'fill',
@@ -72,8 +80,12 @@ export function MediaUpload({ memorialId, onUploadComplete }: MediaUploadProps) 
       })
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null
-        throw new Error(payload?.message || 'Failed to save uploaded image metadata.')
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string
+        } | null
+        throw new Error(
+          payload?.message || 'Failed to save uploaded image metadata.'
+        )
       }
     },
     [memorialId]
@@ -81,7 +93,9 @@ export function MediaUpload({ memorialId, onUploadComplete }: MediaUploadProps) 
 
   const openWidget = useCallback(() => {
     if (!window.cloudinary || !cloudName || !uploadPreset) {
-      setErrorMessage('Cloudinary is not configured. Check NEXT_PUBLIC_CLOUDINARY_* env vars.')
+      setErrorMessage(
+        'Cloudinary is not configured. Check NEXT_PUBLIC_CLOUDINARY_* env vars.'
+      )
       return
     }
 
@@ -113,7 +127,10 @@ export function MediaUpload({ memorialId, onUploadComplete }: MediaUploadProps) 
             await registerPhoto(result.info)
             setUploadedCount((prev) => prev + 1)
           } catch (dbError: unknown) {
-            const message = dbError instanceof Error ? dbError.message : 'Failed to save uploaded image metadata.'
+            const message =
+              dbError instanceof Error
+                ? dbError.message
+                : 'Failed to save uploaded image metadata.'
             setErrorMessage(message)
           }
         }
@@ -130,17 +147,29 @@ export function MediaUpload({ memorialId, onUploadComplete }: MediaUploadProps) 
 
   return (
     <div className="surface-card space-y-4 border-2 border-dashed p-6">
-      <Script src="https://upload-widget.cloudinary.com/global/all.js" onLoad={() => setWidgetReady(true)} />
+      <Script
+        src="https://upload-widget.cloudinary.com/global/all.js"
+        onLoad={() => setWidgetReady(true)}
+      />
 
       <div className="space-y-2 text-center">
         <div className="mx-auto inline-flex rounded-full bg-secondary p-3">
           <Upload className="h-5 w-5 text-foreground/85" />
         </div>
-        <p className="text-sm font-medium">Upload photos with Cloudinary (bulk supported)</p>
-        <p className="text-xs text-muted-foreground">Images are optimized for delivery through Cloudinary URL transformations.</p>
+        <p className="text-sm font-medium">
+          Upload photos with Cloudinary (bulk supported)
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Images are optimized for delivery through Cloudinary URL
+          transformations.
+        </p>
       </div>
 
-      <Button onClick={openWidget} disabled={!widgetReady || uploading} className="w-full">
+      <Button
+        onClick={openWidget}
+        disabled={!widgetReady || uploading}
+        className="w-full"
+      >
         {uploading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -151,11 +180,20 @@ export function MediaUpload({ memorialId, onUploadComplete }: MediaUploadProps) 
         )}
       </Button>
 
-      {uploadedCount > 0 && <p className="text-xs text-emerald-700">Uploaded images this session: {uploadedCount}</p>}
-      {errorMessage && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{errorMessage}</p>}
+      {uploadedCount > 0 && (
+        <p className="text-xs text-emerald-700">
+          Uploaded images this session: {uploadedCount}
+        </p>
+      )}
+      {errorMessage && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {errorMessage}
+        </p>
+      )}
       {!cloudName || !uploadPreset ? (
         <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Missing `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` or `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`.
+          Missing `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` or
+          `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`.
         </p>
       ) : null}
     </div>

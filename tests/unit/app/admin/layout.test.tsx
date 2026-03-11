@@ -20,7 +20,13 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 vi.mock('@/components/admin/AdminShell', () => ({
-  AdminShell: ({ userEmail, children }: { userEmail?: string; children: React.ReactNode }) => {
+  AdminShell: ({
+    userEmail,
+    children,
+  }: {
+    userEmail?: string
+    children: React.ReactNode
+  }) => {
     mockAdminShell({ userEmail, children })
     return <div data-testid="admin-shell">{children}</div>
   },
@@ -58,12 +64,16 @@ describe('app/admin/layout', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } })
 
     const mod = await import('@/app/admin/layout')
-    await expect(mod.default({ children: <div>Admin child</div> })).rejects.toThrow('NEXT_REDIRECT')
+    await expect(
+      mod.default({ children: <div>Admin child</div> })
+    ).rejects.toThrow('NEXT_REDIRECT')
     expect(mockRedirect).toHaveBeenCalledWith('/login')
   })
 
   it('renders AdminShell with authenticated user email', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { email: 'owner@example.com' } } })
+    mockGetUser.mockResolvedValue({
+      data: { user: { email: 'owner@example.com' } },
+    })
 
     const mod = await import('@/app/admin/layout')
     const node = await mod.default({ children: <div>Admin child</div> })
@@ -92,6 +102,8 @@ describe('app/admin/layout', () => {
     render(node)
 
     expect(mockCreateClient).not.toHaveBeenCalled()
-    expect(mockAdminShell).toHaveBeenCalledWith(expect.objectContaining({ userEmail: 'fake@example.com' }))
+    expect(mockAdminShell).toHaveBeenCalledWith(
+      expect.objectContaining({ userEmail: 'fake@example.com' })
+    )
   })
 })

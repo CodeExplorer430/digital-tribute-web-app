@@ -36,32 +36,47 @@ describe('MediaUpload', () => {
     render(<MediaUpload memorialId="page-1" onUploadComplete={vi.fn()} />)
 
     expect(
-      screen.getByText(/Missing `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` or `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`/)
+      screen.getByText(
+        /Missing `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` or `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`/
+      )
     ).toBeInTheDocument()
   })
 
   it('opens cloudinary widget and registers uploaded photo metadata', async () => {
     const onUploadComplete = vi.fn()
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 201 }))
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 201 })
+      )
     let widgetCallback:
-      | ((error: Error | null, result: { event?: string; info?: { [key: string]: unknown } }) => void)
+      | ((
+          error: Error | null,
+          result: { event?: string; info?: { [key: string]: unknown } }
+        ) => void)
       | null = null
     const openMock = vi.fn()
 
     Object.defineProperty(window, 'cloudinary', {
       value: {
-        createUploadWidget: vi.fn((_options: Record<string, unknown>, cb: typeof widgetCallback) => {
-          widgetCallback = cb
-          return { open: openMock }
-        }),
+        createUploadWidget: vi.fn(
+          (_options: Record<string, unknown>, cb: typeof widgetCallback) => {
+            widgetCallback = cb
+            return { open: openMock }
+          }
+        ),
       },
       configurable: true,
     })
 
     const user = userEvent.setup()
-    render(<MediaUpload memorialId="page-1" onUploadComplete={onUploadComplete} />)
+    render(
+      <MediaUpload memorialId="page-1" onUploadComplete={onUploadComplete} />
+    )
 
-    await user.click(screen.getByRole('button', { name: 'Open Cloudinary Uploader' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Open Cloudinary Uploader' })
+    )
     expect(openMock).toHaveBeenCalled()
 
     await act(async () => {
@@ -70,7 +85,8 @@ describe('MediaUpload', () => {
         info: {
           original_filename: 'memory-photo',
           public_id: 'everlume/page-1/photo-1',
-          secure_url: 'https://res.cloudinary.com/demo/image/upload/v1/photo.jpg',
+          secure_url:
+            'https://res.cloudinary.com/demo/image/upload/v1/photo.jpg',
           bytes: 1000,
           format: 'jpg',
           width: 1200,
@@ -86,30 +102,45 @@ describe('MediaUpload', () => {
         expect.objectContaining({ method: 'POST' })
       )
     })
-    expect(await screen.findByText('Uploaded images this session: 1')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Uploaded images this session: 1')
+    ).toBeInTheDocument()
     expect(onUploadComplete).toHaveBeenCalled()
   })
 
   it('shows widget and metadata errors', async () => {
     const onUploadComplete = vi.fn()
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Metadata save failed' }), { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Metadata save failed' }), {
+        status: 500,
+      })
+    )
     let widgetCallback:
-      | ((error: Error | null, result: { event?: string; info?: { [key: string]: unknown } }) => void)
+      | ((
+          error: Error | null,
+          result: { event?: string; info?: { [key: string]: unknown } }
+        ) => void)
       | null = null
 
     Object.defineProperty(window, 'cloudinary', {
       value: {
-        createUploadWidget: vi.fn((_options: Record<string, unknown>, cb: typeof widgetCallback) => {
-          widgetCallback = cb
-          return { open: vi.fn() }
-        }),
+        createUploadWidget: vi.fn(
+          (_options: Record<string, unknown>, cb: typeof widgetCallback) => {
+            widgetCallback = cb
+            return { open: vi.fn() }
+          }
+        ),
       },
       configurable: true,
     })
 
     const user = userEvent.setup()
-    render(<MediaUpload memorialId="page-1" onUploadComplete={onUploadComplete} />)
-    await user.click(screen.getByRole('button', { name: 'Open Cloudinary Uploader' }))
+    render(
+      <MediaUpload memorialId="page-1" onUploadComplete={onUploadComplete} />
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Open Cloudinary Uploader' })
+    )
 
     await act(async () => {
       await widgetCallback?.(new Error('Widget failed'), { event: 'error' })
@@ -122,7 +153,8 @@ describe('MediaUpload', () => {
         info: {
           original_filename: 'memory-photo',
           public_id: 'everlume/page-1/photo-1',
-          secure_url: 'https://res.cloudinary.com/demo/image/upload/v1/photo.jpg',
+          secure_url:
+            'https://res.cloudinary.com/demo/image/upload/v1/photo.jpg',
         },
       })
     })

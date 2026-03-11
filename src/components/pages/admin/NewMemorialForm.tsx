@@ -41,7 +41,9 @@ export function NewMemorialForm() {
     })
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setError(payload?.message || 'Unable to create memorial.')
       setLoading(false)
       return
@@ -54,8 +56,20 @@ export function NewMemorialForm() {
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value
     setTitle(newTitle)
-    if (!slug || slug === title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '')) {
-      setSlug(newTitle.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''))
+    if (
+      !slug ||
+      slug ===
+        title
+          .toLowerCase()
+          .replace(/ /g, '-')
+          .replace(/[^\w-]/g, '')
+    ) {
+      setSlug(
+        newTitle
+          .toLowerCase()
+          .replace(/ /g, '-')
+          .replace(/[^\w-]/g, '')
+      )
     }
   }
 
@@ -63,27 +77,45 @@ export function NewMemorialForm() {
     <div className="mx-auto max-w-3xl space-y-6">
       <section className="dashboard-hero surface-card space-y-2 p-6">
         <p className="section-kicker">New Memorial</p>
-        <h2 className="text-3xl font-semibold tracking-[-0.03em]">Create New Memorial</h2>
+        <h2 className="text-3xl font-semibold tracking-[-0.03em]">
+          Create New Memorial
+        </h2>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Start with the essential identity of the memorial. Photos, timeline events, guestbook moderation, and QR presentation can be refined after creation.
+          Start with the essential identity of the memorial. Photos, timeline
+          events, guestbook moderation, and QR presentation can be refined after
+          creation.
         </p>
       </section>
 
       <form onSubmit={handleSubmit} className="surface-card space-y-5 p-6">
         <div className="grid gap-4">
           <div>
-            <label htmlFor={titleId} className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor={titleId}
+              className="mb-1.5 block text-sm font-medium"
+            >
               Memorial Title
             </label>
-            <Input id={titleId} required value={title} onChange={handleTitleChange} placeholder="In Loving Memory of Jane Doe" />
+            <Input
+              id={titleId}
+              required
+              value={title}
+              onChange={handleTitleChange}
+              placeholder="In Loving Memory of Jane Doe"
+            />
           </div>
 
           <div>
-            <label htmlFor={slugId} className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor={slugId}
+              className="mb-1.5 block text-sm font-medium"
+            >
               URL Slug
             </label>
             <div className="flex">
-              <span className="inline-flex items-center rounded-l-xl border border-r-0 border-input bg-secondary px-3 text-sm text-muted-foreground">/memorials/</span>
+              <span className="inline-flex items-center rounded-l-xl border border-r-0 border-input bg-secondary px-3 text-sm text-muted-foreground">
+                /memorials/
+              </span>
               <Input
                 id={slugId}
                 required
@@ -93,18 +125,32 @@ export function NewMemorialForm() {
                 placeholder="jane-doe"
               />
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Use lowercase letters, numbers, and dashes for a stable public URL.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Use lowercase letters, numbers, and dashes for a stable public
+              URL.
+            </p>
           </div>
 
           <div>
-            <label htmlFor={fullNameId} className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor={fullNameId}
+              className="mb-1.5 block text-sm font-medium"
+            >
               Full Name
             </label>
-            <Input id={fullNameId} value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Elizabeth Doe" />
+            <Input
+              id={fullNameId}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Jane Elizabeth Doe"
+            />
           </div>
 
           <div>
-            <label htmlFor={dedicationId} className="mb-1.5 block text-sm font-medium">
+            <label
+              htmlFor={dedicationId}
+              className="mb-1.5 block text-sm font-medium"
+            >
               Dedication Text
             </label>
             <textarea
@@ -116,26 +162,49 @@ export function NewMemorialForm() {
               className="flex min-h-[112px] w-full rounded-xl border border-input bg-[var(--surface-1)] px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               placeholder="A short family dedication, prayer, or remembrance to welcome visitors."
             />
-            <p className="mt-1 text-xs text-muted-foreground">Optional. This message appears near the top of the public memorial.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Optional. This message appears near the top of the public
+              memorial.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor={dobId} className="mb-1.5 block text-sm font-medium">
+              <label
+                htmlFor={dobId}
+                className="mb-1.5 block text-sm font-medium"
+              >
                 Date of Birth
               </label>
-              <Input id={dobId} type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+              <Input
+                id={dobId}
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+              />
             </div>
             <div>
-              <label htmlFor={dodId} className="mb-1.5 block text-sm font-medium">
+              <label
+                htmlFor={dodId}
+                className="mb-1.5 block text-sm font-medium"
+              >
                 Date of Death
               </label>
-              <Input id={dodId} type="date" value={dod} onChange={(e) => setDod(e.target.value)} />
+              <Input
+                id={dodId}
+                type="date"
+                value={dod}
+                onChange={(e) => setDod(e.target.value)}
+              />
             </div>
           </div>
         </div>
 
-        {error && <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>}
+        {error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
         <div className="flex justify-end gap-3">
           <Button variant="outline" type="button" onClick={() => router.back()}>

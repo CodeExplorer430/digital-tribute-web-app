@@ -15,9 +15,16 @@ const mockJobUpdate = vi.fn(() => ({ eq: mockJobUpdateEq }))
 
 vi.mock('@/lib/server/admin-auth', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdminUser(...args),
-  assertMemorialOwnership: (...args: unknown[]) => mockAssertMemorialOwnership(...args),
-  forbidden: (message: string) => new Response(JSON.stringify({ code: 'FORBIDDEN', message }), { status: 403 }),
-  databaseError: (message: string) => new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), { status: 500 }),
+  assertMemorialOwnership: (...args: unknown[]) =>
+    mockAssertMemorialOwnership(...args),
+  forbidden: (message: string) =>
+    new Response(JSON.stringify({ code: 'FORBIDDEN', message }), {
+      status: 403,
+    }),
+  databaseError: (message: string) =>
+    new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), {
+      status: 500,
+    }),
 }))
 
 vi.mock('@/lib/server/admin-audit', () => ({
@@ -27,7 +34,8 @@ vi.mock('@/lib/server/admin-audit', () => ({
 vi.mock('@/lib/server/video-upload', () => ({
   isVideoTranscodeConfigured: () => mockIsVideoTranscodeConfigured(),
   getVideoTranscodeApiBaseOrThrow: () => mockGetVideoTranscodeApiBaseOrThrow(),
-  getVideoTranscodeApiTokenOrThrow: () => mockGetVideoTranscodeApiTokenOrThrow(),
+  getVideoTranscodeApiTokenOrThrow: () =>
+    mockGetVideoTranscodeApiTokenOrThrow(),
 }))
 
 describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
@@ -58,7 +66,9 @@ describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
     })
     mockAssertMemorialOwnership.mockResolvedValue(true)
     mockIsVideoTranscodeConfigured.mockReturnValue(true)
-    mockGetVideoTranscodeApiBaseOrThrow.mockReturnValue('https://transcode.example.com')
+    mockGetVideoTranscodeApiBaseOrThrow.mockReturnValue(
+      'https://transcode.example.com'
+    )
     mockGetVideoTranscodeApiTokenOrThrow.mockReturnValue('token-1')
     mockJobSingle.mockResolvedValue({
       data: {
@@ -70,31 +80,58 @@ describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
       error: null,
     })
     mockJobUpdateEq.mockResolvedValue({ error: null })
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    )
   })
 
   it('returns 400 for invalid job id param', async () => {
-    const req = new Request('http://localhost/api/admin/videos/uploads/not-a-uuid/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: 'not-a-uuid' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/not-a-uuid/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ jobId: 'not-a-uuid' }),
+    })
 
     expect(res.status).toBe(400)
     expect(mockRequireAdminUser).not.toHaveBeenCalled()
   })
 
   it('returns auth response when user is not authorized', async () => {
-    mockRequireAdminUser.mockResolvedValue({ ok: false, response: new Response(null, { status: 403 }) })
+    mockRequireAdminUser.mockResolvedValue({
+      ok: false,
+      response: new Response(null, { status: 403 }),
+    })
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(403)
   })
 
   it('returns 500 when upload job lookup fails', async () => {
-    mockJobSingle.mockResolvedValue({ data: null, error: { message: 'read failed' } })
+    mockJobSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'read failed' },
+    })
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(500)
   })
@@ -102,8 +139,15 @@ describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
   it('returns 403 when user does not own memorial', async () => {
     mockAssertMemorialOwnership.mockResolvedValue(false)
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(403)
   })
@@ -119,8 +163,15 @@ describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
       error: null,
     })
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(409)
   })
@@ -128,8 +179,15 @@ describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
   it('returns 503 when transcode service is not configured', async () => {
     mockIsVideoTranscodeConfigured.mockReturnValue(false)
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(503)
     expect(globalThis.fetch).not.toHaveBeenCalled()
@@ -138,19 +196,35 @@ describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
   it('returns 503 when transcode upstream is unreachable', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network error'))
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(503)
   })
 
   it('returns 502 with upstream message when start call fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ message: 'upstream denied job start' }), { status: 500 })
+      new Response(JSON.stringify({ message: 'upstream denied job start' }), {
+        status: 500,
+      })
     )
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(502)
     const body = (await res.json()) as { message: string }
@@ -158,10 +232,19 @@ describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
   })
 
   it('returns 502 with fallback message when upstream error body is invalid', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('oops', { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('oops', { status: 500 })
+    )
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(502)
     const body = (await res.json()) as { message: string }
@@ -171,16 +254,30 @@ describe('POST /api/admin/videos/uploads/[jobId]/start', () => {
   it('returns 500 when status update fails after upstream success', async () => {
     mockJobUpdateEq.mockResolvedValue({ error: { message: 'write failed' } })
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(500)
     expect(mockLogAdminAudit).not.toHaveBeenCalled()
   })
 
   it('returns 202, updates job, and audits on success', async () => {
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start', { method: 'POST' })
-    const res = await POST(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000/start',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(202)
     expect(globalThis.fetch).toHaveBeenCalledWith(

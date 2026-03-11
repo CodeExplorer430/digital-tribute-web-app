@@ -28,7 +28,9 @@ test('admin can create memorial from form flow', async ({ page }) => {
 
   await page.goto('/admin/memorials/new')
 
-  await page.getByPlaceholder('In Loving Memory of Jane Doe').fill('In Loving Memory of Jane Doe')
+  await page
+    .getByPlaceholder('In Loving Memory of Jane Doe')
+    .fill('In Loving Memory of Jane Doe')
   await page.getByPlaceholder('Jane Elizabeth Doe').fill('Jane Doe')
   await page.locator('input[type="date"]').first().fill('1960-01-02')
   await page.locator('input[type="date"]').nth(1).fill('2020-02-03')

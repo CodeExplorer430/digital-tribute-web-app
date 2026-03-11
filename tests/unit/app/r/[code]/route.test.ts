@@ -32,7 +32,9 @@ describe('GET /r/[code]', () => {
   })
 
   it('redirects disabled short codes to fallback page', async () => {
-    mockSingle.mockResolvedValue({ data: { target_url: 'https://example.com/memorials/a', is_active: false } })
+    mockSingle.mockResolvedValue({
+      data: { target_url: 'https://example.com/memorials/a', is_active: false },
+    })
 
     const req = new NextRequest('http://localhost/r/grandma')
     const res = await GET(req, { params: Promise.resolve({ code: 'grandma' }) })
@@ -42,7 +44,9 @@ describe('GET /r/[code]', () => {
   })
 
   it('redirects active short codes to target page', async () => {
-    mockSingle.mockResolvedValue({ data: { target_url: 'https://example.com/memorials/a', is_active: true } })
+    mockSingle.mockResolvedValue({
+      data: { target_url: 'https://example.com/memorials/a', is_active: true },
+    })
 
     const req = new NextRequest('http://localhost/r/grandma')
     const res = await GET(req, { params: Promise.resolve({ code: 'grandma' }) })
@@ -55,19 +59,27 @@ describe('GET /r/[code]', () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
 
     const activeReq = new NextRequest('http://localhost/r/tribute-demo')
-    const activeRes = await GET(activeReq, { params: Promise.resolve({ code: 'tribute-demo' }) })
+    const activeRes = await GET(activeReq, {
+      params: Promise.resolve({ code: 'tribute-demo' }),
+    })
 
     expect(activeRes.status).toBe(302)
-    expect(activeRes.headers.get('location')).toBe('http://localhost/memorials/e2e-public-memorial')
+    expect(activeRes.headers.get('location')).toBe(
+      'http://localhost/memorials/e2e-public-memorial'
+    )
     expect(mockSingle).not.toHaveBeenCalled()
 
     const disabledReq = new NextRequest('http://localhost/r/tribute-disabled')
-    const disabledRes = await GET(disabledReq, { params: Promise.resolve({ code: 'tribute-disabled' }) })
+    const disabledRes = await GET(disabledReq, {
+      params: Promise.resolve({ code: 'tribute-disabled' }),
+    })
 
     expect(disabledRes.headers.get('location')).toContain('reason=disabled')
 
     const missingReq = new NextRequest('http://localhost/r/tribute-missing')
-    const missingRes = await GET(missingReq, { params: Promise.resolve({ code: 'tribute-missing' }) })
+    const missingRes = await GET(missingReq, {
+      params: Promise.resolve({ code: 'tribute-missing' }),
+    })
 
     expect(missingRes.headers.get('location')).toContain('reason=missing')
   })

@@ -1,4 +1,7 @@
-import { createSignedMediaToken, verifySignedMediaToken } from '@/lib/server/private-media'
+import {
+  createSignedMediaToken,
+  verifySignedMediaToken,
+} from '@/lib/server/private-media'
 
 describe('private media tokens', () => {
   const previous = process.env.PRIVATE_MEDIA_TOKEN_SECRET

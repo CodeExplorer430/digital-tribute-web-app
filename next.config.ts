@@ -1,27 +1,27 @@
-import type { NextConfig } from "next";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import type { NextConfig } from 'next'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const configDir = dirname(fileURLToPath(import.meta.url));
+const configDir = dirname(fileURLToPath(import.meta.url))
 
-const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
+const remotePatterns: NonNullable<NextConfig['images']>['remotePatterns'] = [
   {
-    protocol: "https",
-    hostname: "res.cloudinary.com",
-    pathname: "/**",
+    protocol: 'https',
+    hostname: 'res.cloudinary.com',
+    pathname: '/**',
   },
-];
+]
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 if (supabaseUrl) {
   try {
-    const parsed = new URL(supabaseUrl);
-    const protocol = parsed.protocol === "http:" ? "http" : "https";
+    const parsed = new URL(supabaseUrl)
+    const protocol = parsed.protocol === 'http:' ? 'http' : 'https'
     remotePatterns.push({
       protocol,
       hostname: parsed.hostname,
-      pathname: "/storage/v1/object/public/**",
-    });
+      pathname: '/storage/v1/object/public/**',
+    })
   } catch {
     // Ignore invalid env format in config parsing.
   }
@@ -40,6 +40,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

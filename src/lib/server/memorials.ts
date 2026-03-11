@@ -7,11 +7,17 @@ type MemorialAccessFields = {
   dedication_text?: string | null
 }
 
-export function resolveMemorialAccessMode(record: MemorialAccessFields): MemorialAccessMode {
-  return record.access_mode || (record.privacy === 'private' ? 'private' : 'public')
+export function resolveMemorialAccessMode(
+  record: MemorialAccessFields
+): MemorialAccessMode {
+  return (
+    record.access_mode || (record.privacy === 'private' ? 'private' : 'public')
+  )
 }
 
-export function persistLegacyMemorialPrivacy(accessMode: MemorialAccessMode | undefined) {
+export function persistLegacyMemorialPrivacy(
+  accessMode: MemorialAccessMode | undefined
+) {
   if (!accessMode) return undefined
   return accessMode === 'public' ? 'public' : 'private'
 }
@@ -22,10 +28,15 @@ export function toMemorialRecord<T extends MemorialAccessFields>(record: T) {
   delete rest.privacy
   delete rest.dedication_text
 
-  const hasDedicationText = Object.prototype.hasOwnProperty.call(record, 'dedication_text')
+  const hasDedicationText = Object.prototype.hasOwnProperty.call(
+    record,
+    'dedication_text'
+  )
   return {
     ...rest,
-    ...(hasDedicationText ? { dedicationText: record.dedication_text ?? null } : {}),
+    ...(hasDedicationText
+      ? { dedicationText: record.dedication_text ?? null }
+      : {}),
     accessMode: resolveMemorialAccessMode(record),
   }
 }

@@ -31,23 +31,36 @@ describe('GET /api/admin/memorials/[id]/redirects', () => {
     mockProfileSingle.mockReset()
     mockPageSingle.mockReset()
     mockOrder.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns unauthorized without user', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } })
-    const req = new Request('http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/redirects')
-    const res = await GET(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/redirects'
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(401)
   })
 
   it('returns redirects for owner', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
-    mockPageSingle.mockResolvedValue({ data: { id: 'page-1', slug: 'jane-doe' } })
+    mockPageSingle.mockResolvedValue({
+      data: { id: 'page-1', slug: 'jane-doe' },
+    })
     mockOrder.mockResolvedValue({ data: [{ id: 'r1' }], error: null })
 
-    const req = new Request('http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/redirects')
-    const res = await GET(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/redirects'
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
   })
 })

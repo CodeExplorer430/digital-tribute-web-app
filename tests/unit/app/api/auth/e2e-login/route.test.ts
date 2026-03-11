@@ -15,19 +15,27 @@ describe('POST /api/auth/e2e-login', () => {
     const req = new Request('http://localhost/api/auth/e2e-login', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'e2e-admin@everlume.local', password: 'Everlume123!' }),
+      body: JSON.stringify({
+        email: 'e2e-admin@everlume.local',
+        password: 'Everlume123!',
+      }),
     })
 
     const res = await POST(req as never)
     expect(res.status).toBe(200)
-    expect(res.cookies.get('everlume_e2e_auth')?.value).toContain('e2e-admin@everlume.local')
+    expect(res.cookies.get('everlume_e2e_auth')?.value).toContain(
+      'e2e-admin@everlume.local'
+    )
   })
 
   it('rejects deactivated users', async () => {
     const req = new Request('http://localhost/api/auth/e2e-login', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'inactive-admin@everlume.local', password: 'Everlume123!' }),
+      body: JSON.stringify({
+        email: 'inactive-admin@everlume.local',
+        password: 'Everlume123!',
+      }),
     })
 
     const res = await POST(req as never)
@@ -38,7 +46,10 @@ describe('POST /api/auth/e2e-login', () => {
     const req = new Request('http://localhost/api/auth/e2e-login', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'pending-admin@everlume.local', password: 'Everlume123!' }),
+      body: JSON.stringify({
+        email: 'pending-admin@everlume.local',
+        password: 'Everlume123!',
+      }),
     })
 
     const res = await POST(req as never)

@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-import { clearE2EAuthSession, getE2EAuthSession, isE2EFakeAuthEnabled } from '@/lib/server/e2e-auth'
+import {
+  clearE2EAuthSession,
+  getE2EAuthSession,
+  isE2EFakeAuthEnabled,
+} from '@/lib/server/e2e-auth'
 import { revalidatePath } from 'next/cache'
 import { type NextRequest, NextResponse } from 'next/server'
 

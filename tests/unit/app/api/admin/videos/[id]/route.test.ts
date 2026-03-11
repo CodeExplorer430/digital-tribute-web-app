@@ -36,7 +36,10 @@ describe('DELETE /api/admin/videos/[id]', () => {
     mockVideoSingle.mockReset()
     mockPageSingle.mockReset()
     mockDeleteEq.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns forbidden for non-owner', async () => {
@@ -44,8 +47,13 @@ describe('DELETE /api/admin/videos/[id]', () => {
     mockVideoSingle.mockResolvedValue({ data: { id: 'v1', page_id: 'page-1' } })
     mockPageSingle.mockResolvedValue({ data: null })
 
-    const req = new Request('http://localhost/api/admin/videos/550e8400-e29b-41d4-a716-446655440000', { method: 'DELETE' })
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'DELETE' }
+    )
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(403)
   })
 
@@ -55,8 +63,13 @@ describe('DELETE /api/admin/videos/[id]', () => {
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1' } })
     mockDeleteEq.mockResolvedValue({ error: null })
 
-    const req = new Request('http://localhost/api/admin/videos/550e8400-e29b-41d4-a716-446655440000', { method: 'DELETE' })
-    const res = await DELETE(req as never, { params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'DELETE' }
+    )
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
     expect(res.status).toBe(200)
   })
 })

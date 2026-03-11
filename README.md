@@ -3,6 +3,7 @@
 A full-stack web app for creating, managing, and sharing memorials with QR-friendly short links.
 
 ## Core Stack
+
 - **Frontend:** Next.js 16 (App Router) + TypeScript + Tailwind CSS
 - **Hosting:** Vercel (Git integration)
 - **Database/Auth:** Supabase (Postgres + Auth)
@@ -11,6 +12,7 @@ A full-stack web app for creating, managing, and sharing memorials with QR-frien
 - **Short Links/DNS:** Cloudflare Workers + Cloudflare DNS
 
 ## Features
+
 - Authenticated admin dashboard for managing memorials with individual admin accounts
 - Cloudinary bulk photo upload and optimized gallery rendering
 - YouTube video embedding workflow in admin and public memorials
@@ -22,6 +24,7 @@ A full-stack web app for creating, managing, and sharing memorials with QR-frien
 ## Local Setup
 
 ### 1) Install
+
 ```bash
 nvm use
 npm install
@@ -30,7 +33,9 @@ npm install
 Recommended runtime: Node.js 22 LTS (see `.nvmrc`).
 
 ### 2) Environment variables
+
 Create `.env.local`:
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
@@ -55,7 +60,9 @@ CAPTCHA_VERIFY_URL=
 ```
 
 ### 3) Database migrations
+
 Run SQL migrations in order from `supabase/migrations/`:
+
 - `20251227000000_initial_schema.sql`
 - `20251227000001_storage_setup.sql` (legacy)
 - `20260304000000_cloudinary_photo_fields.sql`
@@ -68,6 +75,7 @@ Run SQL migrations in order from `supabase/migrations/`:
 - `20260307000100_profiles_full_name_normalization.sql`
 
 Hosted migration workflow (recommended):
+
 ```bash
 supabase login
 npm run ops:supabase:migrate:hosted -- <your-project-ref>
@@ -75,6 +83,7 @@ npm run ops:check-db-schema
 ```
 
 If admin pages show `Your account does not have admin access.`, bootstrap your current login as admin:
+
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=... \
 SUPABASE_SECRET_KEY=... \
@@ -82,17 +91,20 @@ npm run ops:supabase:bootstrap-admin -- --email=you@example.com --full-name="You
 ```
 
 If bootstrap warns about legacy `profiles.name`, migrations are missing on that project. Re-run:
+
 ```bash
 npm run ops:supabase:migrate:hosted -- <your-project-ref>
 ```
 
 Local parity workflow:
+
 ```bash
 supabase start
 supabase db reset
 ```
 
 ## Run and Validate
+
 ```bash
 npm run dev
 npm run dev:webpack
@@ -108,6 +120,7 @@ npm run build
 `NEXT_PUBLIC_APP_URL` is the preferred canonical public origin used for metadata and public sharing URLs. If omitted, the app falls back to Vercel host envs or localhost in development.
 
 ## Testing
+
 ```bash
 npm run test:unit
 npm run test:worker
@@ -120,6 +133,7 @@ npm run test:perf
 ```
 
 If Turbopack-specific local issues appear in e2e startup, use:
+
 ```bash
 npm run test:e2e:turbopack
 npm run test:e2e:webpack
@@ -131,6 +145,7 @@ npm run test:e2e:webpack
 Coverage gates are enforced at 85% for lines/functions/statements and 75% for branches in CI.
 
 ## CI/CD
+
 - **GitHub Actions CI:** lint, typecheck, unit coverage, worker tests, e2e (webpack + turbopack required), a11y, launch-readiness, Lighthouse perf/a11y gate, and build on PRs/pushes (`.github/workflows/ci.yml`)
 - **Vercel deploys:** previews on PRs and production on merge to main branch
 - **Cloudflare Worker deploy:** `.github/workflows/deploy-worker.yml`
@@ -138,6 +153,7 @@ Coverage gates are enforced at 85% for lines/functions/statements and 75% for br
 - **Video transcode service:** deploy `services/video-transcode` to Cloud Run (see `services/video-transcode/README.md`).
 
 Operational docs:
+
 - `docs/operations/ci-cd.md`
 - `docs/operations/backups.md`
 - `docs/operations/media-policy.md`
@@ -154,7 +170,9 @@ Operational docs:
 - `docs/repo-governance.md`
 
 ## Video Upload Policy
+
 For large files, admins can now use the **Upload and Compress** flow:
+
 - Select local video in admin.
 - App initializes upload with the transcode service.
 - Service compresses and targets <=100MB for Cloudinary free tier.
@@ -163,17 +181,20 @@ For large files, admins can now use the **Upload and Compress** flow:
 Fallback policy: if compression cannot get under 100MB with acceptable settings, use YouTube Unlisted and paste the URL in the YouTube form.
 
 Cloud Run contract readiness check:
+
 ```bash
 npm run ops:check-video-transcode
 ```
 
 ## Security Notes
+
 - Admin APIs enforce role-based access (`viewer`, `editor`, `admin`).
 - Admin write actions are recorded in `admin_audit_logs`.
 - Password-protected and private memorial photos are served through short-lived signed proxy URLs.
 - Guestbook endpoint requires durable rate limiting (`upstash`) and CAPTCHA in production.
 
 ## Canonical Routes
+
 - Public memorials: `/memorials/:slug`
 - Admin memorial editor: `/admin/memorials/:id`
 - Admin memorial creation: `/admin/memorials/new`

@@ -52,7 +52,10 @@ describe('POST /api/guestbook', () => {
 
     const req = new Request('http://localhost/api/guestbook', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': '1.2.3.4',
+      },
       body: JSON.stringify({
         memorialId: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Maria',
@@ -77,7 +80,10 @@ describe('POST /api/guestbook', () => {
 
     const req = new Request('http://localhost/api/guestbook', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': '1.2.3.4',
+      },
       body: JSON.stringify({
         memorialId: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Maria',
@@ -99,7 +105,10 @@ describe('POST /api/guestbook', () => {
 
     const req = new Request('http://localhost/api/guestbook', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': '1.2.3.4',
+      },
       body: JSON.stringify({
         memorialId: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Maria',
@@ -118,7 +127,10 @@ describe('POST /api/guestbook', () => {
 
     const req = new Request('http://localhost/api/guestbook', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': '1.2.3.4',
+      },
       body: JSON.stringify({
         memorialId: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Maria',
@@ -131,18 +143,25 @@ describe('POST /api/guestbook', () => {
     const payload = await res.json()
     expect(res.status).toBe(400)
     expect(payload.code).toBe('CAPTCHA_FAILED')
-    expect(payload.message).toBe('Please complete the captcha check before posting.')
+    expect(payload.message).toBe(
+      'Please complete the captcha check before posting.'
+    )
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('returns captcha failure when captcha verification returns success false', async () => {
     vi.stubEnv('CAPTCHA_ENABLED', '1')
     vi.stubEnv('CAPTCHA_SECRET', 'test-secret')
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: false }), { status: 200 }))
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ success: false }), { status: 200 })
+    )
 
     const req = new Request('http://localhost/api/guestbook', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': '1.2.3.4',
+      },
       body: JSON.stringify({
         memorialId: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Maria',
@@ -166,7 +185,10 @@ describe('POST /api/guestbook', () => {
 
     const req = new Request('http://localhost/api/guestbook', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': '1.2.3.4',
+      },
       body: JSON.stringify({
         memorialId: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Maria',
@@ -180,20 +202,27 @@ describe('POST /api/guestbook', () => {
     const payload = await res.json()
     expect(res.status).toBe(400)
     expect(payload.code).toBe('CAPTCHA_FAILED')
-    expect(payload.message).toBe('Spam protection is temporarily unavailable. Please try again shortly.')
+    expect(payload.message).toBe(
+      'Spam protection is temporarily unavailable. Please try again shortly.'
+    )
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('creates guestbook entry when captcha verification succeeds', async () => {
     vi.stubEnv('CAPTCHA_ENABLED', '1')
     vi.stubEnv('CAPTCHA_SECRET', 'test-secret')
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }))
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), { status: 200 })
+    )
     mockSingle.mockResolvedValue({ data: { id: 'page-1' } })
     mockInsert.mockResolvedValue({ error: null })
 
     const req = new Request('http://localhost/api/guestbook', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': '1.2.3.4',
+      },
       body: JSON.stringify({
         memorialId: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Maria',

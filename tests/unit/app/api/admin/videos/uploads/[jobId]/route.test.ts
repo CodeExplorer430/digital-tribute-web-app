@@ -8,9 +8,16 @@ const mockJobSelect = vi.fn(() => ({ eq: mockJobEq }))
 
 vi.mock('@/lib/server/admin-auth', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdminUser(...args),
-  assertMemorialOwnership: (...args: unknown[]) => mockAssertMemorialOwnership(...args),
-  forbidden: (message: string) => new Response(JSON.stringify({ code: 'FORBIDDEN', message }), { status: 403 }),
-  databaseError: (message: string) => new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), { status: 500 }),
+  assertMemorialOwnership: (...args: unknown[]) =>
+    mockAssertMemorialOwnership(...args),
+  forbidden: (message: string) =>
+    new Response(JSON.stringify({ code: 'FORBIDDEN', message }), {
+      status: 403,
+    }),
+  databaseError: (message: string) =>
+    new Response(JSON.stringify({ code: 'DATABASE_ERROR', message }), {
+      status: 500,
+    }),
 }))
 
 describe('GET /api/admin/videos/uploads/[jobId]', () => {
@@ -23,18 +30,33 @@ describe('GET /api/admin/videos/uploads/[jobId]', () => {
   })
 
   it('returns 400 for invalid job id param', async () => {
-    const req = new Request('http://localhost/api/admin/videos/uploads/not-a-uuid', { method: 'GET' })
-    const res = await GET(req as never, { params: Promise.resolve({ jobId: 'not-a-uuid' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/not-a-uuid',
+      { method: 'GET' }
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({ jobId: 'not-a-uuid' }),
+    })
 
     expect(res.status).toBe(400)
     expect(mockRequireAdminUser).not.toHaveBeenCalled()
   })
 
   it('returns auth response when user is not authorized', async () => {
-    mockRequireAdminUser.mockResolvedValue({ ok: false, response: new Response(null, { status: 401 }) })
+    mockRequireAdminUser.mockResolvedValue({
+      ok: false,
+      response: new Response(null, { status: 401 }),
+    })
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000', { method: 'GET' })
-    const res = await GET(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'GET' }
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(401)
   })
@@ -48,10 +70,20 @@ describe('GET /api/admin/videos/uploads/[jobId]', () => {
         from: () => ({ select: mockJobSelect }),
       },
     })
-    mockJobSingle.mockResolvedValue({ data: null, error: { message: 'read failed' } })
+    mockJobSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'read failed' },
+    })
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000', { method: 'GET' })
-    const res = await GET(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'GET' }
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(500)
   })
@@ -71,8 +103,15 @@ describe('GET /api/admin/videos/uploads/[jobId]', () => {
     })
     mockAssertMemorialOwnership.mockResolvedValue(false)
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000', { method: 'GET' })
-    const res = await GET(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'GET' }
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(403)
   })
@@ -96,7 +135,8 @@ describe('GET /api/admin/videos/uploads/[jobId]', () => {
         source_mime: 'video/mp4',
         source_bytes: 139000000,
         output_public_id: 'everlume/page/video-1',
-        output_url: 'https://res.cloudinary.com/demo/video/upload/v1/everlume/page/video-1.mp4',
+        output_url:
+          'https://res.cloudinary.com/demo/video/upload/v1/everlume/page/video-1.mp4',
         output_bytes: 99000000,
         error_message: null,
         created_at: '2026-03-07T00:00:00.000Z',
@@ -106,8 +146,15 @@ describe('GET /api/admin/videos/uploads/[jobId]', () => {
     })
     mockAssertMemorialOwnership.mockResolvedValue(true)
 
-    const req = new Request('http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000', { method: 'GET' })
-    const res = await GET(req as never, { params: Promise.resolve({ jobId: '550e8400-e29b-41d4-a716-446655440000' }) })
+    const req = new Request(
+      'http://localhost/api/admin/videos/uploads/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'GET' }
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({
+        jobId: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
 
     expect(res.status).toBe(200)
     const body = (await res.json()) as { job: { id: string; status: string } }

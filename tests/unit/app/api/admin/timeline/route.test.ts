@@ -31,7 +31,10 @@ describe('POST /api/admin/timeline', () => {
     mockPageSingle.mockReset()
     mockEventSingle.mockReset()
     mockEventInsert.mockClear()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns unauthorized without user', async () => {
@@ -54,7 +57,12 @@ describe('POST /api/admin/timeline', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockPageSingle.mockResolvedValue({ data: { id: 'page-1' } })
     mockEventSingle.mockResolvedValue({
-      data: { id: 'evt-1', page_id: '550e8400-e29b-41d4-a716-446655440000', year: 1990, text: 'Born' },
+      data: {
+        id: 'evt-1',
+        page_id: '550e8400-e29b-41d4-a716-446655440000',
+        year: 1990,
+        text: 'Born',
+      },
       error: null,
     })
 

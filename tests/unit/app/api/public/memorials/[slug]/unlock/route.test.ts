@@ -33,13 +33,18 @@ describe('POST /api/public/memorials/[slug]/unlock', () => {
       },
     })
 
-    const req = new Request('http://localhost/api/public/memorials/jane/unlock', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ password: 'wrong' }),
-    })
+    const req = new Request(
+      'http://localhost/api/public/memorials/jane/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'wrong' }),
+      }
+    )
 
-    const res = await POST(req as never, { params: Promise.resolve({ slug: 'jane' }) })
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
     expect(res.status).toBe(401)
   })
 
@@ -54,44 +59,63 @@ describe('POST /api/public/memorials/[slug]/unlock', () => {
       },
     })
 
-    const req = new Request('http://localhost/api/public/memorials/jane/unlock', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ password: 'correct-password' }),
-    })
+    const req = new Request(
+      'http://localhost/api/public/memorials/jane/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'correct-password' }),
+      }
+    )
 
-    const res = await POST(req as never, { params: Promise.resolve({ slug: 'jane' }) })
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
     expect(res.status).toBe(200)
-    expect(res.headers.get('set-cookie')).toContain('everlume_memorial_access_page-1=')
+    expect(res.headers.get('set-cookie')).toContain(
+      'everlume_memorial_access_page-1='
+    )
     expect(res.headers.get('set-cookie')).toContain('Path=/')
   })
 
   it('unlocks password memorial fixtures when the e2e public lane is enabled', async () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
 
-    const req = new Request('http://localhost/api/public/memorials/e2e-password-memorial/unlock', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ password: 'EverlumeMemory!' }),
+    const req = new Request(
+      'http://localhost/api/public/memorials/e2e-password-memorial/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'EverlumeMemory!' }),
+      }
+    )
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'e2e-password-memorial' }),
     })
 
-    const res = await POST(req as never, { params: Promise.resolve({ slug: 'e2e-password-memorial' }) })
-
     expect(res.status).toBe(200)
-    expect(res.headers.get('set-cookie')).toContain('everlume_memorial_access_12222222-2222-2222-2222-222222222222=')
+    expect(res.headers.get('set-cookie')).toContain(
+      'everlume_memorial_access_12222222-2222-2222-2222-222222222222='
+    )
     expect(res.headers.get('set-cookie')).toContain('Path=/')
   })
 
   it('rejects invalid passwords for password memorial fixtures', async () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
 
-    const req = new Request('http://localhost/api/public/memorials/e2e-password-memorial/unlock', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ password: 'incorrect-password' }),
-    })
+    const req = new Request(
+      'http://localhost/api/public/memorials/e2e-password-memorial/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'incorrect-password' }),
+      }
+    )
 
-    const res = await POST(req as never, { params: Promise.resolve({ slug: 'e2e-password-memorial' }) })
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'e2e-password-memorial' }),
+    })
 
     expect(res.status).toBe(401)
   })

@@ -58,19 +58,28 @@ vi.mock('@/components/public/MemorialUnlockForm', () => ({
 
 vi.mock('@/lib/server/page-access', () => ({
   canAccessMemorial: (...args: unknown[]) => mockCanAccessMemorial(...args),
-  resolveMemorialAccessMode: (page: { access_mode?: 'public' | 'private' | 'password' | null; privacy?: 'public' | 'private' | null }) =>
-    page.access_mode || (page.privacy === 'private' ? 'private' : 'public'),
-  memorialRequiresProtectedMedia: (page: { access_mode?: 'public' | 'private' | 'password' | null; privacy?: 'public' | 'private' | null }) =>
-    (page.access_mode || (page.privacy === 'private' ? 'private' : 'public')) !== 'public',
+  resolveMemorialAccessMode: (page: {
+    access_mode?: 'public' | 'private' | 'password' | null
+    privacy?: 'public' | 'private' | null
+  }) => page.access_mode || (page.privacy === 'private' ? 'private' : 'public'),
+  memorialRequiresProtectedMedia: (page: {
+    access_mode?: 'public' | 'private' | 'password' | null
+    privacy?: 'public' | 'private' | null
+  }) =>
+    (page.access_mode ||
+      (page.privacy === 'private' ? 'private' : 'public')) !== 'public',
 }))
 
 vi.mock('@/lib/server/private-media', () => ({
-  createSignedMediaToken: (...args: unknown[]) => mockCreateSignedMediaToken(...args),
+  createSignedMediaToken: (...args: unknown[]) =>
+    mockCreateSignedMediaToken(...args),
 }))
 
 vi.mock('@/lib/server/media-consent', () => ({
-  getMemorialMediaConsentCookieName: (memorialId: string) => `everlume_memorial_media_consent_${memorialId}`,
-  verifyMemorialMediaConsentToken: (...args: unknown[]) => mockVerifyMediaConsent(...args),
+  getMemorialMediaConsentCookieName: (memorialId: string) =>
+    `everlume_memorial_media_consent_${memorialId}`,
+  verifyMemorialMediaConsentToken: (...args: unknown[]) =>
+    mockVerifyMediaConsent(...args),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -130,13 +139,38 @@ describe('/memorials/[slug] page', () => {
 
   it('renders public memorial view with loaded resources', async () => {
     mockPageSingle.mockResolvedValue({ data: publicPage })
-    mockPhotosOrder.mockResolvedValue({ data: [{ id: 'photo-1', page_id: 'page-1', image_url: '/img.jpg', thumb_url: '/thumb.jpg', caption: null }] })
-    mockGuestbookOrder.mockResolvedValue({ data: [{ id: 'entry-1', name: 'Ana', message: 'Forever', created_at: '2026-01-01T00:00:00.000Z' }] })
-    mockTimelineOrder.mockResolvedValue({ data: [{ id: 't1', year: 2000, text: 'A milestone' }] })
-    mockVideosOrder.mockResolvedValue({ data: [{ id: 'v1', provider_id: 'abcdefghijk', title: 'Memories' }] })
+    mockPhotosOrder.mockResolvedValue({
+      data: [
+        {
+          id: 'photo-1',
+          page_id: 'page-1',
+          image_url: '/img.jpg',
+          thumb_url: '/thumb.jpg',
+          caption: null,
+        },
+      ],
+    })
+    mockGuestbookOrder.mockResolvedValue({
+      data: [
+        {
+          id: 'entry-1',
+          name: 'Ana',
+          message: 'Forever',
+          created_at: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    })
+    mockTimelineOrder.mockResolvedValue({
+      data: [{ id: 't1', year: 2000, text: 'A milestone' }],
+    })
+    mockVideosOrder.mockResolvedValue({
+      data: [{ id: 'v1', provider_id: 'abcdefghijk', title: 'Memories' }],
+    })
 
     const mod = await import('@/app/memorials/[slug]/page')
-    const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
+    const node = await mod.default({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
     render(node)
 
     expect(screen.getByTestId('memorial-page-view')).toBeInTheDocument()
@@ -150,17 +184,26 @@ describe('/memorials/[slug] page', () => {
           dedicationText: 'Beloved in every season.',
           accessMode: 'public',
         }),
-        photos: expect.arrayContaining([expect.objectContaining({ id: 'photo-1' })]),
+        photos: expect.arrayContaining([
+          expect.objectContaining({ id: 'photo-1' }),
+        ]),
       })
     )
   })
 
   it('returns unlock form when password access is required', async () => {
-    mockPageSingle.mockResolvedValue({ data: { ...publicPage, access_mode: 'password', privacy: 'private' } })
-    mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: true })
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, access_mode: 'password', privacy: 'private' },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: false,
+      requiresPassword: true,
+    })
 
     const mod = await import('@/app/memorials/[slug]/page')
-    const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
+    const node = await mod.default({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
     render(node)
 
     expect(screen.getByTestId('memorial-unlock-form')).toBeInTheDocument()
@@ -169,20 +212,34 @@ describe('/memorials/[slug] page', () => {
   })
 
   it('throws notFound when memorial is inaccessible', async () => {
-    mockPageSingle.mockResolvedValue({ data: { ...publicPage, access_mode: 'private', privacy: 'private' } })
-    mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: false })
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, access_mode: 'private', privacy: 'private' },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: false,
+      requiresPassword: false,
+    })
 
     const mod = await import('@/app/memorials/[slug]/page')
-    await expect(mod.default({ params: Promise.resolve({ slug: 'jane' }) })).rejects.toThrow('NEXT_NOT_FOUND')
+    await expect(
+      mod.default({ params: Promise.resolve({ slug: 'jane' }) })
+    ).rejects.toThrow('NEXT_NOT_FOUND')
     expect(mockNotFound).toHaveBeenCalled()
   })
 
   it('generates password-protected metadata when access requires password', async () => {
-    mockPageSingle.mockResolvedValue({ data: { ...publicPage, access_mode: 'password', privacy: 'private' } })
-    mockCanAccessMemorial.mockResolvedValue({ allowed: false, requiresPassword: true })
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, access_mode: 'password', privacy: 'private' },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: false,
+      requiresPassword: true,
+    })
 
     const mod = await import('@/app/memorials/[slug]/page')
-    const metadata = await mod.generateMetadata({ params: Promise.resolve({ slug: 'jane' }) })
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
 
     expect(metadata).toEqual({
       title: 'Password Protected Memorial | Everlume',
@@ -194,7 +251,9 @@ describe('/memorials/[slug] page', () => {
     mockPageSingle.mockResolvedValue({ data: publicPage })
 
     const mod = await import('@/app/memorials/[slug]/page')
-    const metadata = await mod.generateMetadata({ params: Promise.resolve({ slug: 'jane' }) })
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
 
     expect(metadata).toEqual(
       expect.objectContaining({
@@ -207,14 +266,28 @@ describe('/memorials/[slug] page', () => {
   })
 
   it('prefers canonical access_mode over conflicting legacy privacy when rendering a public memorial', async () => {
-    mockPageSingle.mockResolvedValue({ data: { ...publicPage, privacy: 'private', access_mode: 'public' } })
-    mockPhotosOrder.mockResolvedValue({ data: [{ id: 'photo-1', page_id: 'page-1', image_url: '/img.jpg', thumb_url: '/thumb.jpg', caption: null }] })
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, privacy: 'private', access_mode: 'public' },
+    })
+    mockPhotosOrder.mockResolvedValue({
+      data: [
+        {
+          id: 'photo-1',
+          page_id: 'page-1',
+          image_url: '/img.jpg',
+          thumb_url: '/thumb.jpg',
+          caption: null,
+        },
+      ],
+    })
     mockGuestbookOrder.mockResolvedValue({ data: [] })
     mockTimelineOrder.mockResolvedValue({ data: [] })
     mockVideosOrder.mockResolvedValue({ data: [] })
 
     const mod = await import('@/app/memorials/[slug]/page')
-    const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
+    const node = await mod.default({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
     render(node)
 
     expect(mockCanAccessMemorial).not.toHaveBeenCalled()
@@ -223,16 +296,35 @@ describe('/memorials/[slug] page', () => {
   })
 
   it('resolves signed photo urls for private memorial rendering', async () => {
-    mockPageSingle.mockResolvedValue({ data: { ...publicPage, access_mode: 'password', privacy: 'private' } })
-    mockCanAccessMemorial.mockResolvedValue({ allowed: true, requiresPassword: false })
-    mockCreateSignedMediaToken.mockImplementation((photoId: string, variant: string) => `${photoId}-${variant}-token`)
-    mockPhotosOrder.mockResolvedValue({ data: [{ id: 'photo-1', page_id: 'page-1', image_url: null, thumb_url: null, caption: 'Memory' }] })
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, access_mode: 'password', privacy: 'private' },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+    mockCreateSignedMediaToken.mockImplementation(
+      (photoId: string, variant: string) => `${photoId}-${variant}-token`
+    )
+    mockPhotosOrder.mockResolvedValue({
+      data: [
+        {
+          id: 'photo-1',
+          page_id: 'page-1',
+          image_url: null,
+          thumb_url: null,
+          caption: 'Memory',
+        },
+      ],
+    })
     mockGuestbookOrder.mockResolvedValue({ data: [] })
     mockTimelineOrder.mockResolvedValue({ data: [] })
     mockVideosOrder.mockResolvedValue({ data: [] })
 
     const mod = await import('@/app/memorials/[slug]/page')
-    const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
+    const node = await mod.default({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
     render(node)
 
     expect(mockCreateSignedMediaToken).toHaveBeenCalledWith('photo-1', 'image')
@@ -241,8 +333,10 @@ describe('/memorials/[slug] page', () => {
       expect.objectContaining({
         photos: [
           expect.objectContaining({
-            image_url: '/api/public/media/photo-1?variant=image&token=photo-1-image-token',
-            thumb_url: '/api/public/media/photo-1?variant=thumb&token=photo-1-thumb-token',
+            image_url:
+              '/api/public/media/photo-1?variant=image&token=photo-1-image-token',
+            thumb_url:
+              '/api/public/media/photo-1?variant=thumb&token=photo-1-thumb-token',
           }),
         ],
       })
@@ -251,17 +345,39 @@ describe('/memorials/[slug] page', () => {
 
   it('requires explicit media consent before protected media is rendered', async () => {
     mockPageSingle.mockResolvedValue({
-      data: { ...publicPage, access_mode: 'password', privacy: 'private', password_updated_at: '2026-03-01T00:00:00.000Z' },
+      data: {
+        ...publicPage,
+        access_mode: 'password',
+        privacy: 'private',
+        password_updated_at: '2026-03-01T00:00:00.000Z',
+      },
     })
-    mockCanAccessMemorial.mockResolvedValue({ allowed: true, requiresPassword: false })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
     mockVerifyMediaConsent.mockReturnValue(false)
-    mockPhotosOrder.mockResolvedValue({ data: [{ id: 'photo-1', page_id: 'page-1', image_url: '/img.jpg', thumb_url: '/thumb.jpg', caption: null }] })
+    mockPhotosOrder.mockResolvedValue({
+      data: [
+        {
+          id: 'photo-1',
+          page_id: 'page-1',
+          image_url: '/img.jpg',
+          thumb_url: '/thumb.jpg',
+          caption: null,
+        },
+      ],
+    })
     mockGuestbookOrder.mockResolvedValue({ data: [] })
     mockTimelineOrder.mockResolvedValue({ data: [] })
-    mockVideosOrder.mockResolvedValue({ data: [{ id: 'v1', provider_id: 'abcdefghijk', title: 'Memories' }] })
+    mockVideosOrder.mockResolvedValue({
+      data: [{ id: 'v1', provider_id: 'abcdefghijk', title: 'Memories' }],
+    })
 
     const mod = await import('@/app/memorials/[slug]/page')
-    const node = await mod.default({ params: Promise.resolve({ slug: 'jane' }) })
+    const node = await mod.default({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
     render(node)
 
     expect(mockCreateSignedMediaToken).not.toHaveBeenCalled()

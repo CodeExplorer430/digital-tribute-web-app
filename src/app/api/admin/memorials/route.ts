@@ -6,7 +6,11 @@ import { z } from 'zod'
 
 const createMemorialSchema = z.object({
   title: z.string().trim().min(2).max(120),
-  slug: z.string().trim().toLowerCase().regex(/^[a-z0-9-]{3,80}$/),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9-]{3,80}$/),
   fullName: z.string().trim().max(120).optional().default(''),
   dedicationText: z.string().trim().max(600).optional().default(''),
   dob: z.string().trim().nullable().optional(),
@@ -18,12 +22,21 @@ export async function POST(request: NextRequest) {
   try {
     payload = await request.json()
   } catch {
-    return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid request payload.' }, { status: 400 })
+    return NextResponse.json(
+      { code: 'INVALID_JSON', message: 'Invalid request payload.' },
+      { status: 400 }
+    )
   }
 
   const parsed = createMemorialSchema.safeParse(payload)
   if (!parsed.success) {
-    return NextResponse.json({ code: 'VALIDATION_ERROR', message: 'Please provide valid memorial details.' }, { status: 400 })
+    return NextResponse.json(
+      {
+        code: 'VALIDATION_ERROR',
+        message: 'Please provide valid memorial details.',
+      },
+      { status: 400 }
+    )
   }
 
   const auth = await requireAdminUser({ minRole: 'editor' })
@@ -33,7 +46,9 @@ export async function POST(request: NextRequest) {
   const { title, slug, fullName, dedicationText, dob, dod } = parsed.data
   const { data: siteSettings } = await supabase
     .from('site_settings')
-    .select('memorial_slideshow_enabled, memorial_slideshow_interval_ms, memorial_video_layout')
+    .select(
+      'memorial_slideshow_enabled, memorial_slideshow_interval_ms, memorial_video_layout'
+    )
     .eq('id', 1)
     .single()
 
@@ -47,16 +62,24 @@ export async function POST(request: NextRequest) {
       dob: dob || null,
       dod: dod || null,
       owner_id: userId,
-      memorial_slideshow_enabled: siteSettings?.memorial_slideshow_enabled !== false,
-      memorial_slideshow_interval_ms: Number(siteSettings?.memorial_slideshow_interval_ms) || 4500,
-      memorial_video_layout: siteSettings?.memorial_video_layout === 'featured' ? 'featured' : 'grid',
+      memorial_slideshow_enabled:
+        siteSettings?.memorial_slideshow_enabled !== false,
+      memorial_slideshow_interval_ms:
+        Number(siteSettings?.memorial_slideshow_interval_ms) || 4500,
+      memorial_video_layout:
+        siteSettings?.memorial_video_layout === 'featured'
+          ? 'featured'
+          : 'grid',
     })
     .select('id, slug, dedication_text')
     .single()
 
   if (error) {
     if (error.code === '23505') {
-      return NextResponse.json({ code: 'SLUG_EXISTS', message: 'This URL slug is already in use.' }, { status: 409 })
+      return NextResponse.json(
+        { code: 'SLUG_EXISTS', message: 'This URL slug is already in use.' },
+        { status: 409 }
+      )
     }
     return databaseError('Unable to create memorial.')
   }
@@ -69,5 +92,14 @@ export async function POST(request: NextRequest) {
     metadata: { slug: data.slug },
   })
 
-  return NextResponse.json({ memorial: toMemorialRecord({ ...data, access_mode: 'public', privacy: 'public' }) }, { status: 201 })
+  return NextResponse.json(
+    {
+      memorial: toMemorialRecord({
+        ...data,
+        access_mode: 'public',
+        privacy: 'public',
+      }),
+    },
+    { status: 201 }
+  )
 }

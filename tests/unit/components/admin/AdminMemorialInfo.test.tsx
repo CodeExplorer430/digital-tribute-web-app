@@ -47,16 +47,25 @@ describe('AdminMemorialInfo', () => {
     rerender(
       <AdminMemorialInfo
         onUpdate={onUpdate}
-        memorial={makePage({ title: 'Server Updated Title', slug: 'first-title' })}
+        memorial={makePage({
+          title: 'Server Updated Title',
+          slug: 'first-title',
+        })}
       />
     )
 
-    expect(screen.getByLabelText('Memorial Title')).toHaveValue('Server Updated Title')
+    expect(screen.getByLabelText('Memorial Title')).toHaveValue(
+      'Server Updated Title'
+    )
   })
 
   it('submits updates in password mode and clears password on success', async () => {
     const onUpdate = vi.fn()
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 200 })
+      )
     const user = userEvent.setup()
 
     render(
@@ -96,13 +105,21 @@ describe('AdminMemorialInfo', () => {
   })
 
   it('shows server error message when update fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Slug already exists.' }), { status: 409 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Slug already exists.' }), {
+        status: 409,
+      })
+    )
     const user = userEvent.setup()
 
     render(
       <AdminMemorialInfo
         onUpdate={vi.fn()}
-        memorial={makePage({ id: 'page-7', full_name: 'Jane', accessMode: 'private' })}
+        memorial={makePage({
+          id: 'page-7',
+          full_name: 'Jane',
+          accessMode: 'private',
+        })}
       />
     )
 
@@ -112,21 +129,50 @@ describe('AdminMemorialInfo', () => {
 
   it('updates access guidance when access mode changes', async () => {
     const user = userEvent.setup()
-    render(<AdminMemorialInfo onUpdate={vi.fn()} memorial={makePage({ accessMode: 'public' })} />)
+    render(
+      <AdminMemorialInfo
+        onUpdate={vi.fn()}
+        memorial={makePage({ accessMode: 'public' })}
+      />
+    )
 
-    expect(screen.getByText('Visible by direct link and eligible for the homepage directory.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Visible by direct link and eligible for the homepage directory.'
+      )
+    ).toBeInTheDocument()
     await user.selectOptions(screen.getByLabelText('Access mode'), 'password')
-    expect(screen.getByText('Protected by a family-managed password and excluded from the homepage directory.')).toBeInTheDocument()
-    expect(screen.getByText(/Protected memorials keep media behind signed access and require a current password to enter\./)).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Protected by a family-managed password and excluded from the homepage directory.'
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Protected memorials keep media behind signed access and require a current password to enter\./
+      )
+    ).toBeInTheDocument()
   })
 
   it('submits edited dedication text', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 200 })
+      )
     const user = userEvent.setup()
 
-    render(<AdminMemorialInfo onUpdate={vi.fn()} memorial={makePage({ id: 'page-12', dedicationText: null })} />)
+    render(
+      <AdminMemorialInfo
+        onUpdate={vi.fn()}
+        memorial={makePage({ id: 'page-12', dedicationText: null })}
+      />
+    )
 
-    await user.type(screen.getByLabelText('Dedication Text'), 'A life of quiet service and steadfast love.')
+    await user.type(
+      screen.getByLabelText('Dedication Text'),
+      'A life of quiet service and steadfast love.'
+    )
     await user.click(screen.getByRole('button', { name: 'Save Changes' }))
 
     await waitFor(() => {
@@ -139,7 +185,9 @@ describe('AdminMemorialInfo', () => {
   })
 
   it('falls back to default error message when failure body is not json', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('bad payload', { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('bad payload', { status: 500 })
+    )
     const user = userEvent.setup()
 
     render(
@@ -150,7 +198,9 @@ describe('AdminMemorialInfo', () => {
     )
 
     await user.click(screen.getByRole('button', { name: 'Save Changes' }))
-    expect(await screen.findByText('Unable to save memorial details.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Unable to save memorial details.')
+    ).toBeInTheDocument()
   })
 
   it('disables submit and shows saving state while request is pending', async () => {
@@ -176,14 +226,25 @@ describe('AdminMemorialInfo', () => {
     if (resolveFetch) {
       resolveFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }))
     }
-    expect(await screen.findByRole('button', { name: 'Save Changes' })).not.toBeDisabled()
+    expect(
+      await screen.findByRole('button', { name: 'Save Changes' })
+    ).not.toBeDisabled()
   })
 
   it('submits memorial and qr configuration changes', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 200 })
+      )
     const user = userEvent.setup()
 
-    render(<AdminMemorialInfo onUpdate={vi.fn()} memorial={makePage({ id: 'page-11' })} />)
+    render(
+      <AdminMemorialInfo
+        onUpdate={vi.fn()}
+        memorial={makePage({ id: 'page-11' })}
+      />
+    )
 
     await user.selectOptions(screen.getByLabelText('Theme Preset'), 'editorial')
     await user.selectOptions(screen.getByLabelText('Video Layout'), 'featured')
@@ -193,8 +254,14 @@ describe('AdminMemorialInfo', () => {
     await user.selectOptions(screen.getByLabelText('QR Template'), 'warm')
     await user.clear(screen.getByLabelText('QR Caption'))
     await user.type(screen.getByLabelText('QR Caption'), 'Visit tribute')
-    await user.selectOptions(screen.getByLabelText('QR Foreground Color'), '#14532d')
-    await user.selectOptions(screen.getByLabelText('QR Background Color'), '#fffaf2')
+    await user.selectOptions(
+      screen.getByLabelText('QR Foreground Color'),
+      '#14532d'
+    )
+    await user.selectOptions(
+      screen.getByLabelText('QR Background Color'),
+      '#fffaf2'
+    )
     await user.selectOptions(screen.getByLabelText('QR Frame Style'), 'double')
     await user.selectOptions(screen.getByLabelText('QR Caption Font'), 'sans')
     await user.selectOptions(screen.getByLabelText('QR Monogram'), 'enabled')

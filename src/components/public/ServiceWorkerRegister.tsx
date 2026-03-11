@@ -21,17 +21,23 @@ export function ServiceWorkerRegister() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleInstalled)
 
-    navigator.serviceWorker.register('/sw.js').then(() => {
-      if (!disposed) {
-        document.documentElement.dataset.everlumeOfflineReady = 'true'
-      }
-    }).catch(() => {
-      // Ignore registration errors for unsupported environments.
-    })
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then(() => {
+        if (!disposed) {
+          document.documentElement.dataset.everlumeOfflineReady = 'true'
+        }
+      })
+      .catch(() => {
+        // Ignore registration errors for unsupported environments.
+      })
 
     return () => {
       disposed = true
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handleBeforeInstallPrompt
+      )
       window.removeEventListener('appinstalled', handleInstalled)
     }
   }, [])

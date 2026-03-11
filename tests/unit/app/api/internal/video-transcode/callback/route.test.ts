@@ -20,53 +20,78 @@ describe('POST /api/internal/video-transcode/callback', () => {
   })
 
   it('rejects invalid callback token', async () => {
-    const req = new Request('http://localhost/api/internal/video-transcode/callback', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer wrong' },
-      body: JSON.stringify({
-        jobId: '550e8400-e29b-41d4-a716-446655440000',
-        status: 'processing',
-      }),
-    })
+    const req = new Request(
+      'http://localhost/api/internal/video-transcode/callback',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer wrong',
+        },
+        body: JSON.stringify({
+          jobId: '550e8400-e29b-41d4-a716-446655440000',
+          status: 'processing',
+        }),
+      }
+    )
     const res = await POST(req as never)
     expect(res.status).toBe(403)
   })
 
   it('rejects invalid json payloads', async () => {
-    const req = new Request('http://localhost/api/internal/video-transcode/callback', {
-      method: 'POST',
-      headers: { authorization: 'Bearer callback-secret', 'content-type': 'application/json' },
-      body: '{not-json',
-    })
+    const req = new Request(
+      'http://localhost/api/internal/video-transcode/callback',
+      {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer callback-secret',
+          'content-type': 'application/json',
+        },
+        body: '{not-json',
+      }
+    )
 
     const res = await POST(req as never)
     expect(res.status).toBe(400)
   })
 
   it('rejects unsupported callback statuses', async () => {
-    const req = new Request('http://localhost/api/internal/video-transcode/callback', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer callback-secret' },
-      body: JSON.stringify({
-        jobId: '550e8400-e29b-41d4-a716-446655440000',
-        status: 'queued',
-      }),
-    })
+    const req = new Request(
+      'http://localhost/api/internal/video-transcode/callback',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer callback-secret',
+        },
+        body: JSON.stringify({
+          jobId: '550e8400-e29b-41d4-a716-446655440000',
+          status: 'queued',
+        }),
+      }
+    )
 
     const res = await POST(req as never)
     expect(res.status).toBe(400)
   })
 
   it('requires outputPublicId for completed jobs', async () => {
-    const req = new Request('http://localhost/api/internal/video-transcode/callback', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer callback-secret' },
-      body: JSON.stringify({
-        jobId: '550e8400-e29b-41d4-a716-446655440000',
-        status: 'completed',
-        outputUrl: 'https://res.cloudinary.com/demo/video/upload/v1/everlume/page/video-1.mp4',
-      }),
-    })
+    const req = new Request(
+      'http://localhost/api/internal/video-transcode/callback',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer callback-secret',
+        },
+        body: JSON.stringify({
+          jobId: '550e8400-e29b-41d4-a716-446655440000',
+          status: 'completed',
+          outputUrl:
+            'https://res.cloudinary.com/demo/video/upload/v1/everlume/page/video-1.mp4',
+        }),
+      }
+    )
 
     const res = await POST(req as never)
     expect(res.status).toBe(400)
@@ -75,32 +100,45 @@ describe('POST /api/internal/video-transcode/callback', () => {
   it('returns 500 when database update fails', async () => {
     mockEq.mockResolvedValueOnce({ error: { message: 'db failed' } })
 
-    const req = new Request('http://localhost/api/internal/video-transcode/callback', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer callback-secret' },
-      body: JSON.stringify({
-        jobId: '550e8400-e29b-41d4-a716-446655440000',
-        status: 'failed',
-        errorMessage: 'transcode failed',
-      }),
-    })
+    const req = new Request(
+      'http://localhost/api/internal/video-transcode/callback',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer callback-secret',
+        },
+        body: JSON.stringify({
+          jobId: '550e8400-e29b-41d4-a716-446655440000',
+          status: 'failed',
+          errorMessage: 'transcode failed',
+        }),
+      }
+    )
 
     const res = await POST(req as never)
     expect(res.status).toBe(500)
   })
 
   it('updates job on completed callback', async () => {
-    const req = new Request('http://localhost/api/internal/video-transcode/callback', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer callback-secret' },
-      body: JSON.stringify({
-        jobId: '550e8400-e29b-41d4-a716-446655440000',
-        status: 'completed',
-        outputPublicId: 'everlume/page/video-1',
-        outputUrl: 'https://res.cloudinary.com/demo/video/upload/v1/everlume/page/video-1.mp4',
-        outputBytes: 99000000,
-      }),
-    })
+    const req = new Request(
+      'http://localhost/api/internal/video-transcode/callback',
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer callback-secret',
+        },
+        body: JSON.stringify({
+          jobId: '550e8400-e29b-41d4-a716-446655440000',
+          status: 'completed',
+          outputPublicId: 'everlume/page/video-1',
+          outputUrl:
+            'https://res.cloudinary.com/demo/video/upload/v1/everlume/page/video-1.mp4',
+          outputBytes: 99000000,
+        }),
+      }
+    )
     const res = await POST(req as never)
     expect(res.status).toBe(200)
     expect(mockFrom).toHaveBeenCalledWith('video_upload_jobs')

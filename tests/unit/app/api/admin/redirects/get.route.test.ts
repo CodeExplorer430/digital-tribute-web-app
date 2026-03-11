@@ -23,7 +23,10 @@ describe('GET /api/admin/redirects', () => {
     mockGetUser.mockReset()
     mockProfileSingle.mockReset()
     mockOrder.mockReset()
-    mockProfileSingle.mockResolvedValue({ data: { role: 'editor', is_active: true }, error: null })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'editor', is_active: true },
+      error: null,
+    })
   })
 
   it('returns unauthorized without user', async () => {

@@ -51,31 +51,50 @@ describe('MediaConsentReportScreen', () => {
     const user = userEvent.setup()
     render(<MediaConsentReportScreen />)
 
-    expect(await screen.findByText('Consent and Access Report')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Consent and Access Report')
+    ).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
 
-    await user.selectOptions(screen.getByLabelText('Event type'), 'consent_granted')
+    await user.selectOptions(
+      screen.getByLabelText('Event type'),
+      'consent_granted'
+    )
     expect(screen.getAllByText('Consent granted').length).toBeGreaterThan(0)
-    expect(screen.queryByText('Media accessed', { selector: 'td' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Media accessed', { selector: 'td' })
+    ).not.toBeInTheDocument()
 
     await user.type(screen.getByLabelText('Search memorials'), 'mateo')
     expect(screen.getByText('Mateo Rivera')).toBeInTheDocument()
   })
 
   it('shows an explicit empty state and keeps export disabled without rows', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ logs: [] }), { status: 200 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ logs: [] }), { status: 200 })
+    )
 
     render(<MediaConsentReportScreen />)
 
-    expect(await screen.findByText('No protected-media consent events match the current filters.')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        'No protected-media consent events match the current filters.'
+      )
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDisabled()
   })
 
   it('shows the API error when report loading fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ message: 'Consent report unavailable.' }), { status: 500 }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Consent report unavailable.' }), {
+        status: 500,
+      })
+    )
 
     render(<MediaConsentReportScreen />)
 
-    expect(await screen.findByText('Consent report unavailable.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Consent report unavailable.')
+    ).toBeInTheDocument()
   })
 })
