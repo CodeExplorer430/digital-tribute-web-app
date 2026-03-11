@@ -6,6 +6,7 @@ const mockNewMemorialForm = vi.fn()
 const mockAdminSettingsScreen = vi.fn()
 const mockUserManagementScreen = vi.fn()
 const mockEditMemorialScreen = vi.fn()
+const mockMediaConsentReportScreen = vi.fn()
 const mockRedirect = vi.fn()
 
 const mockOrder = vi.fn()
@@ -48,6 +49,13 @@ vi.mock('@/components/pages/admin/UserManagementScreen', () => ({
   },
 }))
 
+vi.mock('@/components/pages/admin/MediaConsentReportScreen', () => ({
+  MediaConsentReportScreen: () => {
+    mockMediaConsentReportScreen()
+    return <div data-testid="media-consent-report-screen" />
+  },
+}))
+
 vi.mock('@/components/pages/admin/EditMemorialScreen', () => ({
   EditMemorialScreen: ({ memorialId }: { memorialId: string }) => {
     mockEditMemorialScreen(memorialId)
@@ -73,6 +81,7 @@ describe('Admin page wrappers', () => {
     mockAdminSettingsScreen.mockReset()
     mockUserManagementScreen.mockReset()
     mockEditMemorialScreen.mockReset()
+    mockMediaConsentReportScreen.mockReset()
     mockRedirect.mockReset()
     mockOrder.mockReset()
     mockSelect.mockClear()
@@ -81,7 +90,14 @@ describe('Admin page wrappers', () => {
   })
 
   it('loads admin dashboard pages and passes them to AdminDashboardView', async () => {
-    const pages = [{ id: 'p1', title: 'Jane', slug: 'jane', created_at: '2026-01-01T00:00:00.000Z' }]
+    const pages = [
+      {
+        id: 'p1',
+        title: 'Jane',
+        slug: 'jane',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    ]
     mockOrder.mockResolvedValue({ data: pages })
 
     const mod = await import('@/app/admin/page')
@@ -113,7 +129,9 @@ describe('Admin page wrappers', () => {
     const node = mod.default()
     render(node)
 
-    expect(screen.getByTestId('guestbook-moderation-screen')).toBeInTheDocument()
+    expect(
+      screen.getByTestId('guestbook-moderation-screen')
+    ).toBeInTheDocument()
     expect(mockGuestbookModerationScreen).toHaveBeenCalled()
   })
 
@@ -144,9 +162,22 @@ describe('Admin page wrappers', () => {
     expect(mockUserManagementScreen).toHaveBeenCalled()
   })
 
+  it('renders admin reports wrapper page', async () => {
+    const mod = await import('@/app/admin/reports/page')
+    const node = mod.default()
+    render(node)
+
+    expect(
+      screen.getByTestId('media-consent-report-screen')
+    ).toBeInTheDocument()
+    expect(mockMediaConsentReportScreen).toHaveBeenCalled()
+  })
+
   it('renders edit memorial wrapper page', async () => {
     const mod = await import('@/app/admin/memorials/[id]/page')
-    const node = await mod.default({ params: Promise.resolve({ id: 'page-123' }) })
+    const node = await mod.default({
+      params: Promise.resolve({ id: 'page-123' }),
+    })
     render(node)
 
     expect(screen.getByTestId('edit-memorial-screen')).toBeInTheDocument()

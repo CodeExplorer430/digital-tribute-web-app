@@ -2,11 +2,6 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 const mockServiceWorkerRegister = vi.fn()
 
-vi.mock('next/font/google', () => ({
-  Geist: () => ({ variable: '--font-geist-sans' }),
-  Geist_Mono: () => ({ variable: '--font-geist-mono' }),
-}))
-
 vi.mock('@/components/public/ServiceWorkerRegister', () => ({
   ServiceWorkerRegister: () => {
     mockServiceWorkerRegister()

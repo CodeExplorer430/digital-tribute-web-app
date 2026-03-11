@@ -17,7 +17,10 @@ type Entry = {
 export function GuestbookModerationScreen() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
-  const [pendingAction, setPendingAction] = useState<{ id: string; kind: 'approve' | 'unapprove' | 'delete' } | null>(null)
+  const [pendingAction, setPendingAction] = useState<{
+    id: string
+    kind: 'approve' | 'unapprove' | 'delete'
+  } | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -25,7 +28,9 @@ export function GuestbookModerationScreen() {
     setLoading(true)
     const response = await fetch('/api/admin/guestbook', { cache: 'no-store' })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to load guestbook entries.')
       setEntries([])
       setLoading(false)
@@ -51,20 +56,30 @@ export function GuestbookModerationScreen() {
     if (pendingAction) return
     const previous = entries
     setPendingAction({ id, kind: 'approve' })
-    setEntries((current) => current.map((entry) => (entry.id === id ? { ...entry, is_approved: true } : entry)))
+    setEntries((current) =>
+      current.map((entry) =>
+        entry.id === id ? { ...entry, is_approved: true } : entry
+      )
+    )
 
     setErrorMessage(null)
     setSuccessMessage(null)
-    const response = await fetch(`/api/admin/guestbook/${id}/approve`, { method: 'POST' })
+    const response = await fetch(`/api/admin/guestbook/${id}/approve`, {
+      method: 'POST',
+    })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to approve entry.')
       setEntries(previous)
       setPendingAction(null)
       return
     }
     const entry = previous.find((item) => item.id === id)
-    setSuccessMessage(`Approved ${entry?.name || 'guestbook entry'} for public display.`)
+    setSuccessMessage(
+      `Approved ${entry?.name || 'guestbook entry'} for public display.`
+    )
     setPendingAction(null)
   }
 
@@ -77,16 +92,22 @@ export function GuestbookModerationScreen() {
 
     setErrorMessage(null)
     setSuccessMessage(null)
-    const response = await fetch(`/api/admin/guestbook/${id}`, { method: 'DELETE' })
+    const response = await fetch(`/api/admin/guestbook/${id}`, {
+      method: 'DELETE',
+    })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to delete entry.')
       setEntries(previous)
       setPendingAction(null)
       return
     }
     const entry = previous.find((item) => item.id === id)
-    setSuccessMessage(`Deleted ${entry?.name || 'guestbook entry'} from the moderation queue.`)
+    setSuccessMessage(
+      `Deleted ${entry?.name || 'guestbook entry'} from the moderation queue.`
+    )
     setPendingAction(null)
   }
 
@@ -94,53 +115,79 @@ export function GuestbookModerationScreen() {
     if (pendingAction) return
     const previous = entries
     setPendingAction({ id, kind: 'unapprove' })
-    setEntries((current) => current.map((entry) => (entry.id === id ? { ...entry, is_approved: false } : entry)))
+    setEntries((current) =>
+      current.map((entry) =>
+        entry.id === id ? { ...entry, is_approved: false } : entry
+      )
+    )
 
     setErrorMessage(null)
     setSuccessMessage(null)
-    const response = await fetch(`/api/admin/guestbook/${id}/unapprove`, { method: 'POST' })
+    const response = await fetch(`/api/admin/guestbook/${id}/unapprove`, {
+      method: 'POST',
+    })
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
       setErrorMessage(payload?.message || 'Unable to unapprove entry.')
       setEntries(previous)
       setPendingAction(null)
       return
     }
     const entry = previous.find((item) => item.id === id)
-    setSuccessMessage(`Moved ${entry?.name || 'guestbook entry'} back to pending review.`)
+    setSuccessMessage(
+      `Moved ${entry?.name || 'guestbook entry'} back to pending review.`
+    )
     setPendingAction(null)
   }
 
-  if (loading) return <div className="surface-card p-8 text-sm text-muted-foreground">Loading entries...</div>
+  if (loading)
+    return (
+      <div className="surface-card p-8 text-sm text-muted-foreground">
+        Loading entries...
+      </div>
+    )
 
   const approvedCount = entries.filter((entry) => entry.is_approved).length
   const pendingCount = entries.length - approvedCount
 
   return (
     <div className="space-y-5">
-      <section className="dashboard-hero surface-card space-y-2 p-6">
+      <section className="dashboard-hero surface-card space-y-3 p-6">
         <p className="section-kicker">Guestbook Review</p>
-        <h2 className="text-3xl font-semibold tracking-[-0.03em]">Guestbook Moderation</h2>
+        <h2 className="text-3xl font-semibold tracking-[-0.03em]">
+          Guestbook Moderation
+        </h2>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Review messages with care before they appear on the public memorial. Pending messages stay private until approved.
+          Review messages with care before they appear on the public memorial.
+          Pending messages stay private until approved.
         </p>
+        <div className="status-pill w-fit">Family-approved entries only</div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
-        <div className="surface-card p-4">
+        <div className="surface-card data-card p-4">
           <p className="section-kicker">Pending</p>
           <p className="mt-2 text-3xl font-semibold">{pendingCount}</p>
-          <p className="mt-1 text-sm text-muted-foreground">Waiting for family review before they can be shown publicly.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Waiting for family review before they can be shown publicly.
+          </p>
         </div>
-        <div className="surface-card p-4">
+        <div className="surface-card data-card p-4">
           <p className="section-kicker">Approved</p>
           <p className="mt-2 text-3xl font-semibold">{approvedCount}</p>
-          <p className="mt-1 text-sm text-muted-foreground">Already visible on the public memorial guestbook.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Already visible on the public memorial guestbook.
+          </p>
         </div>
-        <div className="surface-card p-4">
+        <div className="surface-card data-card p-4">
           <p className="section-kicker">Total Messages</p>
           <p className="mt-2 text-3xl font-semibold">{entries.length}</p>
-          <p className="mt-1 text-sm text-muted-foreground">Every message stays in this queue until the family updates its status.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Every message stays in this queue until the family updates its
+            status.
+          </p>
         </div>
       </section>
 
@@ -155,12 +202,25 @@ export function GuestbookModerationScreen() {
       )}
 
       {successMessage && (
-        <div className="surface-card border-emerald-300/50 bg-emerald-100/60 p-4 text-sm text-emerald-900" role="status" aria-live="polite">
+        <div
+          className="surface-card border-emerald-300/50 bg-emerald-100/60 p-4 text-sm text-emerald-900"
+          role="status"
+          aria-live="polite"
+        >
           {successMessage}
         </div>
       )}
 
       <div className="surface-card overflow-hidden">
+        <div className="border-b border-border/70 px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Moderation Queue
+          </p>
+          <p className="mt-1 text-sm text-foreground">
+            Pending, approved, and removable guestbook messages in chronological
+            order.
+          </p>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-secondary/80 text-xs uppercase tracking-[0.14em] text-muted-foreground">
@@ -178,21 +238,34 @@ export function GuestbookModerationScreen() {
                   <tr key={entry.id} className="align-top">
                     <td className="px-4 py-3">
                       {entry.is_approved ? (
-                        <span className="inline-flex rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">Approved</span>
+                        <span className="inline-flex rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                          Approved
+                        </span>
                       ) : (
-                        <span className="inline-flex rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">Pending</span>
+                        <span className="inline-flex rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                          Pending
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{entry.name}</div>
-                      <div className="text-xs text-muted-foreground">{entry.pages?.title || 'Untitled memorial'}</div>
+                      <div className="font-medium text-foreground">
+                        {entry.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {entry.pages?.title || 'Untitled memorial'}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="line-clamp-3 leading-relaxed text-foreground/95" title={entry.message}>
+                      <p
+                        className="line-clamp-3 leading-relaxed text-foreground/95"
+                        title={entry.message}
+                      >
                         {entry.message}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{format(new Date(entry.created_at), 'MMM d, yyyy')}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {format(new Date(entry.created_at), 'MMM d, yyyy')}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         {!entry.is_approved ? (
@@ -203,7 +276,8 @@ export function GuestbookModerationScreen() {
                             disabled={pendingAction?.id === entry.id}
                             aria-label={`Approve guestbook entry from ${entry.name}`}
                           >
-                            {pendingAction?.id === entry.id && pendingAction.kind === 'approve' ? (
+                            {pendingAction?.id === entry.id &&
+                            pendingAction.kind === 'approve' ? (
                               <Loader2 className="h-4 w-4 animate-spin text-emerald-700" />
                             ) : (
                               <Check className="h-4 w-4 text-emerald-700" />
@@ -217,7 +291,8 @@ export function GuestbookModerationScreen() {
                             disabled={pendingAction?.id === entry.id}
                             aria-label={`Unapprove guestbook entry from ${entry.name}`}
                           >
-                            {pendingAction?.id === entry.id && pendingAction.kind === 'unapprove' ? (
+                            {pendingAction?.id === entry.id &&
+                            pendingAction.kind === 'unapprove' ? (
                               <Loader2 className="h-4 w-4 animate-spin text-amber-700" />
                             ) : (
                               <X className="h-4 w-4 text-amber-700" />
@@ -231,7 +306,8 @@ export function GuestbookModerationScreen() {
                           disabled={pendingAction?.id === entry.id}
                           aria-label={`Delete guestbook entry from ${entry.name}`}
                         >
-                          {pendingAction?.id === entry.id && pendingAction.kind === 'delete' ? (
+                          {pendingAction?.id === entry.id &&
+                          pendingAction.kind === 'delete' ? (
                             <Loader2 className="h-4 w-4 animate-spin text-destructive" />
                           ) : (
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -243,8 +319,12 @@ export function GuestbookModerationScreen() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-sm italic text-muted-foreground">
-                    No guestbook entries need review right now. New messages will appear here before they are shown publicly.
+                  <td
+                    colSpan={5}
+                    className="px-4 py-10 text-center text-sm italic text-muted-foreground"
+                  >
+                    No guestbook entries need review right now. New messages
+                    will appear here before they are shown publicly.
                   </td>
                 </tr>
               )}

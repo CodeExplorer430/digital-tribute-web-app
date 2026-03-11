@@ -9,12 +9,16 @@ describe('Button', () => {
 
   it('applies variant classes', () => {
     render(<Button variant="danger">Delete</Button>)
-    expect(screen.getByRole('button', { name: 'Delete' }).className).toContain('bg-destructive')
+    expect(screen.getByRole('button', { name: 'Delete' }).className).toContain(
+      'border-destructive/70'
+    )
   })
 
   it('applies size classes', () => {
     render(<Button size="lg">Large</Button>)
-    expect(screen.getByRole('button', { name: 'Large' }).className).toContain('h-12')
+    expect(screen.getByRole('button', { name: 'Large' }).className).toContain(
+      'h-13'
+    )
   })
 
   it('renders as child element when asChild is true', () => {
@@ -24,6 +28,9 @@ describe('Button', () => {
       </Button>
     )
 
-    expect(screen.getByRole('link', { name: 'Go' })).toHaveAttribute('href', '/admin')
+    expect(screen.getByRole('link', { name: 'Go' })).toHaveAttribute(
+      'href',
+      '/admin'
+    )
   })
 })
