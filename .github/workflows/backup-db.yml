@@ -41,7 +41,7 @@ jobs:
       SCHEDULE_EXPR: ${{ github.event.schedule }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
@@ -78,7 +78,7 @@ jobs:
         run: node scripts/ops/prune-backups.mjs
 
       - name: Upload backup metadata artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: backup-metadata-${{ steps.resolve_kind.outputs.kind }}-${{ steps.backup.outputs.timestamp }}
           path: |
