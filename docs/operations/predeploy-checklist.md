@@ -32,6 +32,11 @@ Then set:
 4. Set app env:
    - `NEXT_PUBLIC_APP_URL=https://app.yourdomain.com`
    - `NEXT_PUBLIC_SHORT_DOMAIN=https://go.yourdomain.com`
+5. Run worker env check:
+
+```bash
+npm run ops:check-worker-prereqs
+```
 
 ## 3) Redirect Smoke Test
 
@@ -76,6 +81,8 @@ Deploy a compatible transcode callback service before enabling direct video uplo
    - `VIDEO_TRANSCODE_API_TOKEN=<same-as-service-token>`
    - `VIDEO_TRANSCODE_CALLBACK_TOKEN=<same-as-service-callback-token>`
    - `VIDEO_TRANSCODE_APP_BASE=<app-base-url>` (for synthetic callback checks, e.g. `https://app.yourdomain.com`)
+   - `VIDEO_TRANSCODE_API_BASE` must point to a real service, not a placeholder host such as `your-cloud-run-service.run.app`
+   - `VIDEO_TRANSCODE_APP_BASE` must match `NEXT_PUBLIC_APP_URL` in production
 4. Run contract check:
 
 ```bash
@@ -105,6 +112,7 @@ Run before deploy:
 ```bash
 npm run ops:check-prereqs
 npm run ops:check-prereqs:production
+npm run ops:check-worker-prereqs
 npm run ops:check-db-schema
 npm run ops:check-video-transcode
 npm run ops:check-video-transcode:synthetic

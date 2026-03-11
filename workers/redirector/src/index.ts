@@ -18,32 +18,53 @@ function sanitizeCode(pathname: string): string {
   return pathname.replace(/^\/+/, '').replace(/^r\//, '').trim()
 }
 
+function getSafeUrl(value?: string): URL | null {
+  if (!value || value.trim() === '') return null
+  try {
+    return new URL(value)
+  } catch {
+    return null
+  }
+}
+
 async function fetchTargetUrl(code: string, env: Env): Promise<string | null> {
   const apiKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY
   if (!apiKey) return null
-  const endpoint = new URL(`${env.SUPABASE_URL}/rest/v1/redirects`)
+
+  const supabaseUrl = getSafeUrl(env.SUPABASE_URL)
+  if (!supabaseUrl) return null
+
+  const endpoint = new URL('/rest/v1/redirects', supabaseUrl)
   endpoint.searchParams.set('shortcode', `eq.${code}`)
   endpoint.searchParams.set('is_active', 'eq.true')
   endpoint.searchParams.set('select', 'target_url,is_active')
   endpoint.searchParams.set('limit', '1')
 
-  const res = await fetch(endpoint.toString(), {
-    headers: {
-      apikey: apiKey,
-      Authorization: `Bearer ${apiKey}`,
-      Accept: 'application/json',
-    },
-    cf: {
-      cacheTtl: 60,
-      cacheEverything: true,
-    },
-  } as RequestInit & { cf: { cacheTtl: number; cacheEverything: boolean } })
+  let res: Response
+  try {
+    res = await fetch(endpoint.toString(), {
+      headers: {
+        apikey: apiKey,
+        Authorization: `Bearer ${apiKey}`,
+        Accept: 'application/json',
+      },
+      cf: {
+        cacheTtl: 60,
+        cacheEverything: true,
+      },
+    } as RequestInit & { cf: { cacheTtl: number; cacheEverything: boolean } })
+  } catch {
+    return null
+  }
 
   if (!res.ok) {
     return null
   }
 
-  const data = (await res.json()) as RedirectRow[]
+  const data = (await res.json().catch(() => null)) as RedirectRow[] | null
+  if (!Array.isArray(data)) {
+    return null
+  }
   const row = data[0]
   if (!row || row.is_active === false) {
     return null
@@ -60,8 +81,9 @@ const worker = {
     }
 
     if (url.pathname === '/' || url.pathname === '') {
-      if (env.FALLBACK_URL) {
-        return Response.redirect(env.FALLBACK_URL, 302)
+      const fallbackUrl = getSafeUrl(env.FALLBACK_URL)
+      if (fallbackUrl) {
+        return Response.redirect(fallbackUrl.toString(), 302)
       }
       return notFoundResponse()
     }

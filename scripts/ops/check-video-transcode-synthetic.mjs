@@ -2,13 +2,18 @@
 
 import { randomUUID } from 'node:crypto'
 import { loadLocalEnv } from './load-env.mjs'
+import {
+  getTrimmedEnv,
+  isPlaceholderVideoTranscodeApiBase,
+  normalizeUrl,
+} from './env-validation.mjs'
 
 loadLocalEnv()
 
-const apiBaseRaw = process.env.VIDEO_TRANSCODE_API_BASE
-const apiToken = process.env.VIDEO_TRANSCODE_API_TOKEN
-const callbackToken = process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN
-const appBaseRaw = process.env.VIDEO_TRANSCODE_APP_BASE
+const apiBaseRaw = getTrimmedEnv('VIDEO_TRANSCODE_API_BASE')
+const apiToken = getTrimmedEnv('VIDEO_TRANSCODE_API_TOKEN')
+const callbackToken = getTrimmedEnv('VIDEO_TRANSCODE_CALLBACK_TOKEN')
+const appBaseRaw = getTrimmedEnv('VIDEO_TRANSCODE_APP_BASE')
 
 if (!apiBaseRaw || !apiToken || !callbackToken || !appBaseRaw) {
   console.error(
@@ -17,8 +22,22 @@ if (!apiBaseRaw || !apiToken || !callbackToken || !appBaseRaw) {
   process.exit(1)
 }
 
-const apiBase = apiBaseRaw.replace(/\/+$/, '')
-const appBase = appBaseRaw.replace(/\/+$/, '')
+if (isPlaceholderVideoTranscodeApiBase(apiBaseRaw)) {
+  console.error(
+    'VIDEO_TRANSCODE_API_BASE points to a placeholder host. Configure a real transcode service before synthetic checks.'
+  )
+  process.exit(1)
+}
+
+const apiBase = normalizeUrl(apiBaseRaw)
+const appBase = normalizeUrl(appBaseRaw)
+if (!apiBase || !appBase) {
+  console.error(
+    'VIDEO_TRANSCODE_API_BASE and VIDEO_TRANSCODE_APP_BASE must be valid absolute URLs.'
+  )
+  process.exit(1)
+}
+
 const callbackUrl = `${appBase}/api/internal/video-transcode/callback`
 
 function assertStatus(label, actual, expected) {

@@ -17,6 +17,12 @@
 - `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`)
 - `FALLBACK_URL`
 
+Preflight command:
+
+```bash
+npm run ops:check-worker-prereqs
+```
+
 ## Redirect Rules
 
 - Active code (`is_active=true`) -> HTTP 302 redirect to `target_url`
@@ -84,6 +90,7 @@ Expected:
 - `/test` -> `302` with `Location` target from Supabase `redirects`.
 - `/unknown` -> `404`.
 - `/` -> `302` to `FALLBACK_URL` (if configured).
+- Missing worker secrets or invalid worker URLs should degrade to `404`, not runtime `500`.
 
 For app route checks:
 

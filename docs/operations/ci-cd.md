@@ -68,6 +68,12 @@ Production preflight:
 
 Triggers on changes under `workers/redirector/**` and manual dispatch.
 
+Pre-deploy gates:
+
+- `npm run ops:check-prereqs:production`
+- `npm run ops:check-worker-prereqs`
+- `npm run test:worker`
+
 Required GitHub secrets:
 
 - `CLOUDFLARE_API_TOKEN`
@@ -76,6 +82,13 @@ Required GitHub secrets:
 - `WORKER_SUPABASE_SECRET_KEY` (or legacy `WORKER_SUPABASE_SERVICE_ROLE_KEY`)
 - `WORKER_FALLBACK_URL`
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (or repo variable `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) for production prereq gate
+
+Required GitHub secrets for shared production prereq gate:
+
+- `VIDEO_TRANSCODE_API_BASE`
+- `VIDEO_TRANSCODE_API_TOKEN`
+- `VIDEO_TRANSCODE_CALLBACK_TOKEN`
+- `NEXT_PUBLIC_APP_URL` (repo variable or secret, mirrored into `VIDEO_TRANSCODE_APP_BASE`)
 
 Where to get Cloudflare deploy credentials:
 

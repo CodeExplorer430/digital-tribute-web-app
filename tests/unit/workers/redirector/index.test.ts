@@ -124,6 +124,16 @@ describe('redirector worker', () => {
     expect(response.status).toBe(302)
   })
 
+  it('returns 404 for root path when fallback is invalid', async () => {
+    const response = await worker.fetch(
+      new Request('https://go.everlume.app/'),
+      { ...env, FALLBACK_URL: 'not-a-url' }
+    )
+
+    expect(response.status).toBe(404)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('returns 405 for non-GET/HEAD methods', async () => {
     const response = await worker.fetch(
       new Request('https://go.everlume.app/grandma', { method: 'POST' }),
@@ -132,5 +142,47 @@ describe('redirector worker', () => {
 
     expect(response.status).toBe(405)
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('returns 404 when worker supabase url is invalid', async () => {
+    const response = await worker.fetch(
+      new Request('https://go.everlume.app/grandma'),
+      { ...env, SUPABASE_URL: 'not-a-url' }
+    )
+
+    expect(response.status).toBe(404)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('returns 404 when worker api key is missing', async () => {
+    const response = await worker.fetch(
+      new Request('https://go.everlume.app/grandma'),
+      { SUPABASE_URL: env.SUPABASE_URL }
+    )
+
+    expect(response.status).toBe(404)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('returns 404 when upstream fetch throws', async () => {
+    fetchMock.mockRejectedValue(new Error('network down'))
+
+    const response = await worker.fetch(
+      new Request('https://go.everlume.app/grandma'),
+      env
+    )
+
+    expect(response.status).toBe(404)
+  })
+
+  it('returns 404 when upstream returns invalid json', async () => {
+    fetchMock.mockResolvedValue(new Response('not-json', { status: 200 }))
+
+    const response = await worker.fetch(
+      new Request('https://go.everlume.app/grandma'),
+      env
+    )
+
+    expect(response.status).toBe(404)
   })
 })

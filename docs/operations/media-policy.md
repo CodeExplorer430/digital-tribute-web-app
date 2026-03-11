@@ -26,6 +26,9 @@
   - `VIDEO_TRANSCODE_API_TOKEN`
   - `VIDEO_TRANSCODE_CALLBACK_TOKEN`
   - `VIDEO_TRANSCODE_APP_BASE`
+- Production constraints:
+  - `VIDEO_TRANSCODE_API_BASE` must reference a real reachable service, not a placeholder host.
+  - `VIDEO_TRANSCODE_APP_BASE` must match `NEXT_PUBLIC_APP_URL` so callback verification targets the live app origin.
 - Service implementation lives in `services/video-transcode` (Cloud Run container).
 - Contract validation commands:
   - `npm run ops:check-video-transcode`

@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
 import { loadLocalEnv } from './load-env.mjs'
+import {
+  getTrimmedEnv,
+  isPlaceholderVideoTranscodeApiBase,
+  isValidAbsoluteUrl,
+  normalizeUrl,
+} from './env-validation.mjs'
 
 loadLocalEnv()
 
@@ -29,13 +35,9 @@ function isProductionCheckEnabled() {
   )
 }
 
-const missing = requiredAppEnv.filter(
-  (key) => !process.env[key] || `${process.env[key]}`.trim() === ''
-)
+const missing = requiredAppEnv.filter((key) => !getTrimmedEnv(key))
 const missingGroups = keyGroups.filter((group) =>
-  group.keys.every(
-    (key) => !process.env[key] || `${process.env[key]}`.trim() === ''
-  )
+  group.keys.every((key) => !getTrimmedEnv(key))
 )
 const strictProdCheck = isProductionCheckEnabled()
 
@@ -47,8 +49,8 @@ if (strictProdCheck) {
     )
   }
   if (
-    !process.env.UPSTASH_REDIS_REST_URL ||
-    !process.env.UPSTASH_REDIS_REST_TOKEN
+    !getTrimmedEnv('UPSTASH_REDIS_REST_URL') ||
+    !getTrimmedEnv('UPSTASH_REDIS_REST_TOKEN')
   ) {
     securityIssues.push(
       'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required for production.'
@@ -57,39 +59,57 @@ if (strictProdCheck) {
   if (process.env.CAPTCHA_ENABLED !== '1') {
     securityIssues.push('CAPTCHA_ENABLED must be set to "1" for production.')
   }
-  if (
-    !process.env.CAPTCHA_SECRET ||
-    `${process.env.CAPTCHA_SECRET}`.trim() === ''
-  ) {
+  if (!getTrimmedEnv('CAPTCHA_SECRET')) {
     securityIssues.push('CAPTCHA_SECRET is required for production.')
   }
-  if (
-    !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
-    `${process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}`.trim() === ''
-  ) {
+  if (!getTrimmedEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY')) {
     securityIssues.push(
       'NEXT_PUBLIC_TURNSTILE_SITE_KEY is required for production.'
     )
   }
-  if (
-    !process.env.VIDEO_TRANSCODE_API_BASE ||
-    `${process.env.VIDEO_TRANSCODE_API_BASE}`.trim() === ''
-  ) {
+  const transcodeApiBase = getTrimmedEnv('VIDEO_TRANSCODE_API_BASE')
+  const transcodeAppBase = getTrimmedEnv('VIDEO_TRANSCODE_APP_BASE')
+
+  if (!transcodeApiBase) {
     securityIssues.push('VIDEO_TRANSCODE_API_BASE is required for production.')
+  } else if (!isValidAbsoluteUrl(transcodeApiBase)) {
+    securityIssues.push(
+      'VIDEO_TRANSCODE_API_BASE must be a valid absolute URL.'
+    )
+  } else if (isPlaceholderVideoTranscodeApiBase(transcodeApiBase)) {
+    securityIssues.push(
+      'VIDEO_TRANSCODE_API_BASE must point to a real transcode service, not a placeholder URL.'
+    )
   }
-  if (
-    !process.env.VIDEO_TRANSCODE_API_TOKEN ||
-    `${process.env.VIDEO_TRANSCODE_API_TOKEN}`.trim() === ''
-  ) {
+  if (!getTrimmedEnv('VIDEO_TRANSCODE_API_TOKEN')) {
     securityIssues.push('VIDEO_TRANSCODE_API_TOKEN is required for production.')
   }
-  if (
-    !process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN ||
-    `${process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN}`.trim() === ''
-  ) {
+  if (!getTrimmedEnv('VIDEO_TRANSCODE_CALLBACK_TOKEN')) {
     securityIssues.push(
       'VIDEO_TRANSCODE_CALLBACK_TOKEN is required for production.'
     )
+  }
+  if (!transcodeAppBase) {
+    securityIssues.push('VIDEO_TRANSCODE_APP_BASE is required for production.')
+  } else if (!isValidAbsoluteUrl(transcodeAppBase)) {
+    securityIssues.push(
+      'VIDEO_TRANSCODE_APP_BASE must be a valid absolute URL.'
+    )
+  }
+
+  const publicAppUrl = getTrimmedEnv('NEXT_PUBLIC_APP_URL')
+  if (publicAppUrl && transcodeAppBase) {
+    const normalizedPublicAppUrl = normalizeUrl(publicAppUrl)
+    const normalizedTranscodeAppBase = normalizeUrl(transcodeAppBase)
+    if (!normalizedPublicAppUrl) {
+      securityIssues.push(
+        'NEXT_PUBLIC_APP_URL must be a valid absolute URL when set.'
+      )
+    } else if (normalizedPublicAppUrl !== normalizedTranscodeAppBase) {
+      securityIssues.push(
+        'VIDEO_TRANSCODE_APP_BASE must match NEXT_PUBLIC_APP_URL in production.'
+      )
+    }
   }
 }
 
