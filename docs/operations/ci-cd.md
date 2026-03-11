@@ -33,6 +33,10 @@ Security/reliability note:
 This workflow should be configured as a required status check before merge.
 Required statuses: `lint`, `typecheck`, `unit_coverage`, `worker_tests`, `e2e`, `a11y`, `launch_readiness`, `perf_a11y_gate`, `build`.
 
+Workflow runtime note:
+
+- GitHub Actions workflow dependencies are pinned to the Node 24-compatible major line for `actions/checkout`, `actions/setup-node`, and `actions/upload-artifact` so CI and deploy runs do not emit the GitHub-hosted Node 20 deprecation warning.
+
 ### 2) Next.js Deployment (Vercel) (`.github/workflows/deploy-vercel.yml`)
 
 Automated via GitHub Actions + Vercel CLI:
