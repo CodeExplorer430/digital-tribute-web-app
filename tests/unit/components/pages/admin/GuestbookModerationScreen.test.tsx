@@ -2,6 +2,14 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { GuestbookModerationScreen } from '@/components/pages/admin/GuestbookModerationScreen'
 
+function deferredResponse() {
+  let resolve: (response: Response) => void
+  const promise = new Promise<Response>((res) => {
+    resolve = res
+  })
+  return { promise, resolve: resolve! }
+}
+
 const sampleEntry = {
   id: 'entry-1',
   name: 'Ana',
@@ -82,6 +90,29 @@ describe('GuestbookModerationScreen', () => {
 
     expect(await screen.findByText('Forever remembered')).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('shows the loading state before the moderation queue resolves', async () => {
+    const request = deferredResponse()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => request.promise
+    )
+
+    render(<GuestbookModerationScreen />)
+
+    expect(screen.getByText('Loading entries...')).toBeInTheDocument()
+
+    request.resolve(
+      new Response(
+        JSON.stringify({ entries: [{ ...sampleEntry, pages: null }] }),
+        {
+          status: 200,
+        }
+      )
+    )
+
+    expect(await screen.findByText('Forever remembered')).toBeInTheDocument()
+    expect(screen.getByText('Untitled memorial')).toBeInTheDocument()
   })
 
   it('rolls back optimistic approve when API fails', async () => {
@@ -193,6 +224,98 @@ describe('GuestbookModerationScreen', () => {
 
     expect(await screen.findByText('Unapprove failed')).toBeInTheDocument()
     expect(screen.getAllByText('Approved').length).toBeGreaterThan(0)
+  })
+
+  it('unapproves an approved entry and reports the success state', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/guestbook' && (!init || !init.method)) {
+          return new Response(
+            JSON.stringify({
+              entries: [{ ...sampleEntry, is_approved: true }],
+            }),
+            { status: 200 }
+          )
+        }
+        if (
+          url === '/api/admin/guestbook/entry-1/unapprove' &&
+          init?.method === 'POST'
+        ) {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<GuestbookModerationScreen />)
+    await screen.findByRole('button', {
+      name: 'Unapprove guestbook entry from Ana',
+    })
+
+    await user.click(
+      screen.getByRole('button', { name: 'Unapprove guestbook entry from Ana' })
+    )
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/admin/guestbook/entry-1/unapprove',
+        expect.objectContaining({ method: 'POST' })
+      )
+    })
+    expect(screen.getAllByText('Pending').length).toBeGreaterThan(0)
+    expect(
+      screen.getByText('Moved Ana back to pending review.')
+    ).toBeInTheDocument()
+  })
+
+  it('shows the delete fallback error for non-json failures, then clears it after a successful retry', async () => {
+    const confirmMock = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    let deleteAttempts = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/guestbook' && (!init || !init.method)) {
+        return new Response(JSON.stringify({ entries: [sampleEntry] }), {
+          status: 200,
+        })
+      }
+      if (url === '/api/admin/guestbook/entry-1' && init?.method === 'DELETE') {
+        deleteAttempts += 1
+        if (deleteAttempts === 1) {
+          return new Response('bad', { status: 500 })
+        }
+        return new Response(JSON.stringify({ ok: true }), { status: 200 })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<GuestbookModerationScreen />)
+    await screen.findByText('Forever remembered')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete guestbook entry from Ana' })
+    )
+    expect(
+      await screen.findByText('Unable to delete entry.')
+    ).toBeInTheDocument()
+    expect(screen.getByText('Forever remembered')).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete guestbook entry from Ana' })
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText('Unable to delete entry.')
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText('Forever remembered')).not.toBeInTheDocument()
+    })
+    expect(confirmMock).toHaveBeenCalledTimes(2)
+    expect(
+      screen.getByText('Deleted Ana from the moderation queue.')
+    ).toBeInTheDocument()
   })
 
   it('renders the empty state when there are no guestbook entries', async () => {
