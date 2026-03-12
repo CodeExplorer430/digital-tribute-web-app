@@ -15,6 +15,7 @@ vi.mock('@/lib/supabase/server', () => ({
 
 describe('POST /api/public/memorials/[slug]/unlock', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     mockSingle.mockReset()
   })
 
@@ -140,6 +141,75 @@ describe('POST /api/public/memorials/[slug]/unlock', () => {
       'everlume_memorial_access_page-1='
     )
     expect(res.headers.get('set-cookie')).toContain('Path=/')
+  })
+
+  it('uses null password timestamps when unlocking fixture memorials without a password update date', async () => {
+    const fixtureSpy = vi.spyOn(
+      await import('@/lib/server/e2e-public-fixtures'),
+      'verifyE2EMemorialPassword'
+    )
+    fixtureSpy.mockReturnValue({
+      ok: true,
+      memorial: {
+        id: 'fixture-page',
+        slug: 'fixture-memorial',
+        access_mode: 'password',
+        password_updated_at: null,
+      },
+    } as never)
+
+    const req = new Request(
+      'http://localhost/api/public/memorials/fixture-memorial/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'correct-password' }),
+      }
+    )
+
+    const createTokenSpy = vi.spyOn(
+      await import('@/lib/server/page-password'),
+      'createMemorialAccessToken'
+    )
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'fixture-memorial' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(createTokenSpy).toHaveBeenCalledWith('fixture-page', null)
+  })
+
+  it('uses null password timestamps when unlocking database memorials without a password update date', async () => {
+    const createTokenSpy = vi.spyOn(
+      await import('@/lib/server/page-password'),
+      'createMemorialAccessToken'
+    )
+    mockSingle.mockResolvedValue({
+      data: {
+        id: 'page-2',
+        slug: 'jane',
+        access_mode: 'password',
+        password_hash: hashMemorialPassword('correct-password'),
+        password_updated_at: null,
+      },
+    })
+
+    const req = new Request(
+      'http://localhost/api/public/memorials/jane/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'correct-password' }),
+      }
+    )
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(createTokenSpy).toHaveBeenCalledWith('page-2', null)
   })
 
   it('unlocks password memorial fixtures when the e2e public lane is enabled', async () => {

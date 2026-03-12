@@ -33,6 +33,7 @@ vi.mock('@/lib/supabase/server', () => ({
 
 describe('POST /api/public/memorials/[slug]/media-consent', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     mockCanAccessMemorial.mockReset()
     mockInsertMemorialMediaConsent.mockReset()
     mockPageSingle.mockReset()
@@ -112,6 +113,51 @@ describe('POST /api/public/memorials/[slug]/media-consent', () => {
     expect(res.status).toBe(200)
     expect(mockInsertMemorialMediaConsent).toHaveBeenCalledWith(
       expect.objectContaining({ consentVersion: 1 })
+    )
+  })
+
+  it('uses null memorial timestamps and default fixture consent settings when fixture consent succeeds', async () => {
+    const fixtureSpy = vi.spyOn(
+      await import('@/lib/server/e2e-public-fixtures'),
+      'getE2EMemorialFixtureBySlug'
+    )
+    fixtureSpy.mockReturnValue({
+      memorial: {
+        id: 'fixture-page',
+        slug: 'fixture-memorial',
+        owner_id: 'owner-1',
+        privacy: 'private',
+        access_mode: 'password',
+        password_updated_at: null,
+        media_consent_revoked_at: null,
+      },
+      siteSettings: null,
+    } as never)
+    const createTokenSpy = vi.spyOn(
+      await import('@/lib/server/media-consent'),
+      'createMemorialMediaConsentToken'
+    )
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+
+    const req = new Request(
+      'http://localhost/api/public/memorials/fixture-memorial/media-consent',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'fixture-memorial' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(createTokenSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        memorialId: 'fixture-page',
+        passwordUpdatedAt: null,
+        consentVersion: 1,
+        consentRevokedAt: null,
+      })
     )
   })
 
@@ -197,6 +243,55 @@ describe('POST /api/public/memorials/[slug]/media-consent', () => {
     expect(res.status).toBe(200)
     expect(mockPageSingle).not.toHaveBeenCalled()
     expect(mockInsertMemorialMediaConsent).not.toHaveBeenCalled()
+  })
+
+  it('uses null memorial timestamps when the database consent flow succeeds without password or revocation dates', async () => {
+    const createTokenSpy = vi.spyOn(
+      await import('@/lib/server/media-consent'),
+      'createMemorialMediaConsentToken'
+    )
+    mockPageSingle.mockResolvedValue({
+      data: {
+        id: 'page-2',
+        slug: 'jane',
+        owner_id: 'owner-1',
+        privacy: 'private',
+        access_mode: 'password',
+        password_updated_at: null,
+        media_consent_revoked_at: null,
+      },
+    })
+    mockSiteSettingsSingle.mockResolvedValue({
+      data: { protected_media_consent_version: null },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+
+    const req = new Request(
+      'http://localhost/api/public/memorials/jane/media-consent',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockInsertMemorialMediaConsent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        memorialId: 'page-2',
+        consentVersion: 1,
+      })
+    )
+    expect(createTokenSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        memorialId: 'page-2',
+        passwordUpdatedAt: null,
+        consentVersion: 1,
+        consentRevokedAt: null,
+      })
+    )
   })
 
   it('rejects fixture consent requests when the memorial does not require consent', async () => {

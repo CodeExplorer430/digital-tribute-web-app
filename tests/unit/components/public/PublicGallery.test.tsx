@@ -389,4 +389,50 @@ describe('PublicGallery', () => {
       'true'
     )
   })
+
+  it('uses the protected-media main image url in the lightbox and falls back to the default interval when zero is provided', async () => {
+    vi.useFakeTimers()
+
+    try {
+      render(
+        <PublicGallery
+          photos={[
+            {
+              id: 'p1',
+              thumb_url: '/api/public/media/photo-1?variant=thumb',
+              image_url: '/api/public/media/photo-1?variant=image',
+            },
+            photos[1],
+          ]}
+          slideshowEnabled
+          slideshowIntervalMs={0}
+        />
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open photo 1' }))
+      const dialog = screen.getByRole('dialog', { name: /photo lightbox/i })
+      expect(within(dialog).getByAltText('Memorial photo 1')).toHaveAttribute(
+        'src',
+        '/api/public/media/photo-1?variant=image'
+      )
+      expect(within(dialog).getByAltText('Memorial photo 1')).toHaveAttribute(
+        'data-unoptimized',
+        'true'
+      )
+
+      await act(async () => {
+        vi.advanceTimersByTime(4499)
+      })
+      expect(
+        within(dialog).getByAltText('Memorial photo 1')
+      ).toBeInTheDocument()
+
+      await act(async () => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(within(dialog).getByAltText('Second memory')).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

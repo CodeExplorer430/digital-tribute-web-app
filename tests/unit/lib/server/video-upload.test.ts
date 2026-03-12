@@ -68,6 +68,10 @@ describe('video-upload helpers', () => {
     expect(isPlaceholderVideoTranscodeApiBase('not a url')).toBe(false)
   })
 
+  it('treats an omitted transcode url as non-placeholder', () => {
+    expect(isPlaceholderVideoTranscodeApiBase(undefined)).toBe(false)
+  })
+
   it('treats empty or whitespace-only base urls as missing', () => {
     process.env.VIDEO_TRANSCODE_API_BASE = '   '
 
@@ -96,6 +100,14 @@ describe('video-upload helpers', () => {
 
     process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN = 'callback-token'
     expect(isVideoTranscodeConfigured()).toBe(true)
+  })
+
+  it('returns the configured api and callback tokens when present', () => {
+    process.env.VIDEO_TRANSCODE_API_TOKEN = 'api-token'
+    process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN = 'callback-token'
+
+    expect(getVideoTranscodeApiTokenOrThrow()).toBe('api-token')
+    expect(getVideoTranscodeCallbackTokenOrThrow()).toBe('callback-token')
   })
 
   it('accepts the expected upload job states', () => {
