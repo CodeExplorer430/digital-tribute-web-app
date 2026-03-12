@@ -35,6 +35,26 @@ describe('POST /api/guestbook', () => {
     vi.unstubAllGlobals()
   })
 
+  it('returns invalid json when the request body cannot be parsed', async () => {
+    const req = new Request('http://localhost/api/guestbook', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{',
+    })
+
+    const res = await POST(req as never)
+    const payload = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(payload).toEqual({
+      code: 'INVALID_JSON',
+      message: 'Invalid request payload.',
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(mockSelect).not.toHaveBeenCalled()
+    expect(mockInsert).not.toHaveBeenCalled()
+  })
+
   it('rejects invalid payload', async () => {
     const req = new Request('http://localhost/api/guestbook', {
       method: 'POST',
@@ -44,6 +64,53 @@ describe('POST /api/guestbook', () => {
 
     const res = await POST(req as never)
     expect(res.status).toBe(400)
+  })
+
+  it('short-circuits honeypot submissions as accepted spam', async () => {
+    const req = new Request('http://localhost/api/guestbook', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        memorialId: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'Maria',
+        message: 'Forever remembered',
+        honeypot: 'bot-filled',
+      }),
+    })
+
+    const res = await POST(req as never)
+    const payload = await res.json()
+
+    expect(res.status).toBe(202)
+    expect(payload).toEqual({ ok: true })
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(mockSelect).not.toHaveBeenCalled()
+    expect(mockInsert).not.toHaveBeenCalled()
+  })
+
+  it('returns too-fast when the submission delay threshold is not met', async () => {
+    const req = new Request('http://localhost/api/guestbook', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        memorialId: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'Maria',
+        message: 'Forever remembered',
+        submittedAt: Date.now() - 500,
+      }),
+    })
+
+    const res = await POST(req as never)
+    const payload = await res.json()
+
+    expect(res.status).toBe(429)
+    expect(payload).toEqual({
+      code: 'TOO_FAST',
+      message: 'Please wait a moment before submitting your message.',
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(mockSelect).not.toHaveBeenCalled()
+    expect(mockInsert).not.toHaveBeenCalled()
   })
 
   it('creates guestbook entry for valid payload', async () => {

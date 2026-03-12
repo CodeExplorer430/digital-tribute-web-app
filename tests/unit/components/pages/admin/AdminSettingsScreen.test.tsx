@@ -610,6 +610,56 @@ describe('AdminSettingsScreen', () => {
     )
   })
 
+  it('restores the clamped memorial interval when saving fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/site-settings' && (!init || !init.method)) {
+        return new Response(
+          JSON.stringify({
+            settings: {
+              homeDirectoryEnabled: false,
+              memorialSlideshowEnabled: true,
+              memorialSlideshowIntervalMs: 4500,
+              memorialVideoLayout: 'grid',
+            },
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/site-settings' && init?.method === 'PATCH') {
+        return new Response(
+          JSON.stringify({ message: 'Unable to save defaults.' }),
+          {
+            status: 500,
+          }
+        )
+      }
+      return new Response(JSON.stringify({ redirects: [] }), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+
+    await screen.findByText('Memorial Presentation Defaults')
+    const intervalInput = screen.getByLabelText(
+      'Slideshow Interval (milliseconds)'
+    )
+    const videoLayoutSelect = screen.getByLabelText('Video Layout')
+
+    await user.selectOptions(videoLayoutSelect, 'featured')
+    await user.clear(intervalInput)
+    await user.type(intervalInput, '1500')
+    await user.click(
+      screen.getByRole('button', { name: 'Save Memorial Presentation' })
+    )
+
+    expect(
+      await screen.findByText('Unable to save defaults.')
+    ).toBeInTheDocument()
+    expect(intervalInput).toHaveValue(1500)
+    expect(videoLayoutSelect).toHaveValue('featured')
+  })
+
   it('creates a redirect and prepends it to the table when the API returns a redirect payload', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       const url = String(input)
@@ -770,6 +820,61 @@ describe('AdminSettingsScreen', () => {
     })
   })
 
+  it('keeps edited protected media copy visible when publishing a new version fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/redirects') {
+        return new Response(JSON.stringify({ redirects: [] }), {
+          status: 200,
+        })
+      }
+      if (url === '/api/admin/site-settings' && (!init || !init.method)) {
+        return new Response(
+          JSON.stringify({
+            settings: {
+              homeDirectoryEnabled: false,
+              protectedMediaConsentTitle: 'Family Media Notice',
+              protectedMediaConsentBody:
+                'Original protected media consent body for the memorial family.',
+              protectedMediaConsentVersion: 4,
+            },
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/site-settings' && init?.method === 'PATCH') {
+        return new Response(JSON.stringify({ message: 'Publish failed.' }), {
+          status: 500,
+        })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+
+    const titleInput = await screen.findByLabelText('Notice Title')
+    const bodyInput = screen.getByLabelText('Notice Body')
+
+    await user.clear(titleInput)
+    await user.type(titleInput, 'Updated Family Notice')
+    await user.clear(bodyInput)
+    await user.type(
+      bodyInput,
+      'Updated protected media consent body for family memorial visitors and invited guests.'
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Save and Publish New Version' })
+    )
+
+    expect(await screen.findByText('Publish failed.')).toBeInTheDocument()
+    expect(titleInput).toHaveValue('Updated Family Notice')
+    expect(bodyInput).toHaveValue(
+      'Updated protected media consent body for family memorial visitors and invited guests.'
+    )
+    expect(screen.getByText('Current version 4')).toBeInTheDocument()
+  })
+
   it('republishes the current protected media notice without changing the copy', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
@@ -816,5 +921,54 @@ describe('AdminSettingsScreen', () => {
     expect(JSON.parse(String(patchCall?.[1]?.body))).toEqual({
       bumpProtectedMediaConsentVersion: true,
     })
+  })
+
+  it('rolls back the optimistic version bump when republishing fails', async () => {
+    const publishRequest = deferredResponse()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/redirects') {
+        return new Response(JSON.stringify({ redirects: [] }), {
+          status: 200,
+        })
+      }
+      if (url === '/api/admin/site-settings' && (!init || !init.method)) {
+        return new Response(
+          JSON.stringify({
+            settings: {
+              homeDirectoryEnabled: false,
+              protectedMediaConsentTitle: 'Media Viewing Notice',
+              protectedMediaConsentBody:
+                'Protected media consent body for the memorial family and invited visitors.',
+              protectedMediaConsentVersion: 2,
+            },
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/site-settings' && init?.method === 'PATCH') {
+        return publishRequest.promise
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+
+    await screen.findByText('Current version 2')
+    await user.click(
+      screen.getByRole('button', { name: 'Republish Current Notice' })
+    )
+
+    expect(screen.getByText('Current version 3')).toBeInTheDocument()
+
+    publishRequest.resolve(
+      new Response(JSON.stringify({ message: 'Republish failed.' }), {
+        status: 500,
+      })
+    )
+
+    expect(await screen.findByText('Republish failed.')).toBeInTheDocument()
+    expect(screen.getByText('Current version 2')).toBeInTheDocument()
   })
 })

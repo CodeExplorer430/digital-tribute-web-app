@@ -315,6 +315,47 @@ describe('DataExport', () => {
     expect(await screen.findByText('No photos to export.')).toBeInTheDocument()
   })
 
+  it('exports photo metadata csv with populated fields', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          photos: [
+            {
+              id: 'p2',
+              caption: 'Garden "Bench"',
+              image_url: 'https://cdn.example.com/full.jpg',
+              thumb_url: 'https://cdn.example.com/thumb.jpg',
+              cloudinary_public_id: 'memorial/garden-bench',
+              created_at: '2026-01-01T00:00:00.000Z',
+              taken_at: '2025-12-31T12:34:56.000Z',
+            },
+          ],
+        }),
+        { status: 200 }
+      )
+    )
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Photo Metadata/i })
+    )
+
+    const csvBlob = vi.mocked(URL.createObjectURL).mock.calls.at(-1)?.[0]
+    expect(csvBlob).toBeInstanceOf(Blob)
+
+    const csvText = await (csvBlob as Blob).text()
+    expect(csvText).toContain(
+      'ID,Caption,Cloudinary Public ID,Image URL,Thumb URL,Taken At,Uploaded At'
+    )
+    expect(csvText).toContain('"Garden ""Bench"""')
+    expect(csvText).toContain('memorial/garden-bench')
+    expect(csvText).toContain('https://cdn.example.com/full.jpg')
+    expect(csvText).toContain('https://cdn.example.com/thumb.jpg')
+    expect(csvText).toContain('2025-12-31T12:34:56.000Z')
+  })
+
   it('exports photos ZIP and surfaces API errors', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
@@ -752,6 +793,21 @@ describe('DataExport', () => {
     expect(await screen.findByText('No photos to export.')).toBeInTheDocument()
   })
 
+  it('shows no-data notice when the photo zip payload omits photos entirely', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 200 })
+    )
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Download All Photos/i })
+    )
+
+    expect(await screen.findByText('No photos to export.')).toBeInTheDocument()
+  })
+
   it('treats missing media-consent logs as an empty export', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({}), { status: 200 })
@@ -766,6 +822,26 @@ describe('DataExport', () => {
 
     expect(
       await screen.findByText('No protected media consent records to export.')
+    ).toBeInTheDocument()
+  })
+
+  it('shows the generic photo metadata export fallback when a non-error value is thrown', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      if (String(input) === '/api/admin/memorials/page-1/photos') {
+        throw 'boom'
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Photo Metadata/i })
+    )
+
+    expect(
+      await screen.findByText('Export failed: Export failed.')
     ).toBeInTheDocument()
   })
 
