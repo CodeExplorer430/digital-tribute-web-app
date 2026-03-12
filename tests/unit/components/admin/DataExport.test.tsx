@@ -116,6 +116,41 @@ describe('DataExport', () => {
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(3)
   })
 
+  it('exports guestbook csv with escaped populated fields', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          entries: [
+            {
+              id: 'g2',
+              name: 'Ana "Mae"',
+              email: 'ana@example.com',
+              message: 'Forever "loved"',
+              is_approved: false,
+              created_at: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+        { status: 200 }
+      )
+    )
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(screen.getByRole('button', { name: /Export Guestbook/i }))
+
+    const csvBlob = vi.mocked(URL.createObjectURL).mock.calls.at(-1)?.[0]
+    expect(csvBlob).toBeInstanceOf(Blob)
+
+    const csvText = await (csvBlob as Blob).text()
+    expect(csvText).toContain('Name,Email,Message,Date,Approved')
+    expect(csvText).toContain('"Ana ""Mae"""')
+    expect(csvText).toContain('"ana@example.com"')
+    expect(csvText).toContain('"Forever ""loved"""')
+    expect(csvText).toContain('No')
+  })
+
   it('exports a memorial json package with page, timeline, videos, guestbook, photos, and redirects', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
@@ -839,6 +874,24 @@ describe('DataExport', () => {
     await user.click(
       screen.getByRole('button', { name: /Export Photo Metadata/i })
     )
+
+    expect(
+      await screen.findByText('Export failed: Export failed.')
+    ).toBeInTheDocument()
+  })
+
+  it('shows the generic guestbook export fallback when a non-error value is thrown', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      if (String(input) === '/api/admin/memorials/page-1/guestbook') {
+        throw 'boom'
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(screen.getByRole('button', { name: /Export Guestbook/i }))
 
     expect(
       await screen.findByText('Export failed: Export failed.')

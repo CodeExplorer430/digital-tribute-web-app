@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AdminSettingsScreen } from '@/components/pages/admin/AdminSettingsScreen'
 
@@ -271,6 +271,45 @@ describe('AdminSettingsScreen', () => {
     ).toBeGreaterThanOrEqual(1)
   })
 
+  it('renders disabled slideshow defaults and featured video layout from site settings', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/redirects') {
+        return new Response(JSON.stringify({ redirects: [] }), { status: 200 })
+      }
+      return new Response(
+        JSON.stringify({
+          settings: {
+            homeDirectoryEnabled: false,
+            memorialSlideshowEnabled: false,
+            memorialSlideshowIntervalMs: 6000,
+            memorialVideoLayout: 'featured',
+          },
+        }),
+        { status: 200 }
+      )
+    })
+
+    render(<AdminSettingsScreen />)
+
+    await screen.findByText('Memorial Presentation Defaults')
+    const presentationSection = screen
+      .getByText('Memorial Presentation Defaults')
+      .closest('section') as HTMLElement
+
+    expect(
+      within(presentationSection).getByRole('button', { name: 'Disabled' })
+    ).toBeInTheDocument()
+    expect(
+      within(presentationSection).getByLabelText('Video Layout')
+    ).toHaveValue('featured')
+    expect(
+      within(presentationSection).getByLabelText(
+        'Slideshow Interval (milliseconds)'
+      )
+    ).toHaveValue(6000)
+  })
+
   it('updates redirect status and rolls back delete when API fails', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
@@ -355,6 +394,132 @@ describe('AdminSettingsScreen', () => {
     )
     expect(await screen.findByText('Delete failed')).toBeInTheDocument()
     expect(screen.getByText('/sample')).toBeInTheDocument()
+  })
+
+  it('disables the redirect row actions while verification is in flight', async () => {
+    const updateRequest = deferredResponse()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/site-settings') {
+        return new Response(
+          JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects') {
+        return new Response(
+          JSON.stringify({
+            redirects: [
+              {
+                id: 'r1',
+                shortcode: 'sample',
+                target_url: 'https://example.com/memorials/sample',
+                print_status: 'verified',
+                last_verified_at: '2026-03-07T00:00:00.000Z',
+                is_active: true,
+                created_at: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects/r1' && init?.method === 'PATCH') {
+        return updateRequest.promise
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+    await screen.findByText('/sample')
+
+    const verifyButton = screen.getByRole('button', {
+      name: 'Mark redirect sample as unverified',
+    })
+    await user.click(verifyButton)
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'Disable redirect sample' })
+      ).toBeDisabled()
+    })
+    expect(
+      screen.getByRole('button', { name: 'Mark redirect sample as verified' })
+    ).toBeDisabled()
+
+    updateRequest.resolve(
+      new Response(
+        JSON.stringify({
+          redirect: {
+            id: 'r1',
+            shortcode: 'sample',
+            target_url: 'https://example.com/memorials/sample',
+            print_status: 'unverified',
+            last_verified_at: null,
+            is_active: true,
+            created_at: '2026-01-01T00:00:00.000Z',
+          },
+        }),
+        { status: 200 }
+      )
+    )
+
+    expect(await screen.findByText('Unverified')).toBeInTheDocument()
+  })
+
+  it('removes the redirect row optimistically while delete is in flight', async () => {
+    const deleteRequest = deferredResponse()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/site-settings') {
+        return new Response(
+          JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects') {
+        return new Response(
+          JSON.stringify({
+            redirects: [
+              {
+                id: 'r1',
+                shortcode: 'sample',
+                target_url: 'https://example.com/memorials/sample',
+                print_status: 'unverified',
+                last_verified_at: null,
+                is_active: true,
+                created_at: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects/r1' && init?.method === 'DELETE') {
+        return deleteRequest.promise
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+    await screen.findByText('/sample')
+
+    const deleteButton = screen.getByRole('button', {
+      name: 'Delete redirect sample',
+    })
+    await user.click(deleteButton)
+
+    expect(screen.queryByText('/sample')).not.toBeInTheDocument()
+
+    deleteRequest.resolve(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText('/sample')).not.toBeInTheDocument()
+    })
   })
 
   it('keeps the optimistic redirect toggle when the API responds without a redirect payload', async () => {
