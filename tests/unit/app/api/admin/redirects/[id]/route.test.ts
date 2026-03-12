@@ -39,6 +39,8 @@ describe('/api/admin/redirects/[id]', () => {
     mockGetUser.mockReset()
     mockProfileSingle.mockReset()
     mockRedirectSingle.mockReset()
+    mockRedirectEqId.mockClear()
+    mockRedirectEqCreatedBy.mockClear()
     mockDeleteEq.mockReset()
     mockUpdate.mockClear()
     mockUpdateEq.mockClear()
@@ -59,6 +61,23 @@ describe('/api/admin/redirects/[id]', () => {
       params: Promise.resolve({ id: 'not-a-uuid' }),
     })
     expect(res.status).toBe(400)
+  })
+
+  it('returns auth response for delete when admin auth fails', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } })
+
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'DELETE' }
+    )
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(401)
+    expect(mockRedirectEqId).not.toHaveBeenCalled()
+    expect(mockDeleteEq).not.toHaveBeenCalled()
+    expect(mockLogAdminAudit).not.toHaveBeenCalled()
   })
 
   it('returns forbidden for non-owner on delete', async () => {
@@ -95,6 +114,36 @@ describe('/api/admin/redirects/[id]', () => {
         entity: 'redirect',
         entityId: '550e8400-e29b-41d4-a716-446655440000',
       })
+    )
+  })
+
+  it('deletes redirect for admins without applying created_by ownership scope', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockRedirectEqId.mockImplementationOnce(() => ({
+      eq: mockRedirectEqCreatedBy,
+      single: mockRedirectSingle,
+    }))
+    mockRedirectSingle.mockResolvedValue({
+      data: { id: 'r1', created_by: 'user-2' },
+    })
+    mockDeleteEq.mockResolvedValue({ error: null })
+
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'DELETE' }
+    )
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockRedirectEqCreatedBy).not.toHaveBeenCalledWith(
+      'created_by',
+      'admin-1'
     )
   })
 
@@ -140,6 +189,27 @@ describe('/api/admin/redirects/[id]', () => {
       params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
     })
     expect(invalidJsonResponse.status).toBe(400)
+    expect(mockLogAdminAudit).not.toHaveBeenCalled()
+  })
+
+  it('returns auth response for patch when admin auth fails', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } })
+
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ printStatus: 'verified' }),
+      }
+    )
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(401)
+    expect(mockRedirectEqId).not.toHaveBeenCalled()
+    expect(mockUpdate).not.toHaveBeenCalled()
     expect(mockLogAdminAudit).not.toHaveBeenCalled()
   })
 

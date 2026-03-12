@@ -221,6 +221,29 @@ describe('POST /api/public/memorials/[slug]/media-consent', () => {
     expect(mockPageSingle).not.toHaveBeenCalled()
   })
 
+  it('rejects fixture consent when the memorial is not yet unlocked', async () => {
+    vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: false,
+      requiresPassword: true,
+    })
+
+    const req = new Request(
+      'http://localhost/api/public/memorials/e2e-password-memorial/media-consent',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'e2e-password-memorial' }),
+    })
+
+    expect(res.status).toBe(403)
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'FORBIDDEN',
+    })
+    expect(mockPageSingle).not.toHaveBeenCalled()
+    expect(mockInsertMemorialMediaConsent).not.toHaveBeenCalled()
+  })
+
   it('rejects consent when the memorial is not yet unlocked', async () => {
     mockPageSingle.mockResolvedValue({
       data: {
@@ -282,6 +305,38 @@ describe('POST /api/public/memorials/[slug]/media-consent', () => {
     expect(res.status).toBe(500)
     await expect(res.json()).resolves.toMatchObject({
       code: 'CONSENT_LOG_ERROR',
+    })
+  })
+
+  it('uses the fallback logging error message when consent logging throws a non-error value', async () => {
+    mockPageSingle.mockResolvedValue({
+      data: {
+        id: 'page-1',
+        slug: 'jane',
+        owner_id: 'owner-1',
+        privacy: 'private',
+        access_mode: 'password',
+        password_updated_at: '2026-03-09T00:00:00.000Z',
+      },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+    mockInsertMemorialMediaConsent.mockRejectedValue('boom')
+
+    const req = new Request(
+      'http://localhost/api/public/memorials/jane/media-consent',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+
+    expect(res.status).toBe(500)
+    await expect(res.json()).resolves.toEqual({
+      code: 'CONSENT_LOG_ERROR',
+      message: 'Unable to record media consent.',
     })
   })
 })

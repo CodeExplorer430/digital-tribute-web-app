@@ -269,6 +269,26 @@ describe('/memorials/[slug] page', () => {
     )
   })
 
+  it('generates private memorial metadata for inaccessible database-backed pages', async () => {
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, access_mode: 'private', privacy: 'private' },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: false,
+      requiresPassword: false,
+    })
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+
+    expect(metadata).toEqual({
+      title: 'Private Memorial | Everlume',
+      robots: { index: false, follow: false },
+    })
+  })
+
   it('generates private memorial metadata from fixtures without querying the database', async () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
     mockCanAccessMemorial.mockResolvedValue({
@@ -285,6 +305,45 @@ describe('/memorials/[slug] page', () => {
       title: 'Private Memorial | Everlume',
       robots: { index: false, follow: false },
     })
+    expect(mockPageSingle).not.toHaveBeenCalled()
+  })
+
+  it('generates password-protected metadata from fixtures without querying the database', async () => {
+    vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: false,
+      requiresPassword: true,
+    })
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'e2e-password-memorial' }),
+    })
+
+    expect(metadata).toEqual({
+      title: 'Password Protected Memorial | Everlume',
+      robots: { index: false, follow: false },
+    })
+    expect(mockPageSingle).not.toHaveBeenCalled()
+  })
+
+  it('generates open graph metadata from public fixtures without querying the database', async () => {
+    vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'e2e-public-memorial' }),
+    })
+
+    expect(metadata).toEqual(
+      expect.objectContaining({
+        title: 'In Loving Memory of Amelia Stone | Everlume',
+        openGraph: expect.objectContaining({
+          title: 'In Loving Memory of Amelia Stone',
+          type: 'website',
+        }),
+      })
+    )
     expect(mockPageSingle).not.toHaveBeenCalled()
   })
 

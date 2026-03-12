@@ -447,6 +447,59 @@ describe('/api/admin/site-settings', () => {
     )
   })
 
+  it('uses existing fallback values in audit metadata when optional consent fields are omitted', async () => {
+    mockSingle.mockResolvedValue({
+      data: {
+        home_directory_enabled: false,
+        memorial_slideshow_enabled: true,
+        memorial_slideshow_interval_ms: 4500,
+        memorial_video_layout: 'featured',
+        protected_media_consent_title: null,
+        protected_media_consent_body: null,
+        protected_media_consent_version: null,
+      },
+      error: null,
+    })
+    mockUpdateEq.mockResolvedValue({ error: null })
+    mockRequireAdminUser.mockResolvedValue({
+      ok: true,
+      userId: 'admin-1',
+      supabase: {
+        from: () => ({
+          select: mockSelect,
+          update: mockUpdate,
+        }),
+      },
+    })
+
+    const req = new Request('http://localhost/api/admin/site-settings', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        homeDirectoryEnabled: true,
+      }),
+    })
+
+    const res = await PATCH(req as never)
+
+    expect(res.status).toBe(200)
+    expect(mockLogAdminAudit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          after: expect.objectContaining({
+            homeDirectoryEnabled: true,
+            memorialVideoLayout: 'featured',
+            protectedMediaConsentTitle: 'Media Viewing Notice',
+            protectedMediaConsentBody:
+              "The family has protected this memorial's photos and videos for respectful viewing. Continuing confirms that access to protected media is recorded for family oversight.",
+            protectedMediaConsentVersion: 1,
+          }),
+        }),
+      })
+    )
+  })
+
   it('returns 500 when update fails and does not audit', async () => {
     mockSingle.mockResolvedValue({
       data: { home_directory_enabled: false },
