@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { UserManagementScreen } from '@/components/pages/admin/UserManagementScreen'
 
@@ -15,9 +15,34 @@ function makeUser(overrides: Partial<Record<string, unknown>> = {}) {
   }
 }
 
+function deferredResponse() {
+  let resolve: (response: Response) => void
+  const promise = new Promise<Response>((res) => {
+    resolve = res
+  })
+  return { promise, resolve: resolve! }
+}
+
 describe('UserManagementScreen', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+  })
+
+  it('shows the loading state before the initial user list resolves', async () => {
+    const listRequest = deferredResponse()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => listRequest.promise
+    )
+
+    render(<UserManagementScreen />)
+
+    expect(screen.getByText('Loading users...')).toBeInTheDocument()
+
+    listRequest.resolve(
+      new Response(JSON.stringify({ users: [makeUser()] }), { status: 200 })
+    )
+
+    expect(await screen.findByText('Alex Santos')).toBeInTheDocument()
   })
 
   it('loads and displays users with email addresses', async () => {
@@ -30,6 +55,45 @@ describe('UserManagementScreen', () => {
     expect(await screen.findByText('User Management')).toBeInTheDocument()
     expect(await screen.findByText('Alex Santos')).toBeInTheDocument()
     expect(screen.getByText('alex@example.com')).toBeInTheDocument()
+  })
+
+  it('shows the inviting state and falls back to the default invite error for non-json failures', async () => {
+    const inviteRequest = deferredResponse()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/users' && (!init || !init.method)) {
+          return new Response(JSON.stringify({ users: [] }), { status: 200 })
+        }
+        if (url === '/api/admin/users' && init?.method === 'POST') {
+          return inviteRequest.promise
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+
+    await screen.findByText('Invite New User')
+    await user.type(
+      screen.getByPlaceholderText('name@example.com'),
+      'maria@example.com'
+    )
+    await user.type(screen.getByPlaceholderText('Alex Santos'), 'Maria Reyes')
+    await user.click(screen.getByRole('button', { name: /^invite$/i }))
+
+    expect(screen.getByRole('button', { name: /Inviting/i })).toBeDisabled()
+
+    inviteRequest.resolve(new Response('broken', { status: 500 }))
+
+    expect(
+      await screen.findByText('Unable to invite user.')
+    ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/users',
+      expect.objectContaining({ method: 'POST' })
+    )
   })
 
   it('shows load errors and the empty-search state', async () => {
@@ -271,6 +335,101 @@ describe('UserManagementScreen', () => {
     )
   })
 
+  it('shows the fallback update error and blocks other actions while an update is pending', async () => {
+    const patchRequest = deferredResponse()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/users' && (!init || !init.method)) {
+          return new Response(JSON.stringify({ users: [makeUser()] }), {
+            status: 200,
+          })
+        }
+        if (url === '/api/admin/users/u1' && init?.method === 'PATCH') {
+          return patchRequest.promise
+        }
+        if (
+          url === '/api/admin/users/u1/reset-password' &&
+          init?.method === 'POST'
+        ) {
+          return new Response(
+            JSON.stringify({ message: 'should not happen' }),
+            {
+              status: 200,
+            }
+          )
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+
+    await screen.findByText('Alex Santos')
+    await user.selectOptions(
+      screen.getByLabelText('Role for Alex Santos'),
+      'admin'
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Send password reset to Alex Santos' })
+    ).toBeDisabled()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Send password reset to Alex Santos' })
+    )
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/users/u1/reset-password',
+      expect.objectContaining({ method: 'POST' })
+    )
+
+    patchRequest.resolve(new Response('broken', { status: 500 }))
+
+    expect(
+      await screen.findByText('Unable to update user.')
+    ).toBeInTheDocument()
+  })
+
+  it('signs the current browser out when an update response requests self sign-out', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/users' && (!init || !init.method)) {
+          return new Response(JSON.stringify({ users: [makeUser()] }), {
+            status: 200,
+          })
+        }
+        if (url === '/api/admin/users/u1' && init?.method === 'PATCH') {
+          return new Response(
+            JSON.stringify({ shouldSignOutSelf: true, user: makeUser() }),
+            { status: 200 }
+          )
+        }
+        if (url === '/auth/signout' && init?.method === 'POST') {
+          return new Response(null, { status: 302 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+    await screen.findByText('Alex Santos')
+
+    await user.selectOptions(
+      screen.getByLabelText('Role for Alex Santos'),
+      'admin'
+    )
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/auth/signout',
+        expect.objectContaining({ method: 'POST', redirect: 'manual' })
+      )
+    })
+  })
+
   it('resends invites and sends password resets', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
@@ -302,6 +461,54 @@ describe('UserManagementScreen', () => {
             JSON.stringify({ message: 'Password reset email sent.' }),
             { status: 200 }
           )
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+    await screen.findByText('Alex Santos')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Resend invite to Alex Santos' })
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/users/u1/invite',
+      expect.objectContaining({ method: 'POST' })
+    )
+    expect(await screen.findByText('Invite email sent.')).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Send password reset to Alex Santos' })
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/users/u1/reset-password',
+      expect.objectContaining({ method: 'POST' })
+    )
+    expect(
+      await screen.findByText('Password reset email sent.')
+    ).toBeInTheDocument()
+  })
+
+  it('uses default success messages when invite resend and password reset omit them', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/users' && (!init || !init.method)) {
+          return new Response(
+            JSON.stringify({ users: [makeUser({ account_state: 'invited' })] }),
+            { status: 200 }
+          )
+        }
+        if (url === '/api/admin/users/u1/invite' && init?.method === 'POST') {
+          return new Response(JSON.stringify({}), { status: 200 })
+        }
+        if (
+          url === '/api/admin/users/u1/reset-password' &&
+          init?.method === 'POST'
+        ) {
+          return new Response(JSON.stringify({}), { status: 200 })
         }
         return new Response(JSON.stringify({}), { status: 200 })
       })
@@ -384,6 +591,53 @@ describe('UserManagementScreen', () => {
       await screen.findByText('Unable to send password reset.')
     ).toBeInTheDocument()
     expect(screen.getByText('Pending Setup')).toBeInTheDocument()
+  })
+
+  it('shows fallback resend-invite and reset errors when responses are not json', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/users' && (!init || !init.method)) {
+        return new Response(
+          JSON.stringify({
+            users: [
+              makeUser({
+                account_state: 'invited',
+                invited_at: '2026-03-08T00:00:00.000Z',
+              }),
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/users/u1/invite' && init?.method === 'POST') {
+        return new Response('broken', { status: 500 })
+      }
+      if (
+        url === '/api/admin/users/u1/reset-password' &&
+        init?.method === 'POST'
+      ) {
+        return new Response('still broken', { status: 500 })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+    await screen.findByText('Alex Santos')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Resend invite to Alex Santos' })
+    )
+    expect(
+      await screen.findByText('Unable to resend invite.')
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Send password reset to Alex Santos' })
+    )
+    expect(
+      await screen.findByText('Unable to send password reset.')
+    ).toBeInTheDocument()
   })
 
   it('respects deactivate confirmation and handles deactivate errors', async () => {
@@ -480,6 +734,42 @@ describe('UserManagementScreen', () => {
       await screen.findByText('Account status updated.')
     ).toBeInTheDocument()
     expect(screen.getByText('Pending Setup')).toBeInTheDocument()
+  })
+
+  it('uses the local deactivate fallback when the api returns no updated user', async () => {
+    const confirmMock = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/users' && (!init || !init.method)) {
+          return new Response(JSON.stringify({ users: [makeUser()] }), {
+            status: 200,
+          })
+        }
+        if (url === '/api/admin/users/u1' && init?.method === 'DELETE') {
+          return new Response(JSON.stringify({}), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+    await screen.findByText('Alex Santos')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Deactivate Alex Santos' })
+    )
+
+    expect(confirmMock).toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/users/u1',
+      expect.objectContaining({ method: 'DELETE' })
+    )
+    expect(await screen.findByText('User deactivated.')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Reactivate Alex Santos' })
+    ).toBeInTheDocument()
   })
 
   it('signs the current browser out after self-deactivation', async () => {

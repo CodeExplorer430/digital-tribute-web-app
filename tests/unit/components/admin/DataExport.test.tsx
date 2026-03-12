@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import JSZip from 'jszip'
 import { DataExport } from '@/components/admin/DataExport'
 
 function deferredResponse() {
@@ -426,6 +427,50 @@ describe('DataExport', () => {
     ).toBeInTheDocument()
   })
 
+  it('exports media-consent csv rows with defaulted consent values', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          logs: [
+            {
+              id: 'c1',
+              event_type: 'consent_granted',
+              access_mode: 'password',
+              consent_source: 'protected_media_gate',
+              media_kind: null,
+              media_variant: null,
+              ip_hash: 'iphash',
+              user_agent_hash: 'uahash',
+              created_at: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+        { status: 200 }
+      )
+    )
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Media Consent/i })
+    )
+
+    await waitFor(() => {
+      expect(URL.createObjectURL).toHaveBeenCalled()
+    })
+
+    const csvBlob = vi.mocked(URL.createObjectURL).mock.calls.at(-1)?.[0]
+    expect(csvBlob).toBeInstanceOf(Blob)
+    const csvText = await (csvBlob as Blob).text()
+    expect(csvText).toContain(
+      'Event,Media Kind,Media Variant,Access Mode,Consent Version,Consent Source,IP Hash,User Agent Hash,Recorded At'
+    )
+    expect(csvText).toContain(
+      'consent_granted,,,password,1,protected_media_gate,iphash,uahash,'
+    )
+  })
+
   it('shows the loading state while the memorial package export is pending', async () => {
     const memorialRequest = deferredResponse()
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -492,6 +537,61 @@ describe('DataExport', () => {
     expect(packageText).toContain('"memorialTitle": "Jane Doe"')
   })
 
+  it('prefers the exported memorial title over the prop title when the payload includes one', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/memorials/page-1') {
+        return new Response(
+          JSON.stringify({
+            memorial: {
+              id: 'page-1',
+              title: 'Canonical Memorial Title',
+              slug: 'jane-doe',
+              full_name: 'Jane Doe',
+              dob: null,
+              dod: null,
+              accessMode: 'public',
+            },
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/memorials/page-1/photos') {
+        return new Response(JSON.stringify({ photos: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/memorials/page-1/videos') {
+        return new Response(JSON.stringify({ videos: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/memorials/page-1/timeline') {
+        return new Response(JSON.stringify({ events: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/memorials/page-1/guestbook') {
+        return new Response(JSON.stringify({ entries: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/memorials/page-1/redirects') {
+        return new Response(JSON.stringify({ redirects: [] }), { status: 200 })
+      }
+      return new Response(JSON.stringify({ logs: [] }), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Prop Title" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Memorial Package/i })
+    )
+
+    await waitFor(() => {
+      expect(URL.createObjectURL).toHaveBeenCalled()
+    })
+
+    const packageBlob = vi.mocked(URL.createObjectURL).mock.calls.at(-1)?.[0]
+    expect(packageBlob).toBeInstanceOf(Blob)
+    const packageText = await (packageBlob as Blob).text()
+    expect(packageText).toContain('"memorialTitle": "Canonical Memorial Title"')
+    expect(packageText).not.toContain('"memorialTitle": "Prop Title"')
+  })
+
   it('shows fallback export errors for non-json responses and no-data media consent', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
@@ -556,6 +656,35 @@ describe('DataExport', () => {
     expect(await screen.findByText('No photos to export.')).toBeInTheDocument()
   })
 
+  it('clears a prior notice before showing a later export error', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ entries: [] }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response('broken', { status: 500 }))
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(screen.getByRole('button', { name: /Export Guestbook/i }))
+    expect(
+      await screen.findByText('No guestbook entries to export.')
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Photo Metadata/i })
+    )
+    expect(
+      await screen.findByText('Export failed: Unable to load photos.')
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('No guestbook entries to export.')
+    ).not.toBeInTheDocument()
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('skips failed image downloads and still generates a zip from remaining photos', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     const fetchMock = vi
@@ -616,6 +745,67 @@ describe('DataExport', () => {
       expect(URL.createObjectURL).toHaveBeenCalled()
     })
     expect(consoleError).toHaveBeenCalled()
+  })
+
+  it('skips null image urls and falls back to numbered jpg filenames in zip exports', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/memorials/page-1/photos') {
+        return new Response(
+          JSON.stringify({
+            photos: [
+              {
+                id: 'p1',
+                caption: 'Missing image',
+                image_url: null,
+                thumb_url: null,
+                cloudinary_public_id: null,
+                created_at: '2026-01-01T00:00:00.000Z',
+                taken_at: null,
+              },
+              {
+                id: 'p2',
+                caption: 'Fallback name',
+                image_url: 'https://cdn.example.com/fallback.jpg',
+                thumb_url: null,
+                cloudinary_public_id: null,
+                created_at: '2026-01-02T00:00:00.000Z',
+                taken_at: null,
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === 'https://cdn.example.com/fallback.jpg') {
+        return {
+          ok: true,
+          headers: {
+            get: vi.fn(() => null),
+          },
+          arrayBuffer: async () => Uint8Array.from([1, 2, 3]).buffer,
+        } as unknown as Response
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Download All Photos/i })
+    )
+
+    await waitFor(() => {
+      expect(URL.createObjectURL).toHaveBeenCalled()
+    })
+
+    const zipBlob = vi.mocked(URL.createObjectURL).mock.calls.at(-1)?.[0]
+    expect(zipBlob).toBeInstanceOf(Blob)
+    const zip = await JSZip.loadAsync(zipBlob as Blob)
+    const files = Object.keys(zip.files).filter((name) => !zip.files[name]?.dir)
+
+    expect(files).toEqual(['photos/photo_2.jpeg'])
   })
 
   it('shows the zip fallback error when photo download or archive generation throws', async () => {
