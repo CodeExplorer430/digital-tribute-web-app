@@ -460,6 +460,67 @@ describe('GuestbookModerationScreen', () => {
     ).toBeInTheDocument()
   })
 
+  it('disables the approval action while an approve request is in flight', async () => {
+    const approveRequest = deferredResponse()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/guestbook' && (!init || !init.method)) {
+        return new Response(JSON.stringify({ entries: [sampleEntry] }), {
+          status: 200,
+        })
+      }
+      if (
+        url === '/api/admin/guestbook/entry-1/approve' &&
+        init?.method === 'POST'
+      ) {
+        return approveRequest.promise
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<GuestbookModerationScreen />)
+    await screen.findByRole('button', {
+      name: 'Approve guestbook entry from Ana',
+    })
+
+    await user.click(
+      screen.getByRole('button', { name: 'Approve guestbook entry from Ana' })
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', {
+          name: 'Unapprove guestbook entry from Ana',
+        })
+      ).toBeDisabled()
+      expect(
+        screen.getByRole('button', { name: 'Delete guestbook entry from Ana' })
+      ).toBeDisabled()
+    })
+
+    approveRequest.resolve(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    )
+
+    expect(
+      await screen.findByText('Approved Ana for public display.')
+    ).toBeInTheDocument()
+  })
+
+  it('treats an omitted entries payload as an empty moderation queue', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 200 })
+    )
+
+    render(<GuestbookModerationScreen />)
+
+    expect(
+      await screen.findByText(/No guestbook entries need review right now/i)
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('0')).toHaveLength(3)
+  })
+
   it('renders the empty state when there are no guestbook entries', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ entries: [] }), { status: 200 })

@@ -161,6 +161,56 @@ describe('EditMemorialScreen', () => {
     expect(await screen.findByText('Memorial not found.')).toBeInTheDocument()
   })
 
+  it('shows the api error message when memorial loading fails with json', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Memorial API unavailable' }), {
+        status: 503,
+      })
+    )
+
+    render(<EditMemorialScreen memorialId="page-1" />)
+
+    expect(
+      await screen.findByText('Memorial API unavailable')
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Memorial not found.')).toBeInTheDocument()
+  })
+
+  it('shows not found without an error when the memorial payload is missing', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/memorials/page-1' && (!init || !init.method)) {
+          return new Response(JSON.stringify({}), { status: 200 })
+        }
+        if (url === '/api/admin/memorials/page-1/redirects') {
+          return new Response(JSON.stringify({ redirects: [] }), {
+            status: 200,
+          })
+        }
+        if (url === '/api/admin/memorials/page-1/photos') {
+          return new Response(JSON.stringify({ photos: [] }), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    render(<EditMemorialScreen memorialId="page-1" />)
+
+    expect(await screen.findByText('Memorial not found.')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Unable to load memorial.')
+    ).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/memorials/page-1/redirects',
+      expect.objectContaining({ cache: 'no-store' })
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/memorials/page-1/photos',
+      expect.objectContaining({ cache: 'no-store' })
+    )
+  })
+
   it('loads memorial data and allows setting hero image', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
