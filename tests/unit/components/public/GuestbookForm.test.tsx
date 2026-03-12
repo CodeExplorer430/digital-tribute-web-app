@@ -189,6 +189,34 @@ describe('GuestbookForm', () => {
     ).toBeInTheDocument()
   })
 
+  it.each([
+    [
+      'DATABASE_ERROR',
+      'The guestbook is temporarily unavailable. Please try again shortly.',
+    ],
+    [
+      'VALIDATION_ERROR',
+      'Please review your name and message, then try again.',
+    ],
+    [
+      'CAPTCHA_FAILED',
+      'Please complete the spam-protection check before posting.',
+    ],
+  ])('maps %s responses to the expected fallback copy', async (code, text) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ code }), { status: 400 })
+    )
+    const user = userEvent.setup()
+
+    render(<GuestbookForm memorialId="page-1" />)
+
+    await user.type(screen.getByLabelText('Your Name'), 'Maria')
+    await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(await screen.findByText(text)).toBeInTheDocument()
+  })
+
   it('uses memorial-not-found and raw-message fallbacks for other API failures', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
@@ -222,6 +250,23 @@ describe('GuestbookForm', () => {
     await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
     expect(
       await screen.findByText('Custom fallback from the API.')
+    ).toBeInTheDocument()
+  })
+
+  it('falls back to the generic submit error when the api response is not json', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('service unavailable', { status: 500 })
+    )
+    const user = userEvent.setup()
+
+    render(<GuestbookForm memorialId="page-1" />)
+
+    await user.type(screen.getByLabelText('Your Name'), 'Maria')
+    await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(
+      await screen.findByText('Unable to submit your message right now.')
     ).toBeInTheDocument()
   })
 
