@@ -328,4 +328,65 @@ describe('PublicGallery', () => {
       vi.useRealTimers()
     }
   })
+
+  it('uses the default slideshow interval when none is provided', async () => {
+    vi.useFakeTimers()
+
+    try {
+      render(<PublicGallery photos={photos} slideshowEnabled />)
+
+      fireEvent.click(screen.getByRole('button', { name: /open photo 1/i }))
+      expect(
+        within(
+          screen.getByRole('dialog', { name: /photo lightbox/i })
+        ).getByAltText('First memory')
+      ).toBeInTheDocument()
+
+      await act(async () => {
+        vi.advanceTimersByTime(4499)
+      })
+      expect(
+        within(
+          screen.getByRole('dialog', { name: /photo lightbox/i })
+        ).getByAltText('First memory')
+      ).toBeInTheDocument()
+
+      await act(async () => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(
+        within(
+          screen.getByRole('dialog', { name: /photo lightbox/i })
+        ).getByAltText('Second memory')
+      ).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('uses the protected-media thumbnail fallback in the lightbox when the main image is missing', async () => {
+    const user = userEvent.setup()
+    render(
+      <PublicGallery
+        photos={[
+          {
+            id: 'p1',
+            thumb_url: '/api/public/media/photo-1?variant=thumb',
+            image_url: undefined,
+          },
+        ]}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Open photo 1' }))
+    const dialog = screen.getByRole('dialog', { name: /photo lightbox/i })
+    expect(within(dialog).getByAltText('Memorial photo 1')).toHaveAttribute(
+      'src',
+      '/api/public/media/photo-1?variant=thumb'
+    )
+    expect(within(dialog).getByAltText('Memorial photo 1')).toHaveAttribute(
+      'data-unoptimized',
+      'true'
+    )
+  })
 })

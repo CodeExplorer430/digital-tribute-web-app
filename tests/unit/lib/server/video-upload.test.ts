@@ -64,6 +64,40 @@ describe('video-upload helpers', () => {
     expect(isVideoTranscodeConfigured()).toBe(true)
   })
 
+  it('treats invalid urls as non-placeholder values without throwing', () => {
+    expect(isPlaceholderVideoTranscodeApiBase('not a url')).toBe(false)
+  })
+
+  it('treats empty or whitespace-only base urls as missing', () => {
+    process.env.VIDEO_TRANSCODE_API_BASE = '   '
+
+    expect(isVideoTranscodeConfigured()).toBe(false)
+    expect(() => getVideoTranscodeApiBaseOrThrow()).toThrow(
+      'Missing VIDEO_TRANSCODE_API_BASE'
+    )
+  })
+
+  it('treats example.com placeholders as unconfigured even with a token set', () => {
+    process.env.VIDEO_TRANSCODE_API_BASE = 'https://example.com/'
+    process.env.VIDEO_TRANSCODE_API_TOKEN = 'api-token'
+    process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN = 'callback-token'
+
+    expect(
+      isPlaceholderVideoTranscodeApiBase(process.env.VIDEO_TRANSCODE_API_BASE)
+    ).toBe(true)
+    expect(isVideoTranscodeConfigured()).toBe(false)
+  })
+
+  it('requires both transcode tokens for the stack to count as configured', () => {
+    process.env.VIDEO_TRANSCODE_API_BASE = 'https://video.example.com/'
+    process.env.VIDEO_TRANSCODE_API_TOKEN = 'api-token'
+
+    expect(isVideoTranscodeConfigured()).toBe(false)
+
+    process.env.VIDEO_TRANSCODE_CALLBACK_TOKEN = 'callback-token'
+    expect(isVideoTranscodeConfigured()).toBe(true)
+  })
+
   it('accepts the expected upload job states', () => {
     expect(videoUploadStatusSchema.safeParse('completed').success).toBe(true)
     expect(videoUploadStatusSchema.safeParse('fallback_required').success).toBe(

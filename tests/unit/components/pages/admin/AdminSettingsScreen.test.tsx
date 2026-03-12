@@ -1072,6 +1072,224 @@ describe('AdminSettingsScreen', () => {
     expect(await screen.findByText('/legacy')).toBeInTheDocument()
   })
 
+  it('clears a prior create error after a later successful create that reloads redirects', async () => {
+    let createAttempts = 0
+    let redirectsCalls = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/site-settings') {
+        return new Response(
+          JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects' && (!init || !init.method)) {
+        redirectsCalls += 1
+        if (redirectsCalls === 1) {
+          return new Response(JSON.stringify({ redirects: [] }), {
+            status: 200,
+          })
+        }
+        return new Response(
+          JSON.stringify({
+            redirects: [
+              {
+                id: 'r-success',
+                shortcode: 'after-error',
+                target_url: 'https://example.com/memorials/after-error',
+                print_status: 'unverified',
+                last_verified_at: null,
+                is_active: true,
+                created_at: '2026-03-08T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects' && init?.method === 'POST') {
+        createAttempts += 1
+        if (createAttempts === 1) {
+          return new Response(
+            JSON.stringify({ message: 'Create failed once' }),
+            {
+              status: 500,
+            }
+          )
+        }
+        return new Response(JSON.stringify({}), { status: 201 })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+
+    await screen.findByText('Create New Redirect')
+    const shortcodeInput = screen.getByPlaceholderText('grandma')
+    const targetUrlInput = screen.getByPlaceholderText(
+      'https://yourdomain.com/memorials/sample'
+    )
+
+    await user.type(shortcodeInput, 'after-error')
+    await user.type(targetUrlInput, 'https://example.com/memorials/after-error')
+    await user.click(screen.getByRole('button', { name: 'Create Redirect' }))
+
+    expect(await screen.findByText('Create failed once')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Create Redirect' }))
+
+    expect(await screen.findByText('/after-error')).toBeInTheDocument()
+    expect(screen.queryByText('Create failed once')).not.toBeInTheDocument()
+  })
+
+  it('ignores a second redirect update while another row update is already pending', async () => {
+    const updateRequest = deferredResponse()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/site-settings') {
+          return new Response(
+            JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+            { status: 200 }
+          )
+        }
+        if (url === '/api/admin/redirects') {
+          return new Response(
+            JSON.stringify({
+              redirects: [
+                {
+                  id: 'r1',
+                  shortcode: 'sample',
+                  target_url: 'https://example.com/memorials/sample',
+                  print_status: 'unverified',
+                  last_verified_at: null,
+                  is_active: true,
+                  created_at: '2026-01-01T00:00:00.000Z',
+                },
+                {
+                  id: 'r2',
+                  shortcode: 'second',
+                  target_url: 'https://example.com/memorials/second',
+                  print_status: 'unverified',
+                  last_verified_at: null,
+                  is_active: true,
+                  created_at: '2026-01-02T00:00:00.000Z',
+                },
+              ],
+            }),
+            { status: 200 }
+          )
+        }
+        if (url === '/api/admin/redirects/r1' && init?.method === 'PATCH') {
+          return updateRequest.promise
+        }
+        if (url === '/api/admin/redirects/r2' && init?.method === 'PATCH') {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+    await screen.findByText('/sample')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Disable redirect sample' })
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Disable redirect second' })
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/redirects/r1',
+      expect.objectContaining({ method: 'PATCH' })
+    )
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/redirects/r2',
+      expect.objectContaining({ method: 'PATCH' })
+    )
+
+    updateRequest.resolve(new Response(JSON.stringify({}), { status: 200 }))
+
+    await waitFor(() => {
+      expect(screen.getByText('/sample')).toBeInTheDocument()
+      expect(screen.getByText('/second')).toBeInTheDocument()
+    })
+  })
+
+  it('replaces only the updated redirect when a patch response returns a redirect payload', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/site-settings') {
+        return new Response(
+          JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects') {
+        return new Response(
+          JSON.stringify({
+            redirects: [
+              {
+                id: 'r1',
+                shortcode: 'sample',
+                target_url: 'https://example.com/memorials/sample',
+                print_status: 'unverified',
+                last_verified_at: null,
+                is_active: true,
+                created_at: '2026-01-01T00:00:00.000Z',
+              },
+              {
+                id: 'r2',
+                shortcode: 'second',
+                target_url: 'https://example.com/memorials/second',
+                print_status: 'unverified',
+                last_verified_at: null,
+                is_active: true,
+                created_at: '2026-01-02T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects/r1' && init?.method === 'PATCH') {
+        return new Response(
+          JSON.stringify({
+            redirect: {
+              id: 'r1',
+              shortcode: 'sample',
+              target_url: 'https://example.com/memorials/sample',
+              print_status: 'verified',
+              last_verified_at: '2026-03-07T00:00:00.000Z',
+              is_active: true,
+              created_at: '2026-01-01T00:00:00.000Z',
+            },
+          }),
+          { status: 200 }
+        )
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+    await screen.findByText('/sample')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Mark redirect sample as verified' })
+    )
+
+    const rows = screen.getAllByRole('row')
+    expect(await screen.findByText('Verified')).toBeInTheDocument()
+    expect(rows.some((row) => row.textContent?.includes('/second'))).toBe(true)
+    expect(rows.some((row) => row.textContent?.includes('Unverified'))).toBe(
+      true
+    )
+  })
+
   it('loads protected media consent settings and saves a new notice version', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')

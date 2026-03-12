@@ -474,6 +474,55 @@ describe('GuestbookModerationScreen', () => {
     ).toBeInTheDocument()
   })
 
+  it('keeps unrelated approved rows unchanged while unapproving a single entry', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/guestbook' && (!init || !init.method)) {
+        return new Response(
+          JSON.stringify({
+            entries: [
+              { ...sampleEntry, is_approved: true },
+              {
+                ...sampleEntry,
+                id: 'entry-2',
+                name: 'Bea',
+                is_approved: true,
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (
+        url === '/api/admin/guestbook/entry-1/unapprove' &&
+        init?.method === 'POST'
+      ) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<GuestbookModerationScreen />)
+    await screen.findByRole('button', {
+      name: 'Unapprove guestbook entry from Ana',
+    })
+
+    await user.click(
+      screen.getByRole('button', { name: 'Unapprove guestbook entry from Ana' })
+    )
+
+    expect(
+      await screen.findByText('Moved Ana back to pending review.')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Approve guestbook entry from Ana' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Unapprove guestbook entry from Bea' })
+    ).toBeInTheDocument()
+  })
+
   it('clears a prior success banner when a new moderation action starts', async () => {
     const unapproveRequest = deferredResponse()
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
