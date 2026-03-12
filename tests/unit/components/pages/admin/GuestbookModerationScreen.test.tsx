@@ -92,6 +92,18 @@ describe('GuestbookModerationScreen', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  it('falls back to the default load error when the moderation response is not json', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('bad', { status: 500 })
+    )
+
+    render(<GuestbookModerationScreen />)
+
+    expect(
+      await screen.findByText('Unable to load guestbook entries.')
+    ).toBeInTheDocument()
+  })
+
   it('shows the loading state before the moderation queue resolves', async () => {
     const request = deferredResponse()
     vi.spyOn(globalThis, 'fetch').mockImplementation(
@@ -136,13 +148,48 @@ describe('GuestbookModerationScreen', () => {
 
     const user = userEvent.setup()
     render(<GuestbookModerationScreen />)
-    await screen.findByText('Forever remembered')
+    await screen.findByRole('button', {
+      name: 'Approve guestbook entry from Ana',
+    })
 
     await user.click(
       screen.getByRole('button', { name: 'Approve guestbook entry from Ana' })
     )
 
     expect(await screen.findByText('Approval failed')).toBeInTheDocument()
+    expect(screen.getAllByText('Pending').length).toBeGreaterThan(0)
+  })
+
+  it('falls back to the default approve error when the API response is not json', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/guestbook' && (!init || !init.method)) {
+        return new Response(JSON.stringify({ entries: [sampleEntry] }), {
+          status: 200,
+        })
+      }
+      if (
+        url === '/api/admin/guestbook/entry-1/approve' &&
+        init?.method === 'POST'
+      ) {
+        return new Response('bad', { status: 500 })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<GuestbookModerationScreen />)
+    await screen.findByRole('button', {
+      name: 'Approve guestbook entry from Ana',
+    })
+
+    await user.click(
+      screen.getByRole('button', { name: 'Approve guestbook entry from Ana' })
+    )
+
+    expect(
+      await screen.findByText('Unable to approve entry.')
+    ).toBeInTheDocument()
     expect(screen.getAllByText('Pending').length).toBeGreaterThan(0)
   })
 
@@ -168,7 +215,9 @@ describe('GuestbookModerationScreen', () => {
 
     const user = userEvent.setup()
     render(<GuestbookModerationScreen />)
-    await screen.findByText('Forever remembered')
+    await screen.findByRole('button', {
+      name: 'Approve guestbook entry from Ana',
+    })
 
     confirmMock.mockReturnValueOnce(false)
     await user.click(
@@ -223,6 +272,40 @@ describe('GuestbookModerationScreen', () => {
     )
 
     expect(await screen.findByText('Unapprove failed')).toBeInTheDocument()
+    expect(screen.getAllByText('Approved').length).toBeGreaterThan(0)
+  })
+
+  it('falls back to the default unapprove error when the API response is not json', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/guestbook' && (!init || !init.method)) {
+        return new Response(
+          JSON.stringify({ entries: [{ ...sampleEntry, is_approved: true }] }),
+          { status: 200 }
+        )
+      }
+      if (
+        url === '/api/admin/guestbook/entry-1/unapprove' &&
+        init?.method === 'POST'
+      ) {
+        return new Response('bad', { status: 500 })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<GuestbookModerationScreen />)
+    await screen.findByRole('button', {
+      name: 'Unapprove guestbook entry from Ana',
+    })
+
+    await user.click(
+      screen.getByRole('button', { name: 'Unapprove guestbook entry from Ana' })
+    )
+
+    expect(
+      await screen.findByText('Unable to unapprove entry.')
+    ).toBeInTheDocument()
     expect(screen.getAllByText('Approved').length).toBeGreaterThan(0)
   })
 
@@ -315,6 +398,65 @@ describe('GuestbookModerationScreen', () => {
     expect(confirmMock).toHaveBeenCalledTimes(2)
     expect(
       screen.getByText('Deleted Ana from the moderation queue.')
+    ).toBeInTheDocument()
+  })
+
+  it('ignores a second moderation action while another request is still pending', async () => {
+    const approveRequest = deferredResponse()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/guestbook' && (!init || !init.method)) {
+          return new Response(
+            JSON.stringify({
+              entries: [
+                sampleEntry,
+                { ...sampleEntry, id: 'entry-2', name: 'Bea' },
+              ],
+            }),
+            { status: 200 }
+          )
+        }
+        if (
+          url === '/api/admin/guestbook/entry-1/approve' &&
+          init?.method === 'POST'
+        ) {
+          return approveRequest.promise
+        }
+        if (
+          url === '/api/admin/guestbook/entry-2/approve' &&
+          init?.method === 'POST'
+        ) {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<GuestbookModerationScreen />)
+    await screen.findByRole('button', {
+      name: 'Approve guestbook entry from Ana',
+    })
+
+    await user.click(
+      screen.getByRole('button', { name: 'Approve guestbook entry from Ana' })
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Approve guestbook entry from Bea' })
+    )
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(
+      screen.getByRole('button', { name: 'Approve guestbook entry from Bea' })
+    ).toBeEnabled()
+
+    approveRequest.resolve(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    )
+
+    expect(
+      await screen.findByText('Approved Ana for public display.')
     ).toBeInTheDocument()
   })
 

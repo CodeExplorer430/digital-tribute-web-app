@@ -53,6 +53,51 @@ describe('MemorialConsentLog', () => {
     expect(screen.getByText('Active notice version 2')).toBeInTheDocument()
   })
 
+  it('renders revoked summaries, media labels, and default notice versions from loaded data', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          logs: [
+            {
+              id: 'c1',
+              event_type: 'media_accessed',
+              access_mode: 'public',
+              consent_source: 'protected_media_gate',
+              media_kind: 'photo',
+              media_variant: 'hero',
+              ip_hash: '0123456789abcdefgh',
+              user_agent_hash: 'fedcba9876543210',
+              created_at: '2026-03-09T00:00:00.000Z',
+            },
+            {
+              id: 'c2',
+              event_type: 'consent_granted',
+              access_mode: 'password',
+              consent_source: 'protected_media_gate',
+              consent_version: null,
+              media_kind: null,
+              media_variant: null,
+              ip_hash: 'abcdefgh0123456789',
+              user_agent_hash: '1234567890fedcba',
+              created_at: '2026-03-09T01:00:00.000Z',
+            },
+          ],
+          memorial: { mediaConsentRevokedAt: '2026-03-10T10:00:00.000Z' },
+        }),
+        { status: 200 }
+      )
+    )
+
+    render(<MemorialConsentLog memorialId="page-1" />)
+
+    expect(await screen.findByText('Media accessed')).toBeInTheDocument()
+    expect(screen.getByText('Active notice version 1')).toBeInTheDocument()
+    expect(screen.getByText('photo (hero)')).toBeInTheDocument()
+    expect(screen.getByText('Memorial media')).toBeInTheDocument()
+    expect(screen.getByText(/Last revoked:/)).toBeInTheDocument()
+    expect(screen.queryByText('v1')).not.toBeInTheDocument()
+  })
+
   it('shows an explicit empty state when there are no records', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(

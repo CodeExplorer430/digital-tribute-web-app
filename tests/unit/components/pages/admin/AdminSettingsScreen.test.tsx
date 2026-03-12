@@ -2,9 +2,41 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AdminSettingsScreen } from '@/components/pages/admin/AdminSettingsScreen'
 
+function deferredResponse() {
+  let resolve: (response: Response) => void
+  const promise = new Promise<Response>((res) => {
+    resolve = res
+  })
+  return { promise, resolve: resolve! }
+}
+
 describe('AdminSettingsScreen', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+  })
+
+  it('shows the initial loading shell before redirects resolve', async () => {
+    const redirectsRequest = deferredResponse()
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/redirects') {
+        return redirectsRequest.promise
+      }
+      return new Response(
+        JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+        { status: 200 }
+      )
+    })
+
+    render(<AdminSettingsScreen />)
+
+    expect(screen.getByText('Loading short links...')).toBeInTheDocument()
+
+    redirectsRequest.resolve(
+      new Response(JSON.stringify({ redirects: [] }), { status: 200 })
+    )
+    expect(await screen.findByText('Short URL Management')).toBeInTheDocument()
   })
 
   it('loads redirects and site settings', async () => {
@@ -80,6 +112,42 @@ describe('AdminSettingsScreen', () => {
     )
     expect(
       await screen.findByText('Unable to create redirect from API')
+    ).toBeInTheDocument()
+  })
+
+  it('shows the create pending state and falls back when redirect creation fails with a non-json body', async () => {
+    const createRequest = deferredResponse()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/redirects' && init?.method === 'POST') {
+        return createRequest.promise
+      }
+      if (url === '/api/admin/site-settings') {
+        return new Response(
+          JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+          { status: 200 }
+        )
+      }
+      return new Response(JSON.stringify({ redirects: [] }), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+
+    await screen.findByText('Create New Redirect')
+    await user.type(screen.getByPlaceholderText('grandma'), 'abc')
+    await user.type(
+      screen.getByPlaceholderText('https://yourdomain.com/memorials/sample'),
+      'https://example.com'
+    )
+    await user.click(screen.getByRole('button', { name: 'Create Redirect' }))
+
+    expect(screen.getByRole('button', { name: 'Creating...' })).toBeDisabled()
+
+    createRequest.resolve(new Response('bad', { status: 500 }))
+
+    expect(
+      await screen.findByText('Unable to create redirect.')
     ).toBeInTheDocument()
   })
 
@@ -340,6 +408,113 @@ describe('AdminSettingsScreen', () => {
     expect(
       await within(redirectsTable).findByText('Disabled')
     ).toBeInTheDocument()
+  })
+
+  it('shows the fallback error when updating a redirect fails with a non-json response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/site-settings') {
+        return new Response(
+          JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects') {
+        return new Response(
+          JSON.stringify({
+            redirects: [
+              {
+                id: 'r5',
+                shortcode: 'fallback',
+                target_url: 'https://example.com/memorials/fallback',
+                print_status: 'unverified',
+                last_verified_at: null,
+                is_active: true,
+                created_at: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects/r5' && init?.method === 'PATCH') {
+        return new Response('bad', { status: 500 })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+    await screen.findByText('/fallback')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Disable redirect fallback' })
+    )
+
+    expect(
+      await screen.findByText('Unable to update redirect.')
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Active')).toBeInTheDocument()
+  })
+
+  it('clears a prior delete error after a successful retry', async () => {
+    let deleteAttempts = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/site-settings') {
+        return new Response(
+          JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects') {
+        return new Response(
+          JSON.stringify({
+            redirects: [
+              {
+                id: 'r6',
+                shortcode: 'retry-delete',
+                target_url: 'https://example.com/memorials/retry-delete',
+                print_status: 'unverified',
+                last_verified_at: null,
+                is_active: true,
+                created_at: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects/r6' && init?.method === 'DELETE') {
+        deleteAttempts += 1
+        if (deleteAttempts === 1) {
+          return new Response('bad', { status: 500 })
+        }
+        return new Response(JSON.stringify({ ok: true }), { status: 200 })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+    await screen.findByText('/retry-delete')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete redirect retry-delete' })
+    )
+    expect(
+      await screen.findByText('Unable to delete redirect.')
+    ).toBeInTheDocument()
+    expect(screen.getByText('/retry-delete')).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete redirect retry-delete' })
+    )
+
+    expect(screen.queryByText('/retry-delete')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Unable to delete redirect.')
+    ).not.toBeInTheDocument()
   })
 
   it('saves memorial presentation settings', async () => {

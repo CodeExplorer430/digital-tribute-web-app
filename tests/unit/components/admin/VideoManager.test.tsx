@@ -492,6 +492,71 @@ describe('VideoManager', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows the fallback attach error when attach fails with a non-json body', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url.includes('/api/admin/memorials/page-10a/videos')) {
+        return new Response(JSON.stringify({ videos: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/videos/uploads/init' && init?.method === 'POST') {
+        return new Response(
+          JSON.stringify({
+            job: {
+              id: '550e8400-e29b-41d4-a716-446655440027',
+              status: 'uploading',
+              uploadUrl: 'https://upload.test/video.mp4',
+            },
+          }),
+          { status: 201 }
+        )
+      }
+      if (url === 'https://upload.test/video.mp4' && init?.method === 'PUT') {
+        return new Response(null, { status: 200 })
+      }
+      if (url.endsWith('/start') && init?.method === 'POST') {
+        return new Response(JSON.stringify({ ok: true }), { status: 202 })
+      }
+      if (url.endsWith('/550e8400-e29b-41d4-a716-446655440027')) {
+        return new Response(
+          JSON.stringify({
+            job: {
+              id: '550e8400-e29b-41d4-a716-446655440027',
+              status: 'completed',
+            },
+          }),
+          { status: 200 }
+        )
+      }
+      if (url.endsWith('/attach') && init?.method === 'POST') {
+        return new Response('bad', { status: 500 })
+      }
+      return new Response('{}', { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<VideoManager memorialId="page-10a" />)
+
+    await screen.findByText(/Large videos can now be uploaded/)
+    const file = new File(['video-bytes'], 'tribute.mp4', { type: 'video/mp4' })
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement
+    await user.upload(fileInput, file)
+    await user.click(
+      screen.getByRole('button', { name: /upload and process video/i })
+    )
+
+    expect(
+      await screen.findByText(
+        'Unable to attach processed video.',
+        {},
+        {
+          timeout: 4000,
+        }
+      )
+    ).toBeInTheDocument()
+  })
+
   it('shows the fallback poll error when the status response is not json', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       const url = String(input)
@@ -538,6 +603,60 @@ describe('VideoManager', () => {
     expect(
       await screen.findByText(
         'Unable to check video processing status.',
+        {},
+        {
+          timeout: 4000,
+        }
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('shows an invalid-job error when the poll response succeeds without a job payload', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url.includes('/api/admin/memorials/page-10b2/videos')) {
+        return new Response(JSON.stringify({ videos: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/videos/uploads/init' && init?.method === 'POST') {
+        return new Response(
+          JSON.stringify({
+            job: {
+              id: '550e8400-e29b-41d4-a716-446655440026',
+              status: 'uploading',
+              uploadUrl: 'https://upload.test/video.mp4',
+            },
+          }),
+          { status: 201 }
+        )
+      }
+      if (url === 'https://upload.test/video.mp4' && init?.method === 'PUT') {
+        return new Response(null, { status: 200 })
+      }
+      if (url.endsWith('/start') && init?.method === 'POST') {
+        return new Response(JSON.stringify({ ok: true }), { status: 202 })
+      }
+      if (url.endsWith('/550e8400-e29b-41d4-a716-446655440026')) {
+        return new Response(JSON.stringify({}), { status: 200 })
+      }
+      return new Response('{}', { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<VideoManager memorialId="page-10b2" />)
+
+    await screen.findByText(/Large videos can now be uploaded/)
+    const file = new File(['video-bytes'], 'tribute.mp4', { type: 'video/mp4' })
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement
+    await user.upload(fileInput, file)
+    await user.click(
+      screen.getByRole('button', { name: /upload and process video/i })
+    )
+
+    expect(
+      await screen.findByText(
+        'Upload job response was invalid.',
         {},
         {
           timeout: 4000,
@@ -756,6 +875,96 @@ describe('VideoManager', () => {
         String(input).includes('/api/admin/memorials/page-10e/videos')
       )
     ).toHaveLength(1)
+  })
+
+  it('reloads the list when attach succeeds without returning a video payload', async () => {
+    let fetchVideosCount = 0
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url.includes('/api/admin/memorials/page-10e2/videos')) {
+          fetchVideosCount += 1
+          if (fetchVideosCount === 1) {
+            return new Response(JSON.stringify({ videos: [] }), { status: 200 })
+          }
+          return new Response(
+            JSON.stringify({
+              videos: [
+                {
+                  id: 'cloud-3',
+                  provider: 'cloudinary',
+                  provider_id: 'everlume/reloaded',
+                  title: 'Reloaded processed clip',
+                },
+              ],
+            }),
+            { status: 200 }
+          )
+        }
+        if (
+          url === '/api/admin/videos/uploads/init' &&
+          init?.method === 'POST'
+        ) {
+          return new Response(
+            JSON.stringify({
+              job: {
+                id: '550e8400-e29b-41d4-a716-446655440028',
+                status: 'uploading',
+                uploadUrl: 'https://upload.test/video.mp4',
+              },
+            }),
+            { status: 201 }
+          )
+        }
+        if (url === 'https://upload.test/video.mp4' && init?.method === 'PUT') {
+          return new Response(null, { status: 200 })
+        }
+        if (url.endsWith('/start') && init?.method === 'POST') {
+          return new Response(JSON.stringify({ ok: true }), { status: 202 })
+        }
+        if (url.endsWith('/550e8400-e29b-41d4-a716-446655440028')) {
+          return new Response(
+            JSON.stringify({
+              job: {
+                id: '550e8400-e29b-41d4-a716-446655440028',
+                status: 'completed',
+              },
+            }),
+            { status: 200 }
+          )
+        }
+        if (url.endsWith('/attach') && init?.method === 'POST') {
+          return new Response(JSON.stringify({}), { status: 200 })
+        }
+        return new Response('{}', { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<VideoManager memorialId="page-10e2" />)
+
+    await screen.findByText(/Large videos can now be uploaded/)
+    const file = new File(['video-bytes'], 'tribute.mp4', { type: 'video/mp4' })
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement
+    const titleInput = screen.getByPlaceholderText(/Uploaded File Title/i)
+
+    await user.upload(fileInput, file)
+    await user.type(titleInput, 'Queued upload')
+    await user.click(
+      screen.getByRole('button', { name: /upload and process video/i })
+    )
+
+    expect(
+      await screen.findByText('Reloaded processed clip', {}, { timeout: 4000 })
+    ).toBeInTheDocument()
+    expect(titleInput).toHaveValue('')
+    expect(
+      fetchMock.mock.calls.filter(([input]) =>
+        String(input).includes('/api/admin/memorials/page-10e2/videos')
+      )
+    ).toHaveLength(2)
   })
 
   it('times out when processing never leaves the queued states', async () => {

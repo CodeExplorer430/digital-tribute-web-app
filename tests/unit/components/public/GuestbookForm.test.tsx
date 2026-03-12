@@ -170,6 +170,61 @@ describe('GuestbookForm', () => {
     ).toBeInTheDocument()
   })
 
+  it('maps too-fast validation errors to the pacing guidance copy', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ code: 'TOO_FAST' }), { status: 429 })
+    )
+    const user = userEvent.setup()
+
+    render(<GuestbookForm memorialId="page-1" />)
+
+    await user.type(screen.getByLabelText('Your Name'), 'Maria')
+    await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(
+      await screen.findByText(
+        'Please take a moment before sending your message.'
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('uses memorial-not-found and raw-message fallbacks for other API failures', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ code: 'MEMORIAL_NOT_FOUND' }), {
+          status: 404,
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: 'UNKNOWN_CODE',
+            message: 'Custom fallback from the API.',
+          }),
+          { status: 500 }
+        )
+      )
+    const user = userEvent.setup()
+
+    render(<GuestbookForm memorialId="page-1" />)
+
+    await user.type(screen.getByLabelText('Your Name'), 'Maria')
+    await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(
+      await screen.findByText(
+        'This memorial is no longer available for new guestbook messages.'
+      )
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+    expect(
+      await screen.findByText('Custom fallback from the API.')
+    ).toBeInTheDocument()
+  })
+
   it('short-circuits to local success when the honeypot field is filled', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch')
     const user = userEvent.setup()
@@ -243,6 +298,20 @@ describe('GuestbookForm', () => {
       )
     ).toBeInTheDocument()
     expect(resetMock).toHaveBeenCalledWith('widget-1')
+  })
+
+  it('shows the submitting state while the guestbook request is pending', async () => {
+    const request = new Promise<Response>(() => {})
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => request)
+    const user = userEvent.setup()
+
+    render(<GuestbookForm memorialId="page-1" />)
+
+    await user.type(screen.getByLabelText('Your Name'), 'Maria')
+    await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(screen.getByRole('button', { name: 'Submitting...' })).toBeDisabled()
   })
 
   it('surfaces turnstile runtime errors', async () => {

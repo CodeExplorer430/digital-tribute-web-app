@@ -177,4 +177,74 @@ describe('PublicGallery', () => {
     )
     expect(within(dialog).getByText('Styled memory')).toHaveClass('uppercase')
   })
+
+  it('marks protected-media thumbnails as unoptimized and falls back to generated labels when captions are missing', async () => {
+    const user = userEvent.setup()
+    render(
+      <PublicGallery
+        photos={[
+          {
+            id: 'p1',
+            thumb_url: '/api/public/media/photo-1?variant=thumb',
+            image_url: '/api/public/media/photo-1',
+          },
+        ]}
+      />
+    )
+
+    const thumbnail = screen.getByAltText('Memorial photo 1')
+    expect(thumbnail).toHaveAttribute('data-unoptimized', 'true')
+    expect(
+      screen.getByRole('button', { name: 'Open photo 1' })
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Open photo 1' }))
+    const dialog = screen.getByRole('dialog', { name: /photo lightbox/i })
+    expect(within(dialog).getByAltText('Memorial photo 1')).toHaveAttribute(
+      'data-unoptimized',
+      'true'
+    )
+    expect(within(dialog).queryByText('Open photo 1')).not.toBeInTheDocument()
+  })
+
+  it('clamps slideshow intervals to the minimum supported value', async () => {
+    vi.useFakeTimers()
+
+    try {
+      render(
+        <PublicGallery
+          photos={photos}
+          slideshowEnabled
+          slideshowIntervalMs={500}
+        />
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: /open photo 1/i }))
+      expect(
+        within(
+          screen.getByRole('dialog', { name: /photo lightbox/i })
+        ).getByAltText('First memory')
+      ).toBeInTheDocument()
+
+      await act(async () => {
+        vi.advanceTimersByTime(1999)
+      })
+      expect(
+        within(
+          screen.getByRole('dialog', { name: /photo lightbox/i })
+        ).getByAltText('First memory')
+      ).toBeInTheDocument()
+
+      await act(async () => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(
+        within(
+          screen.getByRole('dialog', { name: /photo lightbox/i })
+        ).getByAltText('Second memory')
+      ).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

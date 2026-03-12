@@ -537,6 +537,60 @@ describe('DataExport', () => {
     expect(packageText).toContain('"memorialTitle": "Jane Doe"')
   })
 
+  it('shows the loading labels for guestbook, media consent, and photo metadata exports', async () => {
+    const guestbookRequest = deferredResponse()
+    const consentRequest = deferredResponse()
+    const photosRequest = deferredResponse()
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/memorials/page-1/guestbook') {
+        return guestbookRequest.promise
+      }
+      if (url === '/api/admin/memorials/page-1/media-consent') {
+        return consentRequest.promise
+      }
+      if (url === '/api/admin/memorials/page-1/photos') {
+        return photosRequest.promise
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(screen.getByRole('button', { name: /Export Guestbook/i }))
+    expect(
+      screen.getByRole('button', { name: /^Exporting\.\.\.$/i })
+    ).toBeDisabled()
+    guestbookRequest.resolve(
+      new Response(JSON.stringify({ entries: [] }), { status: 200 })
+    )
+    await screen.findByText('No guestbook entries to export.')
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Media Consent/i })
+    )
+    expect(
+      screen.getByRole('button', { name: /^Exporting\.\.\.$/i })
+    ).toBeDisabled()
+    consentRequest.resolve(
+      new Response(JSON.stringify({ logs: [] }), { status: 200 })
+    )
+    await screen.findByText('No protected media consent records to export.')
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Photo Metadata/i })
+    )
+    expect(
+      screen.getByRole('button', { name: /^Exporting\.\.\.$/i })
+    ).toBeDisabled()
+    photosRequest.resolve(
+      new Response(JSON.stringify({ photos: [] }), { status: 200 })
+    )
+    await screen.findByText('No photos to export.')
+  })
+
   it('prefers the exported memorial title over the prop title when the payload includes one', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = String(input)
@@ -683,6 +737,32 @@ describe('DataExport', () => {
     ).not.toBeInTheDocument()
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('clears a prior export error before showing a later no-data notice', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('broken', { status: 500 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ entries: [] }), { status: 200 })
+      )
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Photo Metadata/i })
+    )
+    expect(
+      await screen.findByText('Export failed: Unable to load photos.')
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Export Guestbook/i }))
+    expect(
+      await screen.findByText('No guestbook entries to export.')
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('Export failed: Unable to load photos.')
+    ).not.toBeInTheDocument()
   })
 
   it('skips failed image downloads and still generates a zip from remaining photos', async () => {
@@ -883,5 +963,213 @@ describe('DataExport', () => {
         'JSON export failed: Unable to load memorial details.'
       )
     ).toBeInTheDocument()
+  })
+
+  it('falls back to the default package error when a dependent endpoint fails with a non-json response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/memorials/page-1') {
+        return new Response(
+          JSON.stringify({
+            memorial: {
+              id: 'page-1',
+              title: 'Jane Doe',
+              slug: 'jane-doe',
+              full_name: 'Jane Doe',
+              dob: null,
+              dod: null,
+              accessMode: 'public',
+            },
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/memorials/page-1/photos') {
+        return new Response(JSON.stringify({ photos: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/memorials/page-1/videos') {
+        return new Response('bad', { status: 500 })
+      }
+      if (url === '/api/admin/memorials/page-1/timeline') {
+        return new Response(JSON.stringify({ events: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/memorials/page-1/guestbook') {
+        return new Response(JSON.stringify({ entries: [] }), { status: 200 })
+      }
+      if (url === '/api/admin/memorials/page-1/redirects') {
+        return new Response(JSON.stringify({ redirects: [] }), { status: 200 })
+      }
+      return new Response(JSON.stringify({ logs: [] }), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Memorial Package/i })
+    )
+
+    expect(
+      await screen.findByText('JSON export failed: Unable to load videos.')
+    ).toBeInTheDocument()
+  })
+
+  it('defaults missing memorial package collections to empty arrays', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/memorials/page-1') {
+        return new Response(
+          JSON.stringify({
+            memorial: {
+              id: 'page-1',
+              title: 'Jane Doe',
+              slug: 'jane-doe',
+              full_name: 'Jane Doe',
+              dob: null,
+              dod: null,
+              accessMode: 'public',
+            },
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/memorials/page-1/timeline') {
+        return new Response(JSON.stringify({ events: undefined }), {
+          status: 200,
+        })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Memorial Package/i })
+    )
+
+    await waitFor(() => {
+      expect(URL.createObjectURL).toHaveBeenCalled()
+    })
+
+    const packageBlob = vi.mocked(URL.createObjectURL).mock.calls.at(-1)?.[0]
+    expect(packageBlob).toBeInstanceOf(Blob)
+    const packageText = await (packageBlob as Blob).text()
+    expect(packageText).toContain('"photos": []')
+    expect(packageText).toContain('"videos": []')
+    expect(packageText).toContain('"timeline": []')
+    expect(packageText).toContain('"guestbook": []')
+    expect(packageText).toContain('"redirects": []')
+    expect(packageText).toContain('"mediaConsent": []')
+  })
+
+  it('shows the generic zip export fallback when a non-error value is thrown', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/memorials/page-1/photos') {
+        return new Response(
+          JSON.stringify({
+            photos: [
+              {
+                id: 'p1',
+                caption: 'Photo 1',
+                image_url: 'https://cdn.example.com/full.jpg',
+                thumb_url: null,
+                cloudinary_public_id: 'memorial/p1',
+                created_at: '2026-01-01T00:00:00.000Z',
+                taken_at: null,
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === 'https://cdn.example.com/full.jpg') {
+        throw 'boom'
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Download All Photos/i })
+    )
+
+    expect(
+      await screen.findByText('ZIP export failed: ZIP export failed.')
+    ).toBeInTheDocument()
+  })
+
+  it('shows the generic package fallback when a non-error value is thrown', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/memorials/page-1') {
+        throw 'boom'
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Export Memorial Package/i })
+    )
+
+    expect(
+      await screen.findByText('JSON export failed: JSON export failed.')
+    ).toBeInTheDocument()
+  })
+
+  it('downloads the generated photo zip using the expected memorial filename', async () => {
+    const setAttributeSpy = vi.spyOn(
+      HTMLAnchorElement.prototype,
+      'setAttribute'
+    )
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === '/api/admin/memorials/page-1/photos') {
+        return new Response(
+          JSON.stringify({
+            photos: [
+              {
+                id: 'p1',
+                caption: 'Photo 1',
+                image_url: 'https://cdn.example.com/full.jpg',
+                thumb_url: null,
+                cloudinary_public_id: 'memorial/p1',
+                created_at: '2026-01-01T00:00:00.000Z',
+                taken_at: null,
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === 'https://cdn.example.com/full.jpg') {
+        return new Response(Uint8Array.from([255, 216, 255, 217]), {
+          status: 200,
+          headers: { 'content-type': 'image/jpeg' },
+        })
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<DataExport memorialId="page-1" memorialTitle="Jane Doe" />)
+
+    await user.click(
+      screen.getByRole('button', { name: /Download All Photos/i })
+    )
+
+    await waitFor(() => {
+      expect(setAttributeSpy).toHaveBeenCalledWith(
+        'download',
+        'jane_doe_photos.zip'
+      )
+      expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled()
+    })
   })
 })
