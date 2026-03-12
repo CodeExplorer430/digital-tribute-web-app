@@ -266,4 +266,26 @@ describe('AdminQRCodeSection', () => {
       screen.getByText(/create and activate a short link/i)
     ).toBeInTheDocument()
   })
+
+  it('forwards default qr props when the memorial does not define optional qr settings', () => {
+    render(
+      <AdminQRCodeSection
+        memorial={{ slug: 'jane' }}
+        redirects={[{ id: 'r1', shortcode: 'garden', is_active: true }]}
+      />
+    )
+
+    expect(qrCodeGeneratorMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        url: 'http://localhost:3000/garden',
+        template: 'classic',
+        caption: 'Scan me!',
+        foregroundColor: undefined,
+        backgroundColor: undefined,
+        frameStyle: undefined,
+        captionFont: undefined,
+        showLogo: false,
+      })
+    )
+  })
 })

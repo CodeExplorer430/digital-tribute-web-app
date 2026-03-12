@@ -60,6 +60,21 @@ describe('app/admin/layout', () => {
     )
   })
 
+  it('uses the fallback bypass email when E2E_BYPASS_ADMIN_AUTH is enabled without an explicit email', async () => {
+    process.env.E2E_BYPASS_ADMIN_AUTH = '1'
+
+    const mod = await import('@/app/admin/layout')
+    const node = await mod.default({ children: <div>Admin child</div> })
+    render(node)
+
+    expect(mockCreateClient).not.toHaveBeenCalled()
+    expect(mockAdminShell).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userEmail: 'e2e-admin@everlume.local',
+      })
+    )
+  })
+
   it('redirects to /login when user is missing', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } })
 

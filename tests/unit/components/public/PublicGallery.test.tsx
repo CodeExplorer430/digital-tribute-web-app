@@ -283,7 +283,42 @@ describe('PublicGallery', () => {
     const image = within(dialog).getByAltText('Memorial photo 1')
 
     expect(image).toHaveAttribute('src', 'https://example.com/thumb-only.jpg')
+    expect(image).toHaveAttribute('data-unoptimized', 'false')
     expect(within(dialog).queryByText('Open photo 1')).not.toBeInTheDocument()
+  })
+
+  it('keeps non-proxy lightbox images optimized while proxy-backed sources stay unoptimized', async () => {
+    const user = userEvent.setup()
+    render(
+      <PublicGallery
+        photos={[
+          {
+            id: 'p1',
+            thumb_url: 'https://example.com/thumb-only.jpg',
+            image_url: null,
+          },
+          {
+            id: 'p2',
+            thumb_url: '/api/public/media/photo-2?variant=thumb',
+            image_url: '/api/public/media/photo-2?variant=image',
+          },
+        ]}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Open photo 1' }))
+    let dialog = screen.getByRole('dialog', { name: /photo lightbox/i })
+    expect(within(dialog).getByAltText('Memorial photo 1')).toHaveAttribute(
+      'data-unoptimized',
+      'false'
+    )
+
+    await user.click(screen.getByRole('button', { name: /next photo/i }))
+    dialog = screen.getByRole('dialog', { name: /photo lightbox/i })
+    expect(within(dialog).getByAltText('Memorial photo 2')).toHaveAttribute(
+      'data-unoptimized',
+      'true'
+    )
   })
 
   it('does not show slideshow controls when only one photo is available', async () => {

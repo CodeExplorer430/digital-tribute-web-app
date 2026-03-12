@@ -1316,6 +1316,70 @@ describe('AdminSettingsScreen', () => {
     )
   })
 
+  it('rolls back an isActive-only redirect update without disturbing print metadata', async () => {
+    const updateRequest = deferredResponse()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input)
+      if (url === '/api/admin/site-settings') {
+        return new Response(
+          JSON.stringify({ settings: { homeDirectoryEnabled: false } }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects') {
+        return new Response(
+          JSON.stringify({
+            redirects: [
+              {
+                id: 'r1',
+                shortcode: 'sample',
+                target_url: 'https://example.com/memorials/sample',
+                print_status: 'verified',
+                last_verified_at: '2026-03-07T00:00:00.000Z',
+                is_active: true,
+                created_at: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      }
+      if (url === '/api/admin/redirects/r1' && init?.method === 'PATCH') {
+        return updateRequest.promise
+      }
+      return new Response(JSON.stringify({}), { status: 200 })
+    })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+
+    await screen.findByText('/sample')
+    await user.click(
+      screen.getByRole('button', { name: 'Disable redirect sample' })
+    )
+
+    const sampleRow = screen
+      .getAllByRole('row')
+      .find((row) => row.textContent?.includes('/sample'))
+    expect(sampleRow).toBeTruthy()
+    expect(within(sampleRow!).getByText('Disabled')).toBeInTheDocument()
+    expect(within(sampleRow!).getByText('Verified')).toBeInTheDocument()
+    expect(within(sampleRow!).getByText(/Last:/)).toBeInTheDocument()
+
+    updateRequest.resolve(
+      new Response(JSON.stringify({ message: 'Unable to update redirect.' }), {
+        status: 500,
+      })
+    )
+
+    expect(
+      await screen.findByText('Unable to update redirect.')
+    ).toBeInTheDocument()
+    expect(within(sampleRow!).getByText('Active')).toBeInTheDocument()
+    expect(within(sampleRow!).getByText('Verified')).toBeInTheDocument()
+    expect(within(sampleRow!).getByText(/Last:/)).toBeInTheDocument()
+  })
+
   it('loads protected media consent settings and saves a new notice version', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
@@ -1371,6 +1435,76 @@ describe('AdminSettingsScreen', () => {
     expect(patchCall).toBeTruthy()
     expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
       protectedMediaConsentTitle: 'Updated Family Notice',
+      protectedMediaConsentBody:
+        'Updated protected media consent body for family memorial visitors and invited guests.',
+    })
+  })
+
+  it('ignores other site-setting actions while a site-settings update is already pending', async () => {
+    const updateRequest = deferredResponse()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/redirects') {
+          return new Response(JSON.stringify({ redirects: [] }), {
+            status: 200,
+          })
+        }
+        if (url === '/api/admin/site-settings' && (!init || !init.method)) {
+          return new Response(
+            JSON.stringify({
+              settings: {
+                homeDirectoryEnabled: false,
+                protectedMediaConsentTitle: 'Media Viewing Notice',
+                protectedMediaConsentBody:
+                  'Protected media consent body for the memorial family and invited visitors.',
+                protectedMediaConsentVersion: 2,
+              },
+            }),
+            { status: 200 }
+          )
+        }
+        if (url === '/api/admin/site-settings' && init?.method === 'PATCH') {
+          return updateRequest.promise
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<AdminSettingsScreen />)
+
+    await screen.findByText('Current version 2')
+    const homeDirectoryButton = screen.getByRole('button', { name: 'Disabled' })
+    const savePresentationButton = screen.getByRole('button', {
+      name: 'Save Memorial Presentation',
+    })
+    const republishButton = screen.getByRole('button', {
+      name: 'Republish Current Notice',
+    })
+
+    await user.click(homeDirectoryButton)
+    await user.click(savePresentationButton)
+    await user.click(republishButton)
+
+    expect(
+      fetchMock.mock.calls.filter(
+        ([url, init]) =>
+          url === '/api/admin/site-settings' && init?.method === 'PATCH'
+      )
+    ).toHaveLength(1)
+
+    updateRequest.resolve(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    )
+
+    const homepageSection = screen
+      .getByText('Homepage Directory')
+      .closest('section')
+    await waitFor(() => {
+      expect(
+        within(homepageSection!).getByRole('button', { name: 'Enabled' })
+      ).toBeInTheDocument()
     })
   })
 
