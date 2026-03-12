@@ -22,6 +22,70 @@ describe('POST /api/public/memorials/[slug]/unlock', () => {
     vi.unstubAllEnvs()
   })
 
+  it('rejects an invalid memorial slug before reading the request body', async () => {
+    const req = new Request(
+      'http://localhost/api/public/memorials/%20/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'correct-password' }),
+      }
+    )
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: ' ' }),
+    })
+
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      message: 'Invalid memorial slug.',
+    })
+    expect(mockSingle).not.toHaveBeenCalled()
+  })
+
+  it('rejects invalid json request payloads', async () => {
+    const req = new Request(
+      'http://localhost/api/public/memorials/jane/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{bad',
+      }
+    )
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'INVALID_JSON',
+      message: 'Invalid request payload.',
+    })
+  })
+
+  it('rejects empty passwords', async () => {
+    const req = new Request(
+      'http://localhost/api/public/memorials/jane/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: '' }),
+      }
+    )
+
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      message: 'Enter your access password.',
+    })
+  })
+
   it('returns 401 for invalid password', async () => {
     mockSingle.mockResolvedValue({
       data: {
@@ -118,5 +182,49 @@ describe('POST /api/public/memorials/[slug]/unlock', () => {
     })
 
     expect(res.status).toBe(401)
+  })
+
+  it('returns not found for missing or non-password memorials', async () => {
+    mockSingle.mockResolvedValueOnce({ data: null }).mockResolvedValueOnce({
+      data: {
+        id: 'page-1',
+        slug: 'jane',
+        access_mode: 'public',
+        password_hash: null,
+        password_updated_at: null,
+      },
+    })
+
+    const missingReq = new Request(
+      'http://localhost/api/public/memorials/jane/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'correct-password' }),
+      }
+    )
+
+    const missingRes = await POST(missingReq as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+    expect(missingRes.status).toBe(404)
+
+    const publicReq = new Request(
+      'http://localhost/api/public/memorials/jane/unlock',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'correct-password' }),
+      }
+    )
+
+    const publicRes = await POST(publicReq as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+    expect(publicRes.status).toBe(404)
+    await expect(publicRes.json()).resolves.toMatchObject({
+      code: 'NOT_FOUND',
+      message: 'This memorial is not available for password unlock.',
+    })
   })
 })

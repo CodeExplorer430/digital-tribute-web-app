@@ -84,6 +84,37 @@ describe('POST /api/public/memorials/[slug]/media-consent', () => {
     )
   })
 
+  it('falls back to consent notice version 1 when site settings are missing', async () => {
+    mockPageSingle.mockResolvedValue({
+      data: {
+        id: 'page-1',
+        slug: 'jane',
+        owner_id: 'owner-1',
+        privacy: 'private',
+        access_mode: 'password',
+        password_updated_at: '2026-03-09T00:00:00.000Z',
+      },
+    })
+    mockSiteSettingsSingle.mockResolvedValue({ data: null })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+
+    const req = new Request(
+      'http://localhost/api/public/memorials/jane/media-consent',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockInsertMemorialMediaConsent).toHaveBeenCalledWith(
+      expect.objectContaining({ consentVersion: 1 })
+    )
+  })
+
   it('rejects an invalid memorial slug', async () => {
     const req = new Request(
       'http://localhost/api/public/memorials/%20/media-consent',
@@ -166,6 +197,28 @@ describe('POST /api/public/memorials/[slug]/media-consent', () => {
     expect(res.status).toBe(200)
     expect(mockPageSingle).not.toHaveBeenCalled()
     expect(mockInsertMemorialMediaConsent).not.toHaveBeenCalled()
+  })
+
+  it('rejects fixture consent requests when the memorial does not require consent', async () => {
+    vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+
+    const req = new Request(
+      'http://localhost/api/public/memorials/e2e-public-memorial/media-consent',
+      { method: 'POST' }
+    )
+    const res = await POST(req as never, {
+      params: Promise.resolve({ slug: 'e2e-public-memorial' }),
+    })
+
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'CONSENT_NOT_REQUIRED',
+    })
+    expect(mockPageSingle).not.toHaveBeenCalled()
   })
 
   it('rejects consent when the memorial is not yet unlocked', async () => {
