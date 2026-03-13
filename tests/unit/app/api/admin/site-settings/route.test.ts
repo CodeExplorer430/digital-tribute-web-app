@@ -64,6 +64,39 @@ describe('/api/admin/site-settings', () => {
     })
   })
 
+  it('preserves the featured memorial video layout when loading site settings', async () => {
+    mockSingle.mockResolvedValue({
+      data: {
+        home_directory_enabled: true,
+        memorial_slideshow_enabled: true,
+        memorial_slideshow_interval_ms: 5000,
+        memorial_video_layout: 'featured',
+        protected_media_consent_title: 'Media Viewing Notice',
+        protected_media_consent_body:
+          'Protected media consent copy for the family memorial.',
+        protected_media_consent_version: 2,
+      },
+      error: null,
+    })
+    mockRequireAdminUser.mockResolvedValue({
+      ok: true,
+      supabase: {
+        from: () => ({
+          select: mockSelect,
+        }),
+      },
+    })
+
+    const res = await GET()
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      settings: expect.objectContaining({
+        memorialVideoLayout: 'featured',
+      }),
+    })
+  })
+
   it('returns fallback defaults for missing site settings values', async () => {
     mockSingle.mockResolvedValue({
       data: {
@@ -494,6 +527,66 @@ describe('/api/admin/site-settings', () => {
             protectedMediaConsentBody:
               "The family has protected this memorial's photos and videos for respectful viewing. Continuing confirms that access to protected media is recorded for family oversight.",
             protectedMediaConsentVersion: 1,
+          }),
+        }),
+      })
+    )
+  })
+
+  it('bumps the protected media notice version from the null fallback baseline when consent copy changes', async () => {
+    mockSingle.mockResolvedValue({
+      data: {
+        home_directory_enabled: false,
+        memorial_slideshow_enabled: true,
+        memorial_slideshow_interval_ms: null,
+        memorial_video_layout: null,
+        protected_media_consent_title: null,
+        protected_media_consent_body: null,
+        protected_media_consent_version: null,
+      },
+      error: null,
+    })
+    mockUpdateEq.mockResolvedValue({ error: null })
+    mockRequireAdminUser.mockResolvedValue({
+      ok: true,
+      userId: 'admin-1',
+      supabase: {
+        from: () => ({
+          select: mockSelect,
+          update: mockUpdate,
+        }),
+      },
+    })
+
+    const req = new Request('http://localhost/api/admin/site-settings', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        protectedMediaConsentTitle: 'Updated Notice',
+        protectedMediaConsentBody:
+          'Updated protected media consent copy for memorial visitors and family review.',
+      }),
+    })
+
+    const res = await PATCH(req as never)
+
+    expect(res.status).toBe(200)
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        protected_media_consent_title: 'Updated Notice',
+        protected_media_consent_version: 2,
+      })
+    )
+    expect(mockLogAdminAudit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          before: expect.objectContaining({
+            protectedMediaConsentVersion: 1,
+          }),
+          after: expect.objectContaining({
+            protectedMediaConsentTitle: 'Updated Notice',
+            protectedMediaConsentVersion: 2,
           }),
         }),
       })

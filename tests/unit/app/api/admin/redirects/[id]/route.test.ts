@@ -317,6 +317,73 @@ describe('/api/admin/redirects/[id]', () => {
     )
   })
 
+  it('updates redirects for admins without applying owner scope during patch', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockRedirectEqId.mockImplementationOnce(() => ({
+      eq: mockRedirectEqCreatedBy,
+      single: mockRedirectSingle,
+    }))
+    mockRedirectSingle.mockResolvedValue({
+      data: { id: 'r1', created_by: 'user-2' },
+    })
+    mockUpdateSingle.mockResolvedValue({
+      data: {
+        id: 'r1',
+        shortcode: 'grandma',
+        target_url: 'https://example.com/memorials/grandma',
+        print_status: 'verified',
+        last_verified_at: '2026-03-06T00:00:00.000Z',
+        is_active: true,
+        created_at: '2026-03-06T00:00:00.000Z',
+      },
+      error: null,
+    })
+
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ printStatus: 'verified' }),
+      }
+    )
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockRedirectEqCreatedBy).not.toHaveBeenCalledWith(
+      'created_by',
+      'admin-1'
+    )
+  })
+
+  it('returns forbidden for patch when the owner-scoped redirect lookup returns null', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockRedirectSingle.mockResolvedValue({ data: null })
+
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ isActive: false }),
+      }
+    )
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(403)
+    expect(mockRedirectEqCreatedBy).toHaveBeenCalledWith('created_by', 'user-1')
+    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(mockLogAdminAudit).not.toHaveBeenCalled()
+  })
+
   it('clears last verified timestamp when print status is marked unverified', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockRedirectSingle.mockResolvedValue({ data: { id: 'r1' } })

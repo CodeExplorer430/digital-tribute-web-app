@@ -80,7 +80,7 @@ export function GuestbookForm({ memorialId }: GuestbookFormProps) {
   useEffect(() => {
     if (!shouldUseCaptcha || !turnstileReady || !window.turnstile) return
     const container = turnstileContainerRef.current
-    if (!container || turnstileWidgetIdRef.current) return
+    if (!container) return
 
     turnstileWidgetIdRef.current = window.turnstile.render(container, {
       sitekey: turnstileSiteKey,

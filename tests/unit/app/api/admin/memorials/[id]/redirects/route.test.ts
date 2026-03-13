@@ -310,6 +310,46 @@ describe('GET /api/admin/memorials/[id]/redirects', () => {
     ])
   })
 
+  it('does not owner-scope the legacy fallback query for admins when order is unavailable', async () => {
+    const fallbackQuery = {
+      eq: vi.fn(() => fallbackQuery),
+      ilike: vi.fn(() => fallbackQuery),
+      data: [
+        {
+          id: 'r1',
+          shortcode: 'jane',
+          target_url: 'https://example.com/memorials/jane-doe',
+          created_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+      error: null,
+    }
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockPageSingle.mockResolvedValue({
+      data: { id: 'page-1', slug: 'jane-doe' },
+    })
+    vi.mocked(getRedirectOrderMock()).mockResolvedValueOnce({
+      data: null,
+      error: { code: '42703' },
+    })
+    mockSelect.mockImplementationOnce(() => mockRedirectsQuery)
+    mockSelect.mockImplementationOnce(() => fallbackQuery as never)
+
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/redirects'
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(fallbackQuery.eq).not.toHaveBeenCalledWith('created_by', 'admin-1')
+  })
+
   it('normalizes null redirect query data to an empty list', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockPageSingle.mockResolvedValue({

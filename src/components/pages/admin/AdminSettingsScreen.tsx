@@ -157,7 +157,6 @@ export function AdminSettingsScreen() {
     },
     rollback: () => void
   ) => {
-    if (updatingSiteSettings) return
     setUpdatingSiteSettings(true)
 
     const response = await fetch('/api/admin/site-settings', {
@@ -181,7 +180,6 @@ export function AdminSettingsScreen() {
   }
 
   const toggleHomeDirectory = async () => {
-    if (updatingSiteSettings) return
     const nextValue = !homeDirectoryEnabled
     setHomeDirectoryEnabled(nextValue)
     await updateSiteSettings({ homeDirectoryEnabled: nextValue }, () =>
@@ -190,7 +188,6 @@ export function AdminSettingsScreen() {
   }
 
   const toggleMemorialSlideshow = async () => {
-    if (updatingSiteSettings) return
     const nextValue = !memorialSlideshowEnabled
     setMemorialSlideshowEnabled(nextValue)
     await updateSiteSettings({ memorialSlideshowEnabled: nextValue }, () =>
@@ -199,7 +196,6 @@ export function AdminSettingsScreen() {
   }
 
   const saveMemorialPresentation = async () => {
-    if (updatingSiteSettings) return
     const clampedInterval = Math.min(
       12000,
       Math.max(2000, memorialSlideshowIntervalMs || 4500)
@@ -222,7 +218,6 @@ export function AdminSettingsScreen() {
   }
 
   const saveProtectedMediaConsent = async (republishOnly = false) => {
-    if (updatingSiteSettings) return
     const previous = {
       protectedMediaConsentTitle,
       protectedMediaConsentBody,

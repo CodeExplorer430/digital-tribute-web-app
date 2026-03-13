@@ -172,6 +172,54 @@ describe('GET /api/public/media/[photoId]', () => {
     })
   })
 
+  it('falls back to consent version 1 for fixture media when site settings are missing', async () => {
+    vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
+    mockVerifyToken.mockReturnValue(true)
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+    const fixtureSpy = vi
+      .spyOn(
+        await import('@/lib/server/e2e-public-fixtures'),
+        'getE2EPhotoFixtureById'
+      )
+      .mockReturnValue({
+        memorial: {
+          id: 'page-1',
+          access_mode: 'private',
+          privacy: 'private',
+          password_updated_at: null,
+          media_consent_revoked_at: null,
+        },
+        siteSettings: undefined,
+        photo: {
+          id: 'photo-1',
+          image_url: '/next.svg',
+          thumb_url: '/next-thumb.svg',
+        },
+      } as never)
+
+    const req = new NextRequest(
+      'http://localhost/api/public/media/22222222-2222-2222-2222-222222222221?token=valid'
+    )
+    const res = await GET(req, {
+      params: Promise.resolve({
+        photoId: '22222222-2222-2222-2222-222222222221',
+      }),
+    })
+
+    expect(res.status).toBe(307)
+    expect(mockVerifyConsent).toHaveBeenCalledWith(
+      undefined,
+      'page-1',
+      null,
+      1,
+      null
+    )
+    fixtureSpy.mockRestore()
+  })
+
   it('redirects fixture thumb requests to the main image when no thumb exists', async () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
     mockVerifyToken.mockReturnValue(true)

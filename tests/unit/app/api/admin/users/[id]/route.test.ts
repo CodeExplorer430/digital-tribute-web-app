@@ -398,6 +398,47 @@ describe('admin users [id] route', () => {
     })
   })
 
+  it('preserves the deactivated account state when an inactive user is updated', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'viewer', is_active: false },
+      error: null,
+    })
+    mockUpdateSingle.mockResolvedValue({
+      data: {
+        id: 'user-2',
+        role: 'editor',
+        is_active: false,
+        email: 'viewer@example.com',
+        full_name: 'Viewer User',
+      },
+      error: null,
+    })
+
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ role: 'editor' }),
+      }
+    )
+
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockListUsers).not.toHaveBeenCalled()
+    await expect(res.json()).resolves.toMatchObject({
+      user: { id: 'user-2', role: 'editor', account_state: 'deactivated' },
+    })
+  })
+
   it('returns self sign-out metadata when the current admin deactivates their own account', async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: '550e8400-e29b-41d4-a716-446655440001' } },
@@ -619,6 +660,34 @@ describe('admin users [id] route', () => {
       params: Promise.resolve({ id: 'not-a-uuid' }),
     })
     expect(res.status).toBe(400)
+  })
+
+  it('returns 409 when trying to delete the last active admin', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'admin-2', role: 'admin', is_active: true },
+      error: null,
+    })
+    const activeAdminEq = vi.fn(() => Promise.resolve({ count: 1 }))
+    mockCountEqRole.mockReturnValueOnce({ eq: activeAdminEq } as never)
+
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      { method: 'DELETE' }
+    )
+
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(409)
+    expect(activeAdminEq).toHaveBeenCalledWith('is_active', true)
+    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(mockLogAdminAudit).not.toHaveBeenCalled()
   })
 
   it('returns unauthorized for delete when the actor is signed out', async () => {

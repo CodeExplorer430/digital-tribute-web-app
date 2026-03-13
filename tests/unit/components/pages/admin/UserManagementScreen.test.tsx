@@ -448,6 +448,113 @@ describe('UserManagementScreen', () => {
     ).toBeInTheDocument()
   })
 
+  it('blocks update, invite, reset, and deactivate actions on other rows while one action is pending', async () => {
+    const patchRequest = deferredResponse()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/users' && (!init || !init.method)) {
+          return new Response(
+            JSON.stringify({
+              users: [
+                makeUser({ id: 'u1', full_name: 'Alex Santos' }),
+                makeUser({
+                  id: 'u2',
+                  full_name: 'Maria Reyes',
+                  email: 'maria@example.com',
+                  account_state: 'invited',
+                }),
+              ],
+            }),
+            { status: 200 }
+          )
+        }
+        if (url === '/api/admin/users/u1' && init?.method === 'PATCH') {
+          return patchRequest.promise
+        }
+        if (url === '/api/admin/users/u2' && init?.method === 'PATCH') {
+          return new Response(
+            JSON.stringify({ user: makeUser({ id: 'u2' }) }),
+            {
+              status: 200,
+            }
+          )
+        }
+        if (url === '/api/admin/users/u2/invite' && init?.method === 'POST') {
+          return new Response(
+            JSON.stringify({ message: 'should not happen' }),
+            {
+              status: 200,
+            }
+          )
+        }
+        if (
+          url === '/api/admin/users/u2/reset-password' &&
+          init?.method === 'POST'
+        ) {
+          return new Response(
+            JSON.stringify({ message: 'should not happen' }),
+            {
+              status: 200,
+            }
+          )
+        }
+        if (url === '/api/admin/users/u2' && init?.method === 'DELETE') {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+
+    await screen.findByText('Alex Santos')
+    await user.selectOptions(
+      screen.getByLabelText('Role for Alex Santos'),
+      'admin'
+    )
+
+    await user.selectOptions(
+      screen.getByLabelText('Role for Maria Reyes'),
+      'viewer'
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Resend invite to Maria Reyes' })
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Send password reset to Maria Reyes' })
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Deactivate Maria Reyes' })
+    )
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/users/u2',
+      expect.objectContaining({ method: 'PATCH' })
+    )
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/users/u2/invite',
+      expect.objectContaining({ method: 'POST' })
+    )
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/users/u2/reset-password',
+      expect.objectContaining({ method: 'POST' })
+    )
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/users/u2',
+      expect.objectContaining({ method: 'DELETE' })
+    )
+    expect(confirmSpy).toHaveBeenCalledTimes(1)
+
+    patchRequest.resolve(new Response('broken', { status: 500 }))
+
+    expect(
+      await screen.findByText('Unable to update user.')
+    ).toBeInTheDocument()
+  })
+
   it('signs the current browser out when an update response requests self sign-out', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')

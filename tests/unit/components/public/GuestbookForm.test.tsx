@@ -150,6 +150,29 @@ describe('GuestbookForm', () => {
     expect(resetMock).toHaveBeenCalledWith('widget-1')
   })
 
+  it('does not render the turnstile widget again when the component rerenders with an existing widget id', async () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'site-key'
+    const renderMock = vi.fn(() => 'widget-1')
+
+    Object.defineProperty(window, 'turnstile', {
+      value: {
+        render: renderMock,
+        reset: vi.fn(),
+        remove: vi.fn(),
+      },
+      configurable: true,
+    })
+
+    const { rerender } = render(<GuestbookForm memorialId="page-1" />)
+
+    await screen.findByTestId('turnstile-widget')
+    expect(renderMock).toHaveBeenCalledTimes(1)
+
+    rerender(<GuestbookForm memorialId="page-1" />)
+
+    expect(renderMock).toHaveBeenCalledTimes(1)
+  })
+
   it('shows retry guidance when rate limited', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
