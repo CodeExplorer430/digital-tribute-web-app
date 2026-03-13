@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { getSecurityHeaders } from './src/lib/security/http-headers'
 
 const configDir = dirname(fileURLToPath(import.meta.url))
 
@@ -32,6 +33,14 @@ const nextConfig: NextConfig = {
     root: configDir,
   },
   allowedDevOrigins: ['localhost', '127.0.0.1'],
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: getSecurityHeaders(),
+      },
+    ]
+  },
   images: {
     remotePatterns,
     localPatterns: [

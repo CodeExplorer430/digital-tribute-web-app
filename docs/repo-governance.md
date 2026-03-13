@@ -22,6 +22,18 @@ Require these statuses before merge:
 - `perf_a11y_gate`
 - `build`
 
+## Security Workflows
+
+Additional security-oriented workflows maintained in the repository:
+
+- `CodeQL`
+- `Dependency Review`
+- `Generate SBOM`
+
+These provide static analysis, dependency change review, and supply-chain
+artifact generation. They should remain enabled even when not yet wired into
+branch protection.
+
 ## GitHub Settings Checklist
 
 Configure in GitHub repository settings:
