@@ -44,3 +44,13 @@ Configure in GitHub repository settings:
 
 - Husky pre-commit hook runs lint, typecheck, and unit tests
 - `lint-staged` enforces clean staged changes for TS/JS files
+
+## Deferred Tooling Upgrades
+
+- `eslint@10` is intentionally deferred on the current stack.
+- Current blocker: `eslint-config-next@16.1.6` and its bundled
+  `eslint-plugin-react@7.37.5` fail during lint startup under ESLint 10 with
+  `contextOrFilename.getFilename is not a function`.
+- Revisit the upgrade only when a newer published Next lint stack supports
+  ESLint 10 cleanly, or if the project explicitly chooses to replace the
+  current Next-provided lint configuration with a custom flat-config stack.
