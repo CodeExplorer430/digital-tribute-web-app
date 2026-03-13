@@ -762,6 +762,35 @@ describe('admin users [id] route', () => {
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 
+  it('treats a null active-admin count as zero when deleting an active admin', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'admin', is_active: true },
+      error: null,
+    })
+    mockCountEqRole.mockReturnValueOnce({
+      eq: vi.fn(() => Promise.resolve({ count: null })),
+    } as never)
+
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'DELETE',
+      }
+    )
+
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(409)
+    expect(mockUpdate).not.toHaveBeenCalled()
+  })
+
   it('returns a database error when delete update fails', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
     mockProfileSingle.mockResolvedValue({
@@ -790,5 +819,86 @@ describe('admin users [id] route', () => {
 
     expect(res.status).toBe(500)
     expect(mockLogAdminAudit).not.toHaveBeenCalled()
+  })
+
+  it('deactivates an already-inactive admin without re-running the last-admin count check', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'admin', is_active: false },
+      error: null,
+    })
+    mockUpdateSingle.mockResolvedValue({
+      data: {
+        id: 'user-2',
+        role: 'admin',
+        is_active: false,
+        email: 'user@example.com',
+        full_name: 'User Two',
+      },
+      error: null,
+    })
+    mockCountEqRole.mockClear()
+
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'DELETE',
+      }
+    )
+
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockCountEqRole).not.toHaveBeenCalled()
+    await expect(res.json()).resolves.toMatchObject({
+      user: { id: 'user-2', account_state: 'deactivated' },
+    })
+  })
+
+  it('deactivates an active admin when more than one active admin remains', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
+    mockProfileSingle.mockResolvedValue({
+      data: { role: 'admin', is_active: true },
+      error: null,
+    })
+    mockTargetSingle.mockResolvedValue({
+      data: { id: 'user-2', role: 'admin', is_active: true },
+      error: null,
+    })
+    mockCountEqRole.mockReturnValueOnce({
+      eq: vi.fn(() => Promise.resolve({ count: 2 })),
+    } as never)
+    mockUpdateSingle.mockResolvedValue({
+      data: {
+        id: 'user-2',
+        role: 'admin',
+        is_active: false,
+        email: 'user@example.com',
+        full_name: 'User Two',
+      },
+      error: null,
+    })
+
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'DELETE',
+      }
+    )
+
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
+      user: { id: 'user-2', account_state: 'deactivated' },
+    })
   })
 })

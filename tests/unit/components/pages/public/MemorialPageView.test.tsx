@@ -354,4 +354,41 @@ describe('MemorialPageView', () => {
     })
     expect(mockProtectedMediaConsentGate).not.toHaveBeenCalled()
   })
+
+  it('falls back to the default slideshow interval when the memorial interval is falsy', () => {
+    render(
+      <MemorialPageView
+        memorial={{
+          id: 'page-1',
+          title: 'In Loving Memory',
+          full_name: 'Jane Doe',
+          dedicationText: null,
+          hero_image_url: null,
+          dob: null,
+          dod: null,
+          memorial_theme: 'classic',
+          memorial_slideshow_enabled: true,
+          memorial_slideshow_interval_ms: 0,
+          memorial_video_layout: 'grid',
+        }}
+        photos={[
+          {
+            id: 'photo-1',
+            image_url: '/image.jpg',
+            thumb_url: '/thumb.jpg',
+            caption: 'A quiet afternoon',
+          },
+        ]}
+        videos={[]}
+        timeline={[]}
+        guestbook={[]}
+      />
+    )
+
+    expect(mockPublicGallery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slideshowIntervalMs: 4500,
+      })
+    )
+  })
 })

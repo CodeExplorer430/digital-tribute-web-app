@@ -251,6 +251,47 @@ describe('/memorials/[slug] page', () => {
     })
   })
 
+  it('generates password-protected metadata for fixture memorials with explicit password access', async () => {
+    const fixtureSpy = vi
+      .spyOn(
+        await import('@/lib/server/e2e-public-fixtures'),
+        'getE2EMemorialFixtureBySlug'
+      )
+      .mockImplementation((slug: string) =>
+        slug === 'fixture-password-metadata'
+          ? ({
+              memorial: {
+                ...publicPage,
+                slug,
+                access_mode: 'password',
+                privacy: 'private',
+              },
+              photos: [],
+              guestbook: [],
+              timeline: [],
+              videos: [],
+              siteSettings: null,
+            } as never)
+          : null
+      )
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: false,
+      requiresPassword: true,
+    })
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'fixture-password-metadata' }),
+    })
+
+    expect(metadata).toEqual({
+      title: 'Password Protected Memorial | Everlume',
+      robots: { index: false, follow: false },
+    })
+    expect(mockPageSingle).not.toHaveBeenCalled()
+    fixtureSpy.mockRestore()
+  })
+
   it('generates open graph metadata for public memorial', async () => {
     mockPageSingle.mockResolvedValue({ data: publicPage })
 
@@ -289,6 +330,28 @@ describe('/memorials/[slug] page', () => {
     })
   })
 
+  it('generates open graph metadata for accessible non-public database pages', async () => {
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, access_mode: 'password', privacy: 'private' },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'jane' }),
+    })
+
+    expect(metadata).toEqual(
+      expect.objectContaining({
+        title: 'In Loving Memory | Everlume',
+        openGraph: expect.objectContaining({ type: 'website' }),
+      })
+    )
+  })
+
   it('generates private memorial metadata from fixtures without querying the database', async () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
     mockCanAccessMemorial.mockResolvedValue({
@@ -305,6 +368,27 @@ describe('/memorials/[slug] page', () => {
       title: 'Private Memorial | Everlume',
       robots: { index: false, follow: false },
     })
+    expect(mockPageSingle).not.toHaveBeenCalled()
+  })
+
+  it('generates open graph fixture metadata when non-public access is allowed', async () => {
+    vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'e2e-password-memorial' }),
+    })
+
+    expect(metadata).toEqual(
+      expect.objectContaining({
+        title: expect.stringContaining('| Everlume'),
+        openGraph: expect.objectContaining({ type: 'website' }),
+      })
+    )
     expect(mockPageSingle).not.toHaveBeenCalled()
   })
 
@@ -325,6 +409,26 @@ describe('/memorials/[slug] page', () => {
       robots: { index: false, follow: false },
     })
     expect(mockPageSingle).not.toHaveBeenCalled()
+  })
+
+  it('generates password-protected metadata for database memorials when access requires a password', async () => {
+    mockPageSingle.mockResolvedValue({
+      data: { ...publicPage, access_mode: 'password', privacy: 'private' },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: false,
+      requiresPassword: true,
+    })
+
+    const mod = await import('@/app/memorials/[slug]/page')
+    const metadata = await mod.generateMetadata({
+      params: Promise.resolve({ slug: 'db-password-protected' }),
+    })
+
+    expect(metadata).toEqual({
+      title: 'Password Protected Memorial | Everlume',
+      robots: { index: false, follow: false },
+    })
   })
 
   it('generates open graph metadata from public fixtures without querying the database', async () => {

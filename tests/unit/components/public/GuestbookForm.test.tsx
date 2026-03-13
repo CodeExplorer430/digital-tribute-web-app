@@ -89,6 +89,23 @@ describe('GuestbookForm', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows the network fallback without captcha enabled', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network down'))
+    const user = userEvent.setup()
+
+    render(<GuestbookForm memorialId="page-1" />)
+
+    await user.type(screen.getByLabelText('Your Name'), 'Maria')
+    await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(
+      await screen.findByText(
+        'The guestbook could not be reached. Please check your connection and try again.'
+      )
+    ).toBeInTheDocument()
+  })
+
   it('requires turnstile token and submits captchaToken when configured', async () => {
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'site-key'
     const fetchMock = vi
@@ -388,6 +405,61 @@ describe('GuestbookForm', () => {
     expect(resetMock).toHaveBeenCalledWith('widget-1')
   })
 
+  it('resets captcha after a network failure and after returning from the success state', async () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'site-key'
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), { status: 201 })
+      )
+    let onSolved: ((token: string) => void) | undefined
+    const resetMock = vi.fn()
+
+    Object.defineProperty(window, 'turnstile', {
+      value: {
+        render: vi.fn(
+          (_container: HTMLElement, options: Record<string, unknown>) => {
+            onSolved = options.callback as (token: string) => void
+            return 'widget-1'
+          }
+        ),
+        reset: resetMock,
+      },
+      configurable: true,
+    })
+
+    const user = userEvent.setup()
+    render(<GuestbookForm memorialId="page-1" />)
+
+    await user.type(screen.getByLabelText('Your Name'), 'Maria')
+    await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
+    await act(async () => {
+      onSolved?.('token-123')
+    })
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(
+      await screen.findByText(
+        'The guestbook could not be reached. Please check your connection and try again.'
+      )
+    ).toBeInTheDocument()
+    expect(resetMock).toHaveBeenCalledWith('widget-1')
+
+    await act(async () => {
+      onSolved?.('token-456')
+    })
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(await screen.findByText('Thank you for sharing')).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Write another message' })
+    )
+    expect(resetMock).toHaveBeenLastCalledWith('widget-1')
+  })
+
   it('resets captcha after an api validation failure when captcha is enabled', async () => {
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'site-key'
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -539,6 +611,28 @@ describe('GuestbookForm', () => {
     expect(screen.getByLabelText('Your Name')).toHaveValue('')
     expect(screen.getByLabelText('Your Message')).toHaveValue('')
     expect(resetMock).toHaveBeenCalledWith('widget-1')
+  })
+
+  it('resets the success screen without captcha when write-another-message is pressed', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 201 })
+    )
+    const user = userEvent.setup()
+
+    render(<GuestbookForm memorialId="page-1" />)
+
+    await user.type(screen.getByLabelText('Your Name'), 'Maria')
+    await user.type(screen.getByLabelText('Your Message'), 'Forever remembered')
+    await user.click(screen.getByRole('button', { name: 'Post to Guestbook' }))
+
+    expect(await screen.findByText('Thank you for sharing')).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Write another message' })
+    )
+
+    expect(screen.getByLabelText('Your Name')).toHaveValue('')
+    expect(screen.getByLabelText('Your Message')).toHaveValue('')
   })
 
   it('shows a load failure when captcha script cannot initialize', async () => {

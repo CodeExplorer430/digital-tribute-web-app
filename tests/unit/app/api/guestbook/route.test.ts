@@ -354,6 +354,26 @@ describe('POST /api/guestbook', () => {
     expect(res.status).toBe(503)
   })
 
+  it('allows production requests to continue when durable rate limiting and captcha are fully configured', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('RATE_LIMIT_BACKEND', 'upstash')
+    vi.stubEnv('CAPTCHA_ENABLED', '1')
+    vi.stubEnv('CAPTCHA_SECRET', 'test-secret')
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'site-key')
+
+    const req = new Request('http://localhost/api/guestbook', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{',
+    })
+
+    const res = await POST(req as never)
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'INVALID_JSON',
+    })
+  })
+
   it('uses the custom captcha verify url when configured', async () => {
     vi.stubEnv('CAPTCHA_ENABLED', '1')
     vi.stubEnv('CAPTCHA_SECRET', 'test-secret')

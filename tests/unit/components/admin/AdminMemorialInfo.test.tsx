@@ -427,4 +427,36 @@ describe('AdminMemorialInfo', () => {
       qrShowLogo: false,
     })
   })
+
+  it('falls back to default slideshow interval and qr caption when falsy values are provided', () => {
+    render(
+      <AdminMemorialInfo
+        onUpdate={vi.fn()}
+        memorial={makePage({
+          memorial_slideshow_interval_ms: 0,
+          qr_caption: '',
+        })}
+      />
+    )
+
+    expect(screen.getByLabelText('Slideshow Interval (ms)')).toHaveValue(4500)
+    expect(screen.getByLabelText('QR Caption')).toHaveValue('Scan me!')
+  })
+
+  it('updates slug and full name fields locally before saving', async () => {
+    const user = userEvent.setup()
+
+    render(<AdminMemorialInfo onUpdate={vi.fn()} memorial={makePage()} />)
+
+    const slugInput = screen.getByLabelText('Slug')
+    const fullNameInput = screen.getByLabelText('Full Name')
+
+    await user.clear(slugInput)
+    await user.type(slugInput, 'updated-slug')
+    await user.clear(fullNameInput)
+    await user.type(fullNameInput, 'Jane Victoria Doe')
+
+    expect(slugInput).toHaveValue('updated-slug')
+    expect(fullNameInput).toHaveValue('Jane Victoria Doe')
+  })
 })

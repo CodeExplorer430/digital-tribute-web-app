@@ -708,6 +708,53 @@ describe('GET /api/public/media/[photoId]', () => {
     })
   })
 
+  it('falls back to the main image for thumb requests when the stored thumb url is missing', async () => {
+    mockVerifyToken.mockReturnValue(true)
+    mockPhotoSingle.mockResolvedValue({
+      data: {
+        id: 'photo-1',
+        image_url: 'https://example.com/photo.jpg',
+        thumb_url: null,
+        pages: {
+          id: 'page-1',
+          owner_id: 'owner-1',
+          privacy: 'private',
+          access_mode: 'private',
+          password_updated_at: null,
+          media_consent_revoked_at: null,
+        },
+      },
+    })
+    mockCanAccessMemorial.mockResolvedValue({
+      allowed: true,
+      requiresPassword: false,
+    })
+    fetchMock.mockResolvedValue(
+      new Response('thumb-fallback-bytes', {
+        status: 200,
+        headers: { 'content-type': 'image/jpeg' },
+      })
+    )
+
+    const req = new NextRequest(
+      'http://localhost/api/public/media/photo-1?token=valid&variant=thumb'
+    )
+    const res = await GET(req, {
+      params: Promise.resolve({ photoId: 'photo-1' }),
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith('https://example.com/photo.jpg', {
+      cache: 'no-store',
+    })
+    expect(res.status).toBe(200)
+    expect(mockTryInsertMediaAccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mediaKind: 'gallery_thumb',
+        mediaVariant: 'thumb',
+      })
+    )
+  })
+
   it('redirects to fixture-backed protected media when the e2e public lane is enabled', async () => {
     vi.stubEnv('E2E_PUBLIC_FIXTURES', '1')
     mockVerifyToken.mockReturnValue(true)

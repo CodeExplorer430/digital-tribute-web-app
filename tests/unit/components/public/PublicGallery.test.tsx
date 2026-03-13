@@ -73,6 +73,17 @@ describe('PublicGallery', () => {
     expect(within(dialog).getByAltText('Second memory')).toBeInTheDocument()
   })
 
+  it('moves to the previous photo with the left arrow key from a later selection', async () => {
+    const user = userEvent.setup()
+    render(<PublicGallery photos={photos} />)
+
+    await user.click(screen.getByRole('button', { name: /open photo 2/i }))
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+
+    const dialog = screen.getByRole('dialog', { name: /photo lightbox/i })
+    expect(within(dialog).getByAltText('First memory')).toBeInTheDocument()
+  })
+
   it('shows slideshow controls when slideshow is enabled', async () => {
     const user = userEvent.setup()
     render(

@@ -58,15 +58,19 @@ export function PublicGallery({
     closeButtonRef.current?.focus()
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        closeLightbox()
-      } else if (event.key === 'ArrowRight') {
-        event.preventDefault()
-        nextImage()
-      } else if (event.key === 'ArrowLeft') {
-        event.preventDefault()
-        prevImage()
+      switch (event.key) {
+        case 'Escape':
+          event.preventDefault()
+          closeLightbox()
+          break
+        case 'ArrowRight':
+          event.preventDefault()
+          nextImage()
+          break
+        case 'ArrowLeft':
+          event.preventDefault()
+          prevImage()
+          break
       }
     }
 

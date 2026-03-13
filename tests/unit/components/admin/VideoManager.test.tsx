@@ -1507,4 +1507,69 @@ describe('VideoManager', () => {
       expect(screen.getByText('Second clip')).toBeInTheDocument()
     })
   })
+
+  it('ignores a second delete request while another video deletion is already pending', async () => {
+    const deleteRequest = deferredResponse()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url.includes('/api/admin/memorials/page-15b/videos')) {
+          return new Response(
+            JSON.stringify({
+              videos: [
+                {
+                  id: 'video-1',
+                  provider: 'youtube',
+                  provider_id: 'abcdefghijk',
+                  title: 'First clip',
+                },
+                {
+                  id: 'video-2',
+                  provider: 'cloudinary',
+                  provider_id: 'everlume/demo',
+                  title: 'Second clip',
+                },
+              ],
+            }),
+            { status: 200 }
+          )
+        }
+        if (url === '/api/admin/videos/video-1' && init?.method === 'DELETE') {
+          return deleteRequest.promise
+        }
+        if (url === '/api/admin/videos/video-2' && init?.method === 'DELETE') {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 })
+        }
+        return new Response('{}', { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<VideoManager memorialId="page-15b" />)
+
+    await screen.findByText('First clip')
+    const deleteButtons = screen.getAllByRole('button', {
+      name: /delete video/i,
+    })
+
+    await user.click(deleteButtons[0]!)
+    await user.click(deleteButtons[1]!)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/videos/video-1',
+      expect.objectContaining({ method: 'DELETE' })
+    )
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/videos/video-2',
+      expect.objectContaining({ method: 'DELETE' })
+    )
+
+    deleteRequest.resolve(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    )
+    await waitFor(() => {
+      expect(screen.queryByText('First clip')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('Second clip')).toBeInTheDocument()
+  })
 })

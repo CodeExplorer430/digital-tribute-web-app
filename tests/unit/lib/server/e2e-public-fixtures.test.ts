@@ -47,6 +47,7 @@ describe('e2e public fixtures', () => {
       }),
     })
     expect(getE2EMemorialFixtureBySlug('missing-slug')).toBeNull()
+    expect(getE2EPhotoFixtureById('missing-photo')).toBeNull()
   })
 
   it('verifies the password memorial unlock secret only for password fixtures', () => {

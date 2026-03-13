@@ -187,10 +187,8 @@ export function VideoManager({ memorialId }: VideoManagerProps) {
           return
         }
 
-        if (job.status === 'attached') {
-          await fetchVideos()
-          return
-        }
+        await fetchVideos()
+        return
       }
 
       setErrorMessage(
@@ -280,9 +278,12 @@ export function VideoManager({ memorialId }: VideoManagerProps) {
       return
     }
 
-    setActiveJob((current) =>
-      current ? { ...current, status: 'processing' } : current
-    )
+    setActiveJob({
+      id: job.id,
+      status: 'processing',
+      uploadUrl: job.uploadUrl,
+      uploadMethod: job.uploadMethod,
+    })
     await pollJobUntilDone(job.id)
     setUploadingFile(false)
   }

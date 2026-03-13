@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { UserManagementScreen } from '@/components/pages/admin/UserManagementScreen'
 
@@ -94,6 +94,44 @@ describe('UserManagementScreen', () => {
       '/api/admin/users',
       expect.objectContaining({ method: 'POST' })
     )
+  })
+
+  it('ignores a second invite form submit while the first invite is still pending', async () => {
+    const inviteRequest = deferredResponse()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/users' && (!init || !init.method)) {
+          return new Response(JSON.stringify({ users: [] }), { status: 200 })
+        }
+        if (url === '/api/admin/users' && init?.method === 'POST') {
+          return inviteRequest.promise
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+
+    await screen.findByText('Invite New User')
+    await user.type(
+      screen.getByPlaceholderText('name@example.com'),
+      'maria@example.com'
+    )
+    await user.type(screen.getByPlaceholderText('Alex Santos'), 'Maria Reyes')
+    await user.click(screen.getByRole('button', { name: /^invite$/i }))
+
+    fireEvent.submit(
+      screen.getByRole('button', { name: /inviting/i }).closest('form')!
+    )
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+
+    inviteRequest.resolve(new Response('broken', { status: 500 }))
+    expect(
+      await screen.findByText('Unable to invite user.')
+    ).toBeInTheDocument()
   })
 
   it('shows load errors and the empty-search state', async () => {
@@ -942,6 +980,42 @@ describe('UserManagementScreen', () => {
         }
         if (url === '/api/admin/users/u1' && init?.method === 'DELETE') {
           return new Response(JSON.stringify({}), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<UserManagementScreen />)
+    await screen.findByText('Alex Santos')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Deactivate Alex Santos' })
+    )
+
+    expect(confirmMock).toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/users/u1',
+      expect.objectContaining({ method: 'DELETE' })
+    )
+    expect(await screen.findByText('User deactivated.')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Reactivate Alex Santos' })
+    ).toBeInTheDocument()
+  })
+
+  it('uses the local deactivate fallback when the api succeeds with a non-json body', async () => {
+    const confirmMock = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/users' && (!init || !init.method)) {
+          return new Response(JSON.stringify({ users: [makeUser()] }), {
+            status: 200,
+          })
+        }
+        if (url === '/api/admin/users/u1' && init?.method === 'DELETE') {
+          return new Response('ok', { status: 200 })
         }
         return new Response(JSON.stringify({}), { status: 200 })
       })

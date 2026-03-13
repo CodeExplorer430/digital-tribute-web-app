@@ -523,6 +523,74 @@ describe('GuestbookModerationScreen', () => {
     ).toBeInTheDocument()
   })
 
+  it('ignores a second unapprove while another unapprove request is pending', async () => {
+    const request = deferredResponse()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const url = String(input)
+        if (url === '/api/admin/guestbook' && (!init || !init.method)) {
+          return new Response(
+            JSON.stringify({
+              entries: [
+                { ...sampleEntry, id: 'entry-1', is_approved: true },
+                {
+                  ...sampleEntry,
+                  id: 'entry-2',
+                  name: 'Bea',
+                  is_approved: true,
+                },
+              ],
+            }),
+            { status: 200 }
+          )
+        }
+        if (
+          url === '/api/admin/guestbook/entry-1/unapprove' &&
+          init?.method === 'POST'
+        ) {
+          return request.promise
+        }
+        if (
+          url === '/api/admin/guestbook/entry-2/unapprove' &&
+          init?.method === 'POST'
+        ) {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 })
+        }
+        return new Response(JSON.stringify({}), { status: 200 })
+      })
+
+    const user = userEvent.setup()
+    render(<GuestbookModerationScreen />)
+    await screen.findByRole('button', {
+      name: 'Unapprove guestbook entry from Ana',
+    })
+
+    const buttons = screen.getAllByRole('button', {
+      name: /unapprove guestbook entry/i,
+    })
+
+    await user.click(buttons[0]!)
+    await user.click(buttons[1]!)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/guestbook/entry-1/unapprove',
+      expect.objectContaining({ method: 'POST' })
+    )
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/guestbook/entry-2/unapprove',
+      expect.objectContaining({ method: 'POST' })
+    )
+
+    request.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    expect(
+      await screen.findByText('Moved Ana back to pending review.')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Unapprove guestbook entry from Bea' })
+    ).toBeInTheDocument()
+  })
+
   it('clears a prior success banner when a new moderation action starts', async () => {
     const unapproveRequest = deferredResponse()
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {

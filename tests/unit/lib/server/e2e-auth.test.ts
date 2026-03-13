@@ -29,6 +29,22 @@ describe('e2e-auth helpers', () => {
     resetE2EAuthFixtures()
   })
 
+  it('reinitializes the mutable fixture users when the global store is missing', () => {
+    globalThis.__EVERLUME_E2E_AUTH_USERS__ = undefined
+
+    expect(
+      authenticateE2EUser('e2e-admin@everlume.local', 'Everlume123!')
+    ).toEqual(
+      expect.objectContaining({
+        ok: true,
+        session: expect.objectContaining({
+          email: 'e2e-admin@everlume.local',
+          state: 'active',
+        }),
+      })
+    )
+  })
+
   it('returns null for missing, malformed, or partial session cookies', async () => {
     mockCookieGet.mockReturnValue(undefined)
     await expect(getE2EAuthSession()).resolves.toBeNull()
