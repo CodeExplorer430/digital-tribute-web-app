@@ -58,9 +58,8 @@ vi.mock('@/lib/server/media-consent', () => ({
 }))
 
 vi.mock('@/lib/server/e2e-public-fixtures', async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import('@/lib/server/e2e-public-fixtures')
-  >()
+  const actual =
+    await importOriginal<typeof import('@/lib/server/e2e-public-fixtures')>()
 
   return {
     ...actual,
