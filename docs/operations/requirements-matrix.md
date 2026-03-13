@@ -23,10 +23,13 @@ This document records the current audit status of the repository's major product
 | ---------------------------------------------------- | ----------- | ------------------------------------------------------------------------- |
 | Server-side admin authorization boundary             | Implemented | Route tests mock role and active-state combinations                       |
 | Admin mutation audit logging                         | Implemented | Route tests and `admin-audit` unit coverage                               |
+| Browser security header policy                       | Implemented | Global Next header policy plus unit coverage for CSP and header set       |
 | Static quality gates (`format`, `lint`, `typecheck`) | Implemented | Local and CI verification                                                 |
 | Coverage threshold enforcement (85/85/85/75)         | Implemented | Vitest thresholds enforced in `vitest.config.ts`                          |
 | Accessibility smoke coverage                         | Implemented | Playwright `@a11y` suite                                                  |
 | Performance/accessibility budgets                    | Implemented | Lighthouse CI gate in `test:perf`                                         |
+| Security scanning and dependency review              | Implemented | CodeQL and dependency review GitHub workflows                             |
+| SBOM artifact generation                             | Implemented | Dedicated GitHub workflow generating SPDX artifact                        |
 | Webpack e2e regression coverage                      | Implemented | Playwright baseline suite                                                 |
 | Turbopack compatibility coverage                     | Diagnostic  | CI diagnostic lane with artifact upload, non-blocking by policy           |
 | Local Playwright server reuse                        | Implemented | `PLAYWRIGHT_REUSE_EXISTING_SERVER=1` support in config and port preflight |
@@ -40,9 +43,13 @@ This document records the current audit status of the repository's major product
 | Backup automation and restore drill       | Implemented | GitHub workflows and `scripts/ops/*` backup tooling                  |
 | Production env/security prerequisite gate | Implemented | `scripts/ops/check-deploy-prereqs.mjs` and workflow usage            |
 | Worker redirect deployment path           | Implemented | Worker tests plus deployment workflow                                |
+| Standards traceability and QA artifacts   | Implemented | `docs/quality/*` and `docs/security/owasp-top-10-assessment.md`      |
 
 ## Current Audit Notes
 
 - Main quality gates currently pass when executed in a localhost-capable environment.
 - Turbopack remains intentionally diagnostic rather than release-blocking.
+- The remaining largest gaps are now governance-heavy rather than feature-heavy:
+  privacy/retention policy formalization, CSRF/origin review evidence, and
+  operational observability/SLO ownership.
 - Branch and PR hygiene are tracked separately from this matrix; see repo governance and GitHub state for merge workflow decisions.
