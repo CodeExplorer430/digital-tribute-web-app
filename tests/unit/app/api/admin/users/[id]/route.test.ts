@@ -621,6 +621,25 @@ describe('admin users [id] route', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns unauthorized for delete when the actor is signed out', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } })
+
+    const req = new Request(
+      'http://localhost/api/admin/users/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'DELETE',
+      }
+    )
+
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(401)
+    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(mockLogAdminAudit).not.toHaveBeenCalled()
+  })
+
   it('returns a configuration error when delete cannot create the service role client', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
     mockProfileSingle.mockResolvedValue({

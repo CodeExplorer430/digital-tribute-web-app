@@ -276,6 +276,47 @@ describe('/api/admin/redirects/[id]', () => {
     )
   })
 
+  it('scopes patch ownership by created_by for non-admin owners', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockRedirectSingle.mockResolvedValue({
+      data: { id: 'r1', created_by: 'user-1' },
+    })
+    mockUpdateSingle.mockResolvedValue({
+      data: {
+        id: 'r1',
+        shortcode: 'grandma',
+        target_url: 'https://example.com/memorials/grandma',
+        print_status: 'verified',
+        last_verified_at: '2026-03-06T00:00:00.000Z',
+        is_active: false,
+        created_at: '2026-03-06T00:00:00.000Z',
+      },
+      error: null,
+    })
+
+    const req = new Request(
+      'http://localhost/api/admin/redirects/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ isActive: false }),
+      }
+    )
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockRedirectEqCreatedBy).toHaveBeenCalledWith('created_by', 'user-1')
+    expect(mockLogAdminAudit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: 'redirect.update',
+        entityId: '550e8400-e29b-41d4-a716-446655440000',
+      })
+    )
+  })
+
   it('clears last verified timestamp when print status is marked unverified', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockRedirectSingle.mockResolvedValue({ data: { id: 'r1' } })

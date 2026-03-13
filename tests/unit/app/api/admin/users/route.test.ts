@@ -347,6 +347,26 @@ describe('admin users route', () => {
     )
   })
 
+  it('POST returns unauthorized when signed out', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } })
+
+    const req = new Request('https://everlume.test/api/admin/users', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'new@everlume.test',
+        fullName: 'New User',
+        role: 'editor',
+      }),
+    })
+
+    const res = await POST(req as never)
+
+    expect(res.status).toBe(401)
+    expect(mockInvite).not.toHaveBeenCalled()
+    expect(mockLogAdminAudit).not.toHaveBeenCalled()
+  })
+
   it('POST returns a conflict when the email already exists', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } } })
     mockProfileSingle.mockResolvedValue({

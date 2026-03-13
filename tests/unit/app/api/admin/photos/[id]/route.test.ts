@@ -229,6 +229,25 @@ describe('DELETE /api/admin/photos/[id]', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns unauthorized without user for delete', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } })
+
+    const req = new Request(
+      'http://localhost/api/admin/photos/550e8400-e29b-41d4-a716-446655440000',
+      {
+        method: 'DELETE',
+      }
+    )
+
+    const res = await DELETE(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+
+    expect(res.status).toBe(401)
+    expect(mockDelete).not.toHaveBeenCalled()
+    expect(mockLogAdminAudit).not.toHaveBeenCalled()
+  })
+
   it('deletes photo for authorized owner', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockPhotoSingle.mockResolvedValue({

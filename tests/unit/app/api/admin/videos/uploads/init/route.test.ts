@@ -447,4 +447,57 @@ describe('POST /api/admin/videos/uploads/init', () => {
     })
     expect(body.job.uploadMethod).toBe('PUT')
   })
+
+  it('falls back to PUT when the persisted upload method is null', async () => {
+    mockJobInsertSingle.mockResolvedValueOnce({
+      data: {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        page_id: '550e8400-e29b-41d4-a716-446655440001',
+        created_by: 'user-1',
+        status: 'queued',
+        title: 'Tribute',
+        source_filename: 'tribute.mp4',
+        source_mime: 'video/mp4',
+        source_bytes: 139000000,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+      },
+      error: null,
+    })
+    mockJobUpdateSingle.mockResolvedValueOnce({
+      data: {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        status: 'uploading',
+        upload_url: 'https://upload.example.com/file.mp4',
+        upload_method: null,
+      },
+      error: null,
+    })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          uploadUrl: 'https://upload.example.com/file.mp4',
+          uploadMethod: 'POST',
+        }),
+        { status: 200 }
+      )
+    )
+
+    const req = new Request('http://localhost/api/admin/videos/uploads/init', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        memorialId: '550e8400-e29b-41d4-a716-446655440001',
+        fileName: 'tribute.mp4',
+        fileSize: 139000000,
+        mimeType: 'video/mp4',
+        title: 'Tribute',
+      }),
+    })
+    const res = await POST(req as never)
+    const body = (await res.json()) as { job: { uploadMethod: string } }
+
+    expect(res.status).toBe(201)
+    expect(body.job.uploadMethod).toBe('PUT')
+  })
 })

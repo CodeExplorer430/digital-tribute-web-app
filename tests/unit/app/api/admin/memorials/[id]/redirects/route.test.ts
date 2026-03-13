@@ -262,6 +262,54 @@ describe('GET /api/admin/memorials/[id]/redirects', () => {
     ])
   })
 
+  it('falls back cleanly when schema mismatch occurs and fallback order is unavailable', async () => {
+    const fallbackQuery = {
+      eq: vi.fn(() => fallbackQuery),
+      ilike: vi.fn(() => fallbackQuery),
+      data: [
+        {
+          id: 'r1',
+          shortcode: 'jane',
+          target_url: 'https://example.com/memorials/jane-doe',
+          created_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+      error: null,
+    }
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockPageSingle.mockResolvedValue({
+      data: { id: 'page-1', slug: 'jane-doe' },
+    })
+    vi.mocked(getRedirectOrderMock()).mockResolvedValueOnce({
+      data: null,
+      error: { code: '42703' },
+    })
+    mockSelect.mockImplementationOnce(() => mockRedirectsQuery)
+    mockSelect.mockImplementationOnce(() => fallbackQuery as never)
+
+    const req = new Request(
+      'http://localhost/api/admin/memorials/550e8400-e29b-41d4-a716-446655440000/redirects'
+    )
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: '550e8400-e29b-41d4-a716-446655440000' }),
+    })
+    const payload = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(fallbackQuery.ilike).toHaveBeenCalledWith('target_url', '%jane-doe%')
+    expect(payload.redirects).toEqual([
+      {
+        id: 'r1',
+        shortcode: 'jane',
+        target_url: 'https://example.com/memorials/jane-doe',
+        print_status: 'unverified',
+        last_verified_at: null,
+        is_active: true,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+    ])
+  })
+
   it('normalizes null redirect query data to an empty list', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockPageSingle.mockResolvedValue({
